@@ -1,0 +1,7 @@
+<%# Butonul Activeaza / Dezactiveaza pentru un anunt. Primeste: a (anuntul), clase (optional). %>
+<form method="post" action="/admin/anunturi/<%= a.id %>/<%= a.esteActiv ? 'dezactiveaza' : 'activeaza' %>" class="d-inline">
+<%- include('../../partials/csrf') %>
+  <button type="submit" class="btn <%= typeof clase !== 'undefined' ? clase : '' %> <%= a.esteActiv ? 'btn-outline-danger' : 'btn-outline-success' %>">
+    <%= a.esteActiv ? 'Dezactivează' : 'Activează' %>
+  </button>
+</form>

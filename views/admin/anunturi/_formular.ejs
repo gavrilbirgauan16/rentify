@@ -1,0 +1,141 @@
+<%
+  // Ajutoare pentru afisarea erorilor pe fiecare camp.
+  const areEroare = (camp) => Boolean(erori[camp]);
+  const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+%>
+
+<% if (Object.keys(erori).length > 0) { %>
+<div class="alert alert-danger" role="alert">Verifică câmpurile marcate cu roșu.</div>
+<% } %>
+
+<% if (proprietati.length === 0) { %>
+<div class="alert alert-warning" role="alert">
+  Nu există nicio proprietate. <a href="/admin/proprietati/create" class="alert-link">Adaugă întâi o proprietate.</a>
+</div>
+<% } %>
+
+<form method="post" action="<%= actiune %>" enctype="multipart/form-data" novalidate>
+<%- include('../../partials/csrf') %>
+  <div class="row g-3">
+
+    <div class="col-12">
+      <label for="proprietate_id" class="form-label">Proprietate</label>
+      <select class="form-select<%= clasaCamp('proprietate_id') %>" id="proprietate_id" name="proprietate_id">
+        <option value="">Alege proprietatea…</option>
+        <% proprietati.forEach(function(p) { %>
+        <option value="<%= p.id %>" <%= String(a.proprietate_id) === String(p.id) ? 'selected' : '' %>>
+          <%= p.denumire %> – <%= p.oras %> (<%= p.utilizator.prenume %> <%= p.utilizator.nume %>)<%= p.stare === 'inactiv' ? ' – inactivă' : '' %>
+        </option>
+        <% }) %>
+      </select>
+              <% if (areEroare('pret')) { %><div class="invalid-feedback"><%= erori.pret %></div><% } %>
+      </div>
+      <div class="form-text">La închiriere: chiria pe lună pentru toată locuința. Se împarte egal între chiriași.</div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="pret_o_persoana" class="form-label">Preț pentru o singură persoană <span class="text-body-secondary fw-normal">(opțional, doar la închiriere)</span></label>
+      <input type="number" class="form-control<%= clasaCamp('pret_o_persoana') %>" id="pret_o_persoana" name="pret_o_persoana"
+             min="0" step="0.01" value="<%= a.pret_o_persoana %>" aria-describedby="ajutor_pret_o_persoana">
+      <% if (areEroare('pret_o_persoana')) { %><div class="invalid-feedback"><%= erori.pret_o_persoana %></div><% } %>
+      <div id="ajutor_pret_o_persoana" class="form-text">Reducere: dacă locuiește o singură persoană, plătește acest preț în loc de prețul întreg. Lasă gol dacă nu oferi reducere.</div>
+    </div>
+
+    <div class="col-12">
+      <label for="titlu" class="form-label">Titlu</label>
+      <input type="text" class="form-control<%= clasaCamp('titlu') %>" id="titlu" name="titlu" maxlength="120" value="<%= a.titlu %>" required>
+      <% if (areEroare('titlu')) { %><div class="invalid-feedback"><%= erori.titlu %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="tip" class="form-label">Tip</label>
+      <select class="form-select<%= clasaCamp('tip') %>" id="tip" name="tip">
+        <% tipuri.forEach(function(t) { %><option value="<%= t %>" <%= a.tip === t ? 'selected' : '' %>><%= eticheteTip[t] %></option><% }) %>
+      </select>
+      <% if (areEroare('tip')) { %><div class="invalid-feedback"><%= erori.tip %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="stare" class="form-label">Stare</label>
+      <select class="form-select<%= clasaCamp('stare') %>" id="stare" name="stare">
+        <% stari.forEach(function(s) { %><option value="<%= s %>" <%= a.stare === s ? 'selected' : '' %>><%= eticheteStare[s] %></option><% }) %>
+      </select>
+      <% if (areEroare('stare')) { %><div class="invalid-feedback"><%= erori.stare %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="pret" class="form-label">Preț</label>
+      <div class="input-group has-validation">
+        <input type="number" class="form-control<%= clasaCamp('pret') %>" id="pret" name="pret" min="0" step="0.01" value="<%= a.pret %>">
+        <select class="form-select flex-grow-0 w-auto<%= clasaCamp('moneda') %>" name="moneda" aria-label="Moneda">
+          <% monede.forEach(function(m) { %><option value="<%= m %>" <%= a.moneda === m ? 'selected' : '' %>><%= m %></option><% }) %>
+        </select>
+        <% if (areEroare('pret')) { %><div class="invalid-feedback"><%= erori.pret %></div><% } %>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="garantie" class="form-label">Garanție <span class="text-body-secondary fw-normal">(opțional)</span></label>
+      <input type="number" class="form-control<%= clasaCamp('garantie') %>" id="garantie" name="garantie" min="0" step="0.01" value="<%= a.garantie %>">
+      <% if (areEroare('garantie')) { %><div class="invalid-feedback"><%= erori.garantie %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="disponibil_de_la" class="form-label">Disponibil de la <span class="text-body-secondary fw-normal">(opțional)</span></label>
+      <input type="date" class="form-control<%= clasaCamp('disponibil_de_la') %>" id="disponibil_de_la" name="disponibil_de_la" value="<%= a.disponibil_de_la %>">
+      <% if (areEroare('disponibil_de_la')) { %><div class="invalid-feedback"><%= erori.disponibil_de_la %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="locuri_libere" class="form-label">Locuri libere <span class="text-body-secondary fw-normal">(opțional, la colocare)</span></label>
+      <input type="number" class="form-control<%= clasaCamp('locuri_libere') %>" id="locuri_libere" name="locuri_libere" min="0" step="1" value="<%= a.locuri_libere %>">
+      <% if (areEroare('locuri_libere')) { %><div class="invalid-feedback"><%= erori.locuri_libere %></div><% } %>
+    </div>
+
+    <div class="col-12">
+      <label for="descriere" class="form-label">Descriere <span class="text-body-secondary fw-normal">(opțional)</span></label>
+      <textarea class="form-control" id="descriere" name="descriere" rows="3"><%= a.descriere %></textarea>
+    </div>
+
+    <div class="col-12">
+      <label for="imagini" class="form-label">Imagini <span class="text-body-secondary fw-normal">(opțional)</span></label>
+
+      <% if (a.imagini.length > 0) { %>
+      <!-- Imaginile actuale (doar la Edit): bifezi ce vrei sa stergi -->
+      <div class="row row-cols-3 row-cols-sm-4 row-cols-lg-6 g-2 mb-2">
+        <% a.imagini.forEach(function(img) { %>
+        <div class="col">
+          <div class="imagine-existenta">
+            <img src="<%= img.url %>" alt="<%= img.nume %>" class="rounded">
+            <div class="form-check mt-1">
+              <input class="form-check-input" type="checkbox" name="sterge_imagini" value="<%= img.id %>" id="sterge_<%= img.id %>">
+              <label class="form-check-label small" for="sterge_<%= img.id %>">Șterge</label>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+
+      <input type="file" class="form-control<%= clasaCamp('imagini') %>" id="imagini" name="imagini"
+             accept="image/jpeg,image/png,image/webp" multiple aria-describedby="ajutor_imagini">
+      <% if (areEroare('imagini')) { %><div class="invalid-feedback"><%= erori.imagini %></div><% } %>
+      <div id="ajutor_imagini" class="form-text">
+        JPG, PNG sau WEBP, cel mult <%= maxMb %> MB fiecare și <%= maxImagini %> imagini pe anunț. Poți alege mai multe deodată (Ctrl + clic).
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="promovat" name="promovat" <%= a.promovat ? 'checked' : '' %>>
+        <label class="form-check-label" for="promovat">Anunț promovat</label>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="d-grid gap-2 d-sm-flex mt-4">
+    <button class="btn btn-primary px-4" type="submit">Salvează</button>
+    <a class="btn btn-outline-secondary" href="/admin/anunturi">Renunță</a>
+  </div>
+</form>
