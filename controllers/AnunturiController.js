@@ -161,4 +161,4 @@ async function dezactiveaza(req, res) {
   res.redirect('/admin/anunturi');
 }
 
-module.exports = { index, createGet, createPost, editGet, editPost, activeaza, dezactiveaza };
+module.exports = { index, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, verificaProprietatea };
