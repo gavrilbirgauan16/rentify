@@ -1,0 +1,420 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model abonament {
+  id                 Int               @id @default(autoincrement())
+  utilizator_id      Int
+  plan_id            Int
+  perioada           String            @db.VarChar(10)
+  data_inceput       DateTime          @db.Date
+  data_sfarsit       DateTime          @db.Date
+  reinnoire_automata Boolean           @default(false)
+  stare              String            @default("activ") @db.VarChar(20)
+  referinta_externa  String?           @db.VarChar(100)
+  creat_la           DateTime          @default(now()) @db.Timestamp(6)
+  plan_abonament     plan_abonament    @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  utilizator         utilizator        @relation(fields: [utilizator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  plata_abonament    plata_abonament[]
+}
+
+model anunt {
+  id               Int          @id @default(autoincrement())
+  proprietate_id   Int
+  tip              String       @db.VarChar(20)
+  titlu            String       @db.VarChar(120)
+  descriere        String?
+  pret             Decimal      @db.Decimal(12, 2)
+  pret_o_persoana  Decimal?     @db.Decimal(12, 2)
+  moneda           String       @default("RON") @db.VarChar(3)
+  garantie         Decimal?     @db.Decimal(10, 2)
+  disponibil_de_la DateTime?    @db.Date
+  locuri_libere    Int?
+  stare            String       @default("ciorna") @db.VarChar(20)
+  promovat         Boolean      @default(false)
+  promovat_pana_la DateTime?    @db.Date
+  vizualizari      Int          @default(0)
+  creat_la         DateTime     @default(now()) @db.Timestamp(6)
+  expira_la        DateTime?    @db.Date
+  proprietate      proprietate  @relation(fields: [proprietate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  contactare       contactare[]
+  favorit          favorit[]
+  vizionare        vizionare[]
+  @@index([proprietate_id])
+}
+
+model cerere_prelungire {
+  id           Int       @id @default(autoincrement())
+  obligatie_id Int
+  data_noua    DateTime  @db.Date
+  motiv        String?   @db.VarChar(300)
+  stare        String    @default("trimisa") @db.VarChar(20)
+  raspuns      String?   @db.VarChar(300)
+  creat_la     DateTime  @default(now()) @db.Timestamp(6)
+  raspuns_la   DateTime? @db.Timestamp(6)
+  obligatie    obligatie @relation(fields: [obligatie_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model contactare {
+  id         Int        @id @default(autoincrement())
+  anunt_id   Int
+  chirias_id Int
+  mesaj      String?
+  stare      String     @default("trimisa") @db.VarChar(20)
+  creat_la   DateTime   @default(now()) @db.Timestamp(6)
+  raspuns_la DateTime?  @db.Timestamp(6)
+  anunt      anunt      @relation(fields: [anunt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  utilizator utilizator @relation(fields: [chirias_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contract {
+  id                    Int                @id @default(autoincrement())
+  proprietate_id        Int
+  data_inceput          DateTime           @db.Date
+  data_sfarsit          DateTime?          @db.Date
+  zi_scadenta           Int
+  mod_calcul            String             @default("pe_apartament") @db.VarChar(20)
+  chirie_totala         Decimal?           @db.Decimal(10, 2)
+  chirie_pe_persoana    Decimal?           @db.Decimal(10, 2)
+  moneda                String             @default("RON") @db.VarChar(3)
+  garantie              Decimal?           @db.Decimal(10, 2)
+  reducere_la_timp      Decimal            @default(0) @db.Decimal(5, 2)
+  luni_gratie           Int                @default(1)
+  notificari_proprietar String             @default("doar_final") @db.VarChar(20)
+  stare                 String             @default("ciorna") @db.VarChar(20)
+  creat_la              DateTime           @default(now()) @db.Timestamp(6)
+  actualizat_la         DateTime?          @db.Timestamp(6)
+  proprietate           proprietate        @relation(fields: [proprietate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  contract_chirias      contract_chirias[]
+  recenzie              recenzie[]
+  regula_contract       regula_contract[]
+  treapta_chirie        treapta_chirie[]
+}
+
+model contract_chirias {
+  id                  Int            @id @default(autoincrement())
+  contract_id         Int
+  chirias_id          Int
+  parte_chirie        Decimal        @db.Decimal(10, 2)
+  parte_manuala       Boolean        @default(false)
+  data_intrare        DateTime       @db.Date
+  data_iesire         DateTime?      @db.Date
+  reguli_acceptate_la DateTime?      @db.Timestamp(6)
+  stare               String         @default("invitat") @db.VarChar(20)
+  utilizator          utilizator     @relation(fields: [chirias_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  contract            contract       @relation(fields: [contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  dovada_plata        dovada_plata[]
+  obligatie           obligatie[]
+}
+
+model dovada_plata {
+  id                  Int              @id @default(autoincrement())
+  contract_chirias_id Int
+  tip                 String           @db.VarChar(30)
+  luna                DateTime         @db.Date
+  suma                Decimal?         @db.Decimal(10, 2)
+  observatii          String?          @db.VarChar(200)
+  creat_la            DateTime         @default(now()) @db.Timestamp(6)
+  contract_chirias    contract_chirias @relation(fields: [contract_chirias_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model favorit {
+  id            Int        @id @default(autoincrement())
+  utilizator_id Int
+  anunt_id      Int
+  creat_la      DateTime   @default(now()) @db.Timestamp(6)
+  anunt         anunt      @relation(fields: [anunt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  utilizator    utilizator @relation(fields: [utilizator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([utilizator_id, anunt_id])
+}
+
+model fisier {
+  id          Int        @id @default(autoincrement())
+  incarcat_de Int
+  entitate    String     @db.VarChar(30)
+  entitate_id Int
+  tip         String     @db.VarChar(20)
+  nume_fisier String     @db.VarChar(200)
+  cale        String     @db.VarChar(300)
+  creat_la    DateTime   @default(now()) @db.Timestamp(6)
+  utilizator  utilizator @relation(fields: [incarcat_de], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  @@index([entitate, entitate_id])
+}
+
+model jurnal_admin {
+  id          Int        @id @default(autoincrement())
+  admin_id    Int
+  actiune     String     @db.VarChar(50)
+  entitate    String?    @db.VarChar(30)
+  entitate_id Int?
+  detalii     String?
+  creat_la    DateTime   @default(now()) @db.Timestamp(6)
+  utilizator  utilizator @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model limita_plan {
+  id             Int            @id @default(autoincrement())
+  plan_id        Int
+  cheie          String         @db.VarChar(50)
+  valoare        Int
+  plan_abonament plan_abonament @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([plan_id, cheie])
+}
+
+model mesaj_sesizare {
+  id          Int        @id @default(autoincrement())
+  sesizare_id Int
+  autor_id    Int
+  continut    String
+  creat_la    DateTime   @default(now()) @db.Timestamp(6)
+  utilizator  utilizator @relation(fields: [autor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sesizare    sesizare   @relation(fields: [sesizare_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model notificare {
+  id            Int        @id @default(autoincrement())
+  utilizator_id Int
+  tip           String     @db.VarChar(30)
+  titlu         String     @db.VarChar(120)
+  continut      String?    @db.VarChar(500)
+  link          String?    @db.VarChar(200)
+  citita        Boolean    @default(false)
+  trimisa_email Boolean    @default(false)
+  creat_la      DateTime   @default(now()) @db.Timestamp(6)
+  utilizator    utilizator @relation(fields: [utilizator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model obligatie {
+  id                  Int                 @id @default(autoincrement())
+  contract_chirias_id Int
+  tip                 String              @db.VarChar(20)
+  descriere           String?             @db.VarChar(200)
+  luna                DateTime            @db.Date
+  suma                Decimal             @db.Decimal(10, 2)
+  scadenta            DateTime            @db.Date
+  scadenta_initiala   DateTime            @db.Date
+  sesizare_id         Int?
+  stare               String              @default("in_asteptare") @db.VarChar(20)
+  creat_la            DateTime            @default(now()) @db.Timestamp(6)
+  cerere_prelungire   cerere_prelungire[]
+  contract_chirias    contract_chirias    @relation(fields: [contract_chirias_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sesizare            sesizare?           @relation(fields: [sesizare_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  plata               plata[]
+}
+
+model plan_abonament {
+  id              Int               @id @default(autoincrement())
+  rol_id          Int
+  nume            String            @db.VarChar(50)
+  descriere       String?           @db.VarChar(300)
+  pret_lunar      Decimal           @default(0) @db.Decimal(8, 2)
+  pret_anual      Decimal           @default(0) @db.Decimal(8, 2)
+  activ           Boolean           @default(true)
+  recomandat      Boolean           @default(false)
+  abonament       abonament[]
+  cod_promotional cod_promotional[]
+  limita_plan     limita_plan[]
+  rol             rol               @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([rol_id, nume])
+}
+
+model plata {
+  id                Int       @id @default(autoincrement())
+  obligatie_id      Int
+  suma              Decimal   @db.Decimal(10, 2)
+  reducere_aplicata Decimal   @default(0) @db.Decimal(10, 2)
+  data_platii       DateTime  @db.Date
+  metoda            String    @default("transfer") @db.VarChar(20)
+  stare             String    @default("declarata") @db.VarChar(20)
+  confirmata_la     DateTime? @db.Timestamp(6)
+  motiv_respingere  String?   @db.VarChar(200)
+  referinta_externa String?   @db.VarChar(100)
+  creat_la          DateTime  @default(now()) @db.Timestamp(6)
+  obligatie         obligatie @relation(fields: [obligatie_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model plata_abonament {
+  id           Int       @id @default(autoincrement())
+  abonament_id Int
+  suma         Decimal   @db.Decimal(8, 2)
+  moneda       String    @default("RON") @db.VarChar(3)
+  data_platii  DateTime  @db.Timestamp(6)
+  metoda       String    @default("card") @db.VarChar(20)
+  stare        String    @default("reusita") @db.VarChar(20)
+  referinta    String?   @db.VarChar(100)
+  abonament    abonament @relation(fields: [abonament_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model proprietate {
+  id             Int        @id @default(autoincrement())
+  proprietar_id  Int
+  denumire       String     @db.VarChar(100)
+  tip            String     @db.VarChar(20)
+  judet          String     @db.VarChar(50)
+  oras           String     @db.VarChar(50)
+  zona           String?    @db.VarChar(80)
+  adresa         String?    @db.VarChar(200)
+  latitudine     Decimal?   @db.Decimal(9, 6)
+  longitudine    Decimal?   @db.Decimal(9, 6)
+  etaj           Int?
+  nr_camere      Int
+  suprafata_mp   Decimal?   @db.Decimal(6, 2)
+  an_constructie Int?
+  stare_imobil   String?    @db.VarChar(20)
+  mobilat        String?    @db.VarChar(20)
+  dotari         Json?
+  descriere      String?
+  max_locatari   Int        @default(1)
+  stare          String     @default("liber") @db.VarChar(20)
+  creat_la       DateTime   @default(now()) @db.Timestamp(6)
+  actualizat_la  DateTime?  @db.Timestamp(6)
+  are_balcon     Boolean    @default(false)
+  anunt          anunt[]
+  contract       contract[]
+  utilizator     utilizator @relation(fields: [proprietar_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sesizare       sesizare[]
+
+  @@index([proprietar_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model recenzie {
+  id                                            Int        @id @default(autoincrement())
+  contract_id                                   Int
+  autor_id                                      Int
+  destinatar_id                                 Int
+  nota                                          Int
+  comentariu                                    String?
+  vizibila                                      Boolean    @default(true)
+  creat_la                                      DateTime   @default(now()) @db.Timestamp(6)
+  utilizator_recenzie_autor_idToutilizator      utilizator @relation("recenzie_autor_idToutilizator", fields: [autor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  contract                                      contract   @relation(fields: [contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  utilizator_recenzie_destinatar_idToutilizator utilizator @relation("recenzie_destinatar_idToutilizator", fields: [destinatar_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([contract_id, autor_id, destinatar_id])
+}
+
+model regula_contract {
+  id          Int      @id @default(autoincrement())
+  contract_id Int
+  continut    String   @db.VarChar(300)
+  ordine      Int      @default(1)
+  contract    contract @relation(fields: [contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model rol {
+  id             Int              @id @default(autoincrement())
+  nume           String           @unique @db.VarChar(30)
+  descriere      String?          @db.VarChar(200)
+  plan_abonament plan_abonament[]
+  utilizator     utilizator[]
+}
+
+model sesizare {
+  id              Int              @id @default(autoincrement())
+  proprietate_id  Int
+  autor_id        Int
+  tip             String           @db.VarChar(20)
+  titlu           String           @db.VarChar(120)
+  descriere       String?
+  cost_estimat    Decimal?         @db.Decimal(10, 2)
+  cine_plateste   String?          @db.VarChar(20)
+  suma_proprietar Decimal?         @db.Decimal(10, 2)
+  suma_chiriasi   Decimal?         @db.Decimal(10, 2)
+  stare           String           @default("deschisa") @db.VarChar(20)
+  creat_la        DateTime         @default(now()) @db.Timestamp(6)
+  inchisa_la      DateTime?        @db.Timestamp(6)
+  mesaj_sesizare  mesaj_sesizare[]
+  obligatie       obligatie[]
+  utilizator      utilizator       @relation(fields: [autor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proprietate     proprietate      @relation(fields: [proprietate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model treapta_chirie {
+  id            Int      @id @default(autoincrement())
+  contract_id   Int
+  nr_persoane   Int
+  chirie_totala Decimal  @db.Decimal(10, 2)
+  contract      contract @relation(fields: [contract_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([contract_id, nr_persoane])
+}
+
+model utilizator {
+  id                                          Int                @id @default(autoincrement())
+  rol_id                                      Int
+  email                                       String             @unique @db.VarChar(150)
+  parola_hash                                 String             @db.VarChar(255)
+  nume                                        String             @db.VarChar(60)
+  prenume                                     String             @db.VarChar(60)
+  telefon                                     String?            @db.VarChar(30)
+  iban                                        String?            @db.VarChar(34)
+  id_client_plati                             String?            @db.VarChar(100)
+  id_cont_incasare                            String?            @db.VarChar(100)
+  stare                                       String             @default("activ") @db.VarChar(20)
+  email_verificat                             Boolean            @default(false)
+  notificari_email                            Boolean            @default(true)
+  creat_la                                    DateTime           @default(now()) @db.Timestamp(6)
+  actualizat_la                               DateTime?          @db.Timestamp(6)
+  ultima_autentificare                        DateTime?          @db.Timestamp(6)
+  oras                                        String?            @db.VarChar(50)
+  limba_preferata                             String             @default("ro") @db.VarChar(5)
+  abonament                                   abonament[]
+  contactare                                  contactare[]
+  contract_chirias                            contract_chirias[]
+  favorit                                     favorit[]
+  fisier                                      fisier[]
+  jurnal_admin                                jurnal_admin[]
+  mesaj_sesizare                              mesaj_sesizare[]
+  notificare                                  notificare[]
+  proprietate                                 proprietate[]
+  recenzie_recenzie_autor_idToutilizator      recenzie[]         @relation("recenzie_autor_idToutilizator")
+  recenzie_recenzie_destinatar_idToutilizator recenzie[]         @relation("recenzie_destinatar_idToutilizator")
+  sesizare                                    sesizare[]
+  vizionare                                   vizionare[]
+  rol                                         rol                @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([rol_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cod_promotional {
+  id               Int             @id @default(autoincrement())
+  plan_id          Int?
+  cod              String          @unique @db.VarChar(30)
+  procent          Decimal         @db.Decimal(5, 2)
+  valabil_pana_la  DateTime?       @db.Date
+  utilizari_maxime Int?
+  utilizari        Int             @default(0)
+  activ            Boolean         @default(true)
+  creat_la         DateTime        @default(now()) @db.Timestamp(6)
+  plan_abonament   plan_abonament? @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+model vizionare {
+  id         Int        @id @default(autoincrement())
+  anunt_id   Int
+  chirias_id Int
+  data_ora   DateTime   @db.Timestamp(6)
+  mesaj      String?    @db.VarChar(300)
+  stare      String     @default("programata") @db.VarChar(20)
+  creat_la   DateTime   @default(now()) @db.Timestamp(6)
+  anunt      anunt      @relation(fields: [anunt_id], references: [id])
+  utilizator utilizator @relation(fields: [chirias_id], references: [id])
+}
+
+/// Sesiunile utilizatorilor conectati (folosite de connect-pg-simple).
+model sesiune {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire])
+}
