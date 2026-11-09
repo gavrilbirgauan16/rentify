@@ -1,0 +1,15 @@
+<%- include('partials/header', { titluPagina: 'Acasă' }) %>
+
+<div class="card shadow-sm text-center mx-auto" style="max-width: 560px;">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4">Bine ai venit pe Rentify</h1>
+    <% if (utilizator) { %>
+      <p class="text-body-secondary mb-0">Ești conectat ca <strong><%= utilizator.nume %></strong>. Partea pentru contul tău va fi disponibilă în curând.</p>
+    <% } else { %>
+      <p class="text-body-secondary">Platforma pentru chiriași și proprietari.</p>
+      <a class="btn btn-primary" href="/autentificare">Intră în cont</a>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

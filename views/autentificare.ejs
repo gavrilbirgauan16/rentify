@@ -1,0 +1,28 @@
+<%- include('partials/header', { titluPagina: 'Autentificare' }) %>
+
+<div class="card shadow-sm mx-auto" style="max-width: 420px;">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4 mb-1 text-center">Autentificare</h1>
+    <p class="text-body-secondary text-center mb-4">Intră în contul tău Rentify</p>
+
+    <% if (eroare) { %>
+    <div class="alert alert-danger" role="alert"><%= eroare %></div>
+    <% } %>
+
+    <form method="post" action="/autentificare" novalidate>
+	<%- include('partials/csrf') %>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" value="<%= email %>"
+               autocomplete="username" required autofocus>
+      </div>
+      <div class="mb-4">
+        <label for="parola" class="form-label">Parolă</label>
+        <input type="password" class="form-control" id="parola" name="parola" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Intră în cont</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <!-- Spune telefonului sa afiseze pagina la latimea ecranului (fara asta nu e responsive) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= typeof titluPagina !== 'undefined' ? titluPagina + ' – ' : '' %>Rentify</title>
+  <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-body-tertiary">
+  <nav class="navbar navbar-expand-md navbar-dark bara-rentify">
+    <div class="container-fluid px-3 px-md-4 px-xl-5">
+      <a class="navbar-brand fw-semibold" href="/">Rentify<% if (utilizator && utilizator.rol === 'admin') { %> <span class="fw-normal opacity-75">Admin</span><% } %></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#meniu"
+              aria-controls="meniu" aria-expanded="false" aria-label="Deschide meniul">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="meniu">
+        <%
+          // Meniul depinde de rol. Sectiunile fara adresa (href: null) nu sunt gata inca.
+          const meniuri = {
+            admin: [
+              { cheie: 'proprietati', text: 'Proprietăți', href: '/admin/proprietati' },
+              { cheie: 'anunturi', text: 'Anunțuri', href: '/admin/anunturi' },
+              { cheie: 'planuri', text: 'Planuri', href: '/admin/planuri' },
+              { cheie: 'abonamente', text: 'Abonamente', href: null },
+              { cheie: 'utilizatori', text: 'Utilizatori', href: null },
+            ],
+          };
+          const meniu = utilizator ? meniuri[utilizator.rol] || [] : [];
+          const curenta = typeof sectiune !== 'undefined' ? sectiune : '';
+        %>
+        <ul class="navbar-nav ms-auto">
+          <% meniu.forEach(function(m) { %>
+          <li class="nav-item">
+            <% if (!m.href) { %>
+              <span class="nav-link disabled" aria-disabled="true"><%= m.text %></span>
+            <% } else if (m.cheie === curenta) { %>
+              <a class="nav-link active" aria-current="page" href="<%= m.href %>"><%= m.text %></a>
+            <% } else { %>
+              <a class="nav-link" href="<%= m.href %>"><%= m.text %></a>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+
+        <!-- Contul: numele si iesirea (sau linkul de autentificare) -->
+        <div class="d-md-flex align-items-center ms-md-4 pt-2 pt-md-0 border-top cont-bara">
+          <% if (utilizator) { %>
+            <span class="navbar-text me-md-3 d-block d-md-inline small">
+              <%= utilizator.nume %> <span class="opacity-75">(<%= utilizator.rol %>)</span>
+            </span>
+            <form method="post" action="/iesire" class="d-inline">
+              <%- include('csrf') %>
+              <button type="submit" class="btn btn-sm btn-outline-light my-2 my-md-0">Ieșire</button>
+            </form>
+          <% } else if (curenta !== 'autentificare') { %>
+            <a class="btn btn-sm btn-outline-light my-2 my-md-0" href="/autentificare">Autentificare</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <% if (mesaj) { %>
+    <div class="alert alert-<%= tipMesaj %> alert-dismissible fade show" role="alert">
+      <%= mesaj %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Închide"></button>
+    </div>
+    <% } %>
