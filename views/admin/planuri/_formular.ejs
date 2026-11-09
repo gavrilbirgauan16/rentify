@@ -1,0 +1,97 @@
+<%
+  const areEroare = (camp) => Boolean(erori[camp]);
+  const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+%>
+
+<% if (Object.keys(erori).length > 0) { %>
+<div class="alert alert-danger" role="alert">Verifică câmpurile marcate cu roșu.</div>
+<% } %>
+
+<form method="post" action="<%= actiune %>" novalidate>
+  <%- include('../../partials/csrf') %>
+  <input type="hidden" name="rol" value="<%= p.rol %>">
+  <div class="row g-3">
+
+    <div class="col-md-6">
+      <label for="nume" class="form-label">Nume plan</label>
+      <input type="text" class="form-control<%= clasaCamp('nume') %>" id="nume" name="nume" maxlength="50" value="<%= p.nume %>" required>
+      <% if (areEroare('nume')) { %><div class="invalid-feedback"><%= erori.nume %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">Pentru</label>
+      <input type="text" class="form-control" value="<%= eticheteRol[p.rol] %>" disabled>
+    </div>
+
+    <div class="col-12">
+      <label for="descriere" class="form-label">Descriere scurtă <span class="text-body-secondary fw-normal">(apare pe card)</span></label>
+      <input type="text" class="form-control<%= clasaCamp('descriere') %>" id="descriere" name="descriere" maxlength="300" value="<%= p.descriere %>">
+      <% if (areEroare('descriere')) { %><div class="invalid-feedback"><%= erori.descriere %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="pret_lunar" class="form-label">Preț pe lună</label>
+      <div class="input-group has-validation">
+        <input type="number" class="form-control<%= clasaCamp('pret_lunar') %>" id="pret_lunar" name="pret_lunar" min="0" step="0.01" value="<%= p.pret_lunar %>">
+        <span class="input-group-text">lei</span>
+        <% if (areEroare('pret_lunar')) { %><div class="invalid-feedback"><%= erori.pret_lunar %></div><% } %>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="pret_anual" class="form-label">Preț pe an</label>
+      <div class="input-group has-validation">
+        <input type="number" class="form-control<%= clasaCamp('pret_anual') %>" id="pret_anual" name="pret_anual" min="0" step="0.01" value="<%= p.pret_anual %>" aria-describedby="ajutor_anual">
+        <span class="input-group-text">lei</span>
+        <% if (areEroare('pret_anual')) { %><div class="invalid-feedback"><%= erori.pret_anual %></div><% } %>
+      </div>
+      <div id="ajutor_anual" class="form-text">De obicei: 10 × prețul lunar (2 luni gratuite). 0 și 0 = plan gratuit.</div>
+    </div>
+
+    <!-- Limitele si beneficiile, generate din lista de caracteristici a rolului -->
+    <div class="col-12">
+      <fieldset class="border rounded p-3">
+        <legend class="float-none w-auto px-2 fs-6 mb-0">Ce include planul</legend>
+        <div class="row g-3">
+          <% caracteristici.filter(function(c) { return c.tip === 'limita'; }).forEach(function(c) { %>
+          <div class="col-md-6">
+            <label for="limita_<%= c.cheie %>" class="form-label"><%= c.campFormular %></label>
+            <input type="number" class="form-control<%= clasaCamp('limita_' + c.cheie) %>" id="limita_<%= c.cheie %>" name="limita_<%= c.cheie %>"
+                   min="<%= c.min %>" step="1" value="<%= p.limite[c.cheie] || '' %>" placeholder="nelimitat">
+            <% if (areEroare('limita_' + c.cheie)) { %><div class="invalid-feedback"><%= erori['limita_' + c.cheie] %></div><% } %>
+            <div class="form-text">Lasă gol pentru nelimitat.</div>
+          </div>
+          <% }) %>
+          <% caracteristici.filter(function(c) { return c.tip === 'beneficiu'; }).forEach(function(c) { %>
+          <div class="col-md-6">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="limita_<%= c.cheie %>" name="limita_<%= c.cheie %>" <%= String(p.limite[c.cheie]) === '1' ? 'checked' : '' %>>
+              <label class="form-check-label" for="limita_<%= c.cheie %>"><%= c.text() %></label>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="col-md-6">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="activ" name="activ" <%= p.activ ? 'checked' : '' %>>
+        <label class="form-check-label" for="activ">Activ (poate fi ales)</label>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="form-check form-switch">
+        <input class="form-check-input<%= clasaCamp('recomandat') %>" type="checkbox" role="switch" id="recomandat" name="recomandat" <%= p.recomandat ? 'checked' : '' %>>
+        <label class="form-check-label" for="recomandat">Recomandat (evidențiat; unul singur pe rol)</label>
+        <% if (areEroare('recomandat')) { %><div class="invalid-feedback d-block"><%= erori.recomandat %></div><% } %>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="d-grid gap-2 d-sm-flex mt-4">
+    <button class="btn btn-primary px-4" type="submit">Salvează</button>
+    <a class="btn btn-outline-secondary" href="/admin/planuri?rol=<%= p.rol %>">Renunță</a>
+  </div>
+</form>
