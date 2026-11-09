@@ -1,0 +1,9 @@
+<%# Butonul Dezactiveaza / Activeaza. Primeste: p (proprietatea), inapoi (pagina la care revenim), clase (optional). %>
+<% const inactiva = p.stare === 'inactiv'; %>
+<form method="post" action="/admin/proprietati/<%= p.id %>/<%= inactiva ? 'activeaza' : 'dezactiveaza' %>" class="d-inline">
+  <input type="hidden" name="inapoi" value="<%= inapoi %>">
+<%- include('../../partials/csrf') %>
+  <button type="submit" class="btn <%= typeof clase !== 'undefined' ? clase : '' %> <%= inactiva ? 'btn-outline-success' : 'btn-outline-danger' %>">
+    <%= inactiva ? 'Activează' : 'Dezactivează' %>
+  </button>
+</form>

@@ -1,0 +1,97 @@
+<%
+  // Ajutoare pentru afisarea erorilor pe fiecare camp.
+  const areEroare = (camp) => Boolean(erori[camp]);
+  const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+%>
+
+<% if (Object.keys(erori).length > 0) { %>
+<div class="alert alert-danger" role="alert">Verifică câmpurile marcate cu roșu.</div>
+<% } %>
+
+<form method="post" action="<%= actiune %>" novalidate>
+<%- include('../../partials/csrf') %>
+  <div class="row g-3">
+
+    <div class="col-12">
+      <label for="denumire" class="form-label">Denumire</label>
+      <input type="text" class="form-control<%= clasaCamp('denumire') %>" id="denumire" name="denumire" value="<%= p.denumire %>" required>
+      <% if (areEroare('denumire')) { %><div class="invalid-feedback"><%= erori.denumire %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="tip" class="form-label">Tip</label>
+      <select class="form-select<%= clasaCamp('tip') %>" id="tip" name="tip">
+        <% tipuri.forEach(function(t) { %><option value="<%= t %>" <%= p.tip === t ? 'selected' : '' %>><%= eticheteTip[t] %></option><% }) %>
+      </select>
+      <% if (areEroare('tip')) { %><div class="invalid-feedback"><%= erori.tip %></div><% } %>
+    </div>
+
+    <div class="col-md-6">
+      <label for="stare" class="form-label">Stare</label>
+      <select class="form-select<%= clasaCamp('stare') %>" id="stare" name="stare">
+        <% stari.forEach(function(s) { %><option value="<%= s %>" <%= p.stare === s ? 'selected' : '' %>><%= eticheteStare[s] %></option><% }) %>
+      </select>
+      <% if (areEroare('stare')) { %><div class="invalid-feedback"><%= erori.stare %></div><% } %>
+    </div>
+
+    <div class="col-md-4">
+      <label for="judet" class="form-label">Județ</label>
+      <input type="text" class="form-control<%= clasaCamp('judet') %>" id="judet" name="judet" value="<%= p.judet %>" required>
+      <% if (areEroare('judet')) { %><div class="invalid-feedback"><%= erori.judet %></div><% } %>
+    </div>
+
+    <div class="col-md-4">
+      <label for="oras" class="form-label">Oraș</label>
+      <input type="text" class="form-control<%= clasaCamp('oras') %>" id="oras" name="oras" value="<%= p.oras %>" required>
+      <% if (areEroare('oras')) { %><div class="invalid-feedback"><%= erori.oras %></div><% } %>
+    </div>
+
+    <div class="col-md-4">
+      <label for="zona" class="form-label">Zonă <span class="text-body-secondary fw-normal">(opțional)</span></label>
+      <input type="text" class="form-control" id="zona" name="zona" value="<%= p.zona %>">
+    </div>
+
+    <div class="col-6 col-md-4">
+      <label for="nr_camere" class="form-label">Număr de camere</label>
+      <input type="number" class="form-control<%= clasaCamp('nr_camere') %>" id="nr_camere" name="nr_camere" min="1" step="1" value="<%= p.nr_camere %>">
+      <% if (areEroare('nr_camere')) { %><div class="invalid-feedback"><%= erori.nr_camere %></div><% } %>
+    </div>
+
+    <div class="col-6 col-md-4">
+      <label for="max_locatari" class="form-label">Maxim locatari</label>
+      <input type="number" class="form-control<%= clasaCamp('max_locatari') %>" id="max_locatari" name="max_locatari" min="1" step="1" value="<%= p.max_locatari %>">
+      <% if (areEroare('max_locatari')) { %><div class="invalid-feedback"><%= erori.max_locatari %></div><% } %>
+    </div>
+
+    <div class="col-md-4">
+      <label for="suprafata_mp" class="form-label">Suprafață <span class="text-body-secondary fw-normal">(opțional)</span></label>
+      <div class="input-group has-validation">
+        <input type="number" class="form-control<%= clasaCamp('suprafata_mp') %>" id="suprafata_mp" name="suprafata_mp" min="0" step="0.01" value="<%= p.suprafata_mp %>">
+        <span class="input-group-text">mp</span>
+        <% if (areEroare('suprafata_mp')) { %><div class="invalid-feedback"><%= erori.suprafata_mp %></div><% } %>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <label for="proprietar_id" class="form-label">Proprietar</label>
+      <select class="form-select<%= clasaCamp('proprietar_id') %>" id="proprietar_id" name="proprietar_id">
+        <option value="">Alege proprietarul…</option>
+        <% proprietari.forEach(function(u) { %><option value="<%= u.id %>" <%= String(p.proprietar_id) === String(u.id) ? 'selected' : '' %>><%= u.prenume %> <%= u.nume %></option><% }) %>
+      </select>
+      <% if (areEroare('proprietar_id')) { %><div class="invalid-feedback"><%= erori.proprietar_id %></div><% } %>
+    </div>
+
+    <div class="col-md-6 d-flex align-items-md-end">
+      <div class="form-check form-switch mb-md-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="are_balcon" name="are_balcon" <%= p.are_balcon ? 'checked' : '' %>>
+        <label class="form-check-label" for="are_balcon">Are balcon</label>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="d-grid gap-2 d-sm-flex mt-4">
+    <button class="btn btn-primary px-4" type="submit">Salvează</button>
+    <a class="btn btn-outline-secondary" href="<%= typeof inapoi !== 'undefined' ? inapoi : '/admin/proprietati' %>">Renunță</a>
+  </div>
+</form>
