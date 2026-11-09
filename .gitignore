@@ -1,0 +1,18 @@
+# Pachetele instalate (se refac cu "npm install")
+node_modules/
+
+# Setarile secrete (parola bazei de date, SESSION_SECRET) - NU se pun niciodata in Git
+.env
+
+# Imaginile incarcate de utilizatori (sunt date, nu cod)
+uploads/
+
+# Documentele de laborator si backup-urile bazei de date (contin date, nu cod)
+*.docx
+*_backup.sql
+
+# Fisiere temporare
+*.log
+~$*
+.DS_Store
+Thumbs.db
