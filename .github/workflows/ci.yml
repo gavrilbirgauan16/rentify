@@ -1,0 +1,30 @@
+# Verificare automata (CI = Continuous Integration).
+# La fiecare "git push" si la fiecare Pull Request, GitHub instaleaza proiectul pe un calculator curat,
+# verifica stilul codului (ESLint) si ruleaza testele. Rezultatul apare ca ✅ sau ❌ langa commit.
+name: Teste
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descarca codul
+        uses: actions/checkout@v4
+
+      - name: Instaleaza Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instaleaza pachetele (exact versiunile din package-lock.json)
+        run: npm ci
+
+      - name: Verifica codul (ESLint)
+        run: npm run lint
+
+      - name: Ruleaza testele
+        run: npm test

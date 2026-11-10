@@ -1,19 +1,25 @@
 {
   "name": "rentify_lab4",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Rentify - platforma de inchirieri (proiect PPAW)",
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "node --watch app.js",
     "test": "node --test \"test/*.test.js\"",
+    "lint": "eslint .",
+    "verifica": "npm run lint && npm test",
+    "backup": "node scripts/backup-db.js",
     "seteaza-parola": "node scripts/seteaza-parola.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Birgauan Gavril",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
     "prisma": "7.10.1"
   },
   "dependencies": {
@@ -30,5 +36,8 @@
     "morphism": "1.12.3",
     "multer": "2.5.0",
     "pg": "^8.23.1"
+  },
+  "overrides": {
+    "minimatch": "11.0.3"
   }
 }
