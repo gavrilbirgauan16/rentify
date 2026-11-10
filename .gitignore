@@ -16,3 +16,5 @@ uploads/
 ~$*
 .DS_Store
 Thumbs.db
+# Copiile bazei de date (npm run backup) - contin date reale, nu se pun pe GitHub
+backups/
