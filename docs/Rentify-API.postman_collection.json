@@ -1,0 +1,66 @@
+{
+  "info": {
+    "name": "Rentify API – Anunțuri (Lab 7)",
+    "description": "Get, Get(id), Post, Put pentru anunturi. Inainte de rulare: in tab-ul Variables al colectiei completeaza apiKey cu valoarea API_KEY din .env (nu o salva pe GitHub).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "apiKey", "value": "" },
+    { "key": "idAnunt", "value": "3" }
+  ],
+  "item": [
+    {
+      "name": "1. Get – toate anunturile active",
+      "request": { "method": "GET", "url": "{{baseUrl}}/anunturi" }
+    },
+    {
+      "name": "2. Get(id) – un anunt",
+      "request": { "method": "GET", "url": "{{baseUrl}}/anunturi/{{idAnunt}}" }
+    },
+    {
+      "name": "3. Get – toate (cu cheie, inclusiv ciorne si inactive)",
+      "request": { "method": "GET", "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }], "url": "{{baseUrl}}/anunturi" }
+    },
+    {
+      "name": "4. Post – anunt nou",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('201 Created', () => pm.response.to.have.status(201));",
+        "if (pm.response.code === 201) pm.collectionVariables.set('idAnunt', pm.response.json().id);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/anunturi",
+        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{\n  \"proprietate_id\": 3,\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Garsoniera adaugata din Postman\",\n  \"descriere\": \"Aproape de USV\",\n  \"pret\": 1500,\n  \"pret_o_persoana\": 1100,\n  \"moneda\": \"RON\",\n  \"garantie\": 1500,\n  \"disponibil_de_la\": \"2026-12-01\",\n  \"stare\": \"activ\",\n  \"promovat\": false\n}" }
+      }
+    },
+    {
+      "name": "5. Put – modifica anuntul",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/anunturi/{{idAnunt}}",
+        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{\n  \"proprietate_id\": 3,\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Garsoniera modificata din Postman\",\n  \"descriere\": \"Pret redus\",\n  \"pret\": 1400,\n  \"moneda\": \"RON\",\n  \"stare\": \"activ\",\n  \"promovat\": true\n}" }
+      }
+    },
+    {
+      "name": "6. Post – date invalide (asteptat 400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }, { "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/anunturi",
+        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{\n  \"titlu\": \"\",\n  \"pret\": -5\n}" }
+      }
+    },
+    {
+      "name": "7. Post – fara cheie (asteptat 401)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/anunturi",
+        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{}" }
+      }
+    }
+  ]
+}
