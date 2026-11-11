@@ -1,0 +1,111 @@
+<%- include('../../partials/header', { titluPagina: 'Abonament – ' + a.utilizator_nume }) %>
+<%
+  const areEroare = (camp) => Boolean(erori[camp]);
+  const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+  const ETICHETE_PLATA = { reusita: ['Reușită', 'success'], esuata: ['Eșuată', 'danger'], rambursata: ['Rambursată', 'secondary'] };
+%>
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small mb-2">
+  <li class="breadcrumb-item"><a href="/admin/abonamente">Abonamente</a></li>
+  <li class="breadcrumb-item active" aria-current="page">#<%= a.id %></li>
+</ol></nav>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1"><%= a.plan_nume %> · <%= a.utilizator_nume %></h1>
+    <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+    <% if (a.expiraCurand) { %><span class="badge bg-warning-subtle text-warning-emphasis">expiră în <%= a.zileRamase %> <%= a.zileRamase === 1 ? 'zi' : 'zile' %></span><% } %>
+  </div>
+  <% if (a.poateFiAnulat) { %>
+  <form method="post" action="/admin/abonamente/<%= a.id %>/anuleaza">
+    <%- include('../../partials/csrf') %>
+    <button type="submit" class="btn btn-outline-danger">Anulează abonamentul</button>
+  </form>
+  <% } %>
+</div>
+
+<div class="row g-4">
+  <div class="<%= a.poatePrimiPlata ? 'col-lg-7' : 'col-lg-9 col-xl-8' %> d-grid gap-4 align-content-start">
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Detalii</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-5 col-sm-4">Utilizator</dt><dd class="col-7 col-sm-8"><%= a.utilizator_nume %> (<%= a.rolAfisat %>)<br><span class="text-body-secondary"><%= a.utilizator_email %></span></dd>
+          <dt class="col-5 col-sm-4">Plan</dt><dd class="col-7 col-sm-8"><%= a.plan_nume %></dd>
+          <dt class="col-5 col-sm-4">Perioadă</dt><dd class="col-7 col-sm-8"><%= a.perioadaAfisata %>, <%= a.intervalAfisat %></dd>
+          <dt class="col-5 col-sm-4">Reînnoire automată</dt><dd class="col-7 col-sm-8"><%= a.reinnoire_automata ? 'Da' : 'Nu' %></dd>
+          <dt class="col-5 col-sm-4">Preț</dt><dd class="col-7 col-sm-8"><%= a.pretAfisat %> <span class="text-body-secondary">(fixat la cumpărare)</span></dd>
+          <dt class="col-5 col-sm-4">Plătit</dt><dd class="col-7 col-sm-8"><%= a.totalPlatitAfisat %></dd>
+          <dt class="col-5 col-sm-4">Rest de plată</dt><dd class="col-7 col-sm-8 <%= a.restDePlata > 0 && a.stare !== 'anulat' ? 'text-danger fw-semibold' : '' %>"><%= a.restDePlataAfisat %></dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Istoricul plăților</h2>
+        <% if (a.plati.length === 0) { %>
+          <p class="small text-body-secondary mb-0"><%= Number(a.pret) === 0 ? 'Plan gratuit: nu are nevoie de plăți.' : 'Nicio plată încă.' %></p>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th scope="col">Data</th><th scope="col" class="text-end">Sumă</th><th scope="col">Metodă</th><th scope="col">Stare</th><th scope="col">Referință</th></tr></thead>
+              <tbody>
+                <% a.plati.forEach(function(p) { const e = ETICHETE_PLATA[p.stare] || [p.stare, 'secondary']; %>
+                <tr>
+                  <td class="text-nowrap"><%= new Date(p.data_platii).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }) %></td>
+                  <td class="text-end text-nowrap"><%= p.suma.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) %> lei</td>
+                  <td><%= metode[p.metoda] || p.metoda %></td>
+                  <td><span class="badge text-bg-<%= e[1] %>"><%= e[0] %></span></td>
+                  <td class="small text-body-secondary"><%= p.referinta || '–' %></td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5 d-grid gap-4 align-content-start">
+    <% if (a.poatePrimiPlata) { %>
+    <div class="card shadow-sm border-primary-subtle">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Înregistrează o plată</h2>
+        <form method="post" action="/admin/abonamente/<%= a.id %>/plati" novalidate>
+          <%- include('../../partials/csrf') %>
+          <div class="mb-3">
+            <label for="suma" class="form-label">Sumă</label>
+            <div class="input-group has-validation">
+              <input type="number" class="form-control<%= clasaCamp('suma') %>" id="suma" name="suma" min="0.01" step="0.01" max="<%= a.restDePlata %>" value="<%= plataIntrodusa.suma ?? a.restDePlata %>" required>
+              <span class="input-group-text">lei</span>
+              <% if (areEroare('suma')) { %><div class="invalid-feedback"><%= erori.suma %></div><% } %>
+            </div>
+            <div class="form-text">Rest de plată: <%= a.restDePlataAfisat %>. Se poate plăti și în rate.</div>
+          </div>
+          <div class="mb-3">
+            <label for="metoda" class="form-label">Metoda</label>
+            <select class="form-select<%= clasaCamp('metoda') %>" id="metoda" name="metoda">
+              <% Object.keys(metode).forEach(function(cod) { %>
+              <option value="<%= cod %>" <%= (plataIntrodusa.metoda || 'transfer') === cod ? 'selected' : '' %>><%= metode[cod] %></option>
+              <% }) %>
+            </select>
+            <% if (areEroare('metoda')) { %><div class="invalid-feedback"><%= erori.metoda %></div><% } %>
+          </div>
+          <div class="mb-3">
+            <label for="referinta" class="form-label">Referință <span class="text-body-secondary fw-normal">(opțional)</span></label>
+            <input type="text" class="form-control<%= clasaCamp('referinta') %>" id="referinta" name="referinta" maxlength="100" value="<%= plataIntrodusa.referinta || '' %>" placeholder="ex. nr. chitanță / OP">
+            <% if (areEroare('referinta')) { %><div class="invalid-feedback"><%= erori.referinta %></div><% } %>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Salvează plata</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>
