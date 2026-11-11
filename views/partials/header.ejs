@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="bg-body-tertiary">
-  <nav class="navbar navbar-expand-md navbar-dark bara-rentify">
+  <nav class="navbar navbar-expand-lg navbar-dark bara-rentify">
     <div class="container-fluid px-3 px-md-4 px-xl-5">
       <a class="navbar-brand fw-semibold" href="/">Rentify<% if (utilizator && utilizator.rol === 'admin') { %> <span class="fw-normal opacity-75">Admin</span><% } %></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#meniu"
@@ -25,7 +25,7 @@
               { cheie: 'anunturi', text: 'Anunțuri', href: '/admin/anunturi' },
               { cheie: 'planuri', text: 'Planuri', href: '/admin/planuri' },
               { cheie: 'abonamente', text: 'Abonamente', href: '/admin/abonamente' },
-              { cheie: 'utilizatori', text: 'Utilizatori', href: null },
+              { cheie: 'utilizatori', text: 'Utilizatori', href: '/admin/utilizatori' },
             ],
           };
           const meniu = utilizator ? meniuri[utilizator.rol] || [] : [];
@@ -46,17 +46,18 @@
         </ul>
 
         <!-- Contul: numele si iesirea (sau linkul de autentificare) -->
-        <div class="d-md-flex align-items-center ms-md-4 pt-2 pt-md-0 border-top cont-bara">
+        <div class="d-lg-flex align-items-center ms-lg-4 pt-2 pt-lg-0 border-top cont-bara">
           <% if (utilizator) { %>
-            <span class="navbar-text me-md-3 d-block d-md-inline small">
+            <span class="navbar-text me-lg-2 d-block d-lg-inline small text-nowrap">
               <%= utilizator.nume %> <span class="opacity-75">(<%= utilizator.rol %>)</span>
             </span>
+            <a class="btn btn-sm btn-link link-light link-opacity-75 link-opacity-100-hover px-0 me-3 text-nowrap" href="/cont/parola">Schimbă parola</a>
             <form method="post" action="/iesire" class="d-inline">
               <%- include('csrf') %>
-              <button type="submit" class="btn btn-sm btn-outline-light my-2 my-md-0">Ieșire</button>
+              <button type="submit" class="btn btn-sm btn-outline-light my-2 my-lg-0">Ieșire</button>
             </form>
           <% } else if (curenta !== 'autentificare') { %>
-            <a class="btn btn-sm btn-outline-light my-2 my-md-0" href="/autentificare">Autentificare</a>
+            <a class="btn btn-sm btn-outline-light my-2 my-lg-0" href="/autentificare">Autentificare</a>
           <% } %>
         </div>
       </div>
