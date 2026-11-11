@@ -63,7 +63,7 @@ a { color: var(--rentify); }
 
    /* Bara de sus: linia de deasupra contului apare doar pe telefon (cand meniul e strans) */
    .cont-bara { border-color: rgba(255, 255, 255, .25) !important; }
-   @media (min-width: 992px) { .cont-bara { border-top: 0 !important; } }
+   @media (min-width: 1200px) { .cont-bara { border-top: 0 !important; } }
 
 /* Locul gol "fără imagine" de pe cardurile de telefon: textul centrat */
 .imagine-card.miniatura-goala { display: flex; font-size: .9rem; }
@@ -97,3 +97,30 @@ a { color: var(--rentify); }
 .latime-camp { max-width: 320px; }
 .latime-cont { max-width: 440px; }
 .parola-temporara { font-family: var(--bs-font-monospace); font-size: 1.6rem; letter-spacing: .08em; padding: .5rem 1rem; background: var(--bs-light); border: 1px dashed var(--bs-border-color); border-radius: .5rem; display: inline-block; }
+
+/* ===== Panou de administrare ===== */
+.kpi { border: 0; border-left: 4px solid var(--rentify); }
+.kpi.kpi-avertizare { border-left-color: var(--bs-danger); }
+.kpi.kpi-bine { border-left-color: var(--bs-success); }
+.kpi .kpi-valoare { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+.kpi .kpi-eticheta { font-size: .85rem; color: var(--bs-secondary-color); }
+a.kpi-link { color: inherit; text-decoration: none; }
+a.kpi-link:hover .kpi, a.kpi-link:focus-visible .kpi { box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .08) !important; }
+.eticheta-numar { min-width: 2.5rem; }
+
+/* Istoric (jurnal) sub forma de linie cu puncte */
+.istoric { list-style: none; padding-left: 0; margin: 0; }
+.istoric li { position: relative; padding: 0 0 .75rem 1.25rem; border-left: 2px solid var(--bs-border-color); margin-left: .35rem; }
+.istoric li:last-child { padding-bottom: 0; }
+.istoric li::before { content: ''; position: absolute; left: -6px; top: .4rem; width: 10px; height: 10px; border-radius: 50%; background: var(--rentify); }
+
+/* Cautarea din antet (admin) */
+.cautare-antet { min-width: 14rem; }
+
+/* Zona de continut a adminului: lata pentru tabele, dar nu mai mult de 1600px */
+.container-admin { max-width: 1600px; padding-left: 1rem; padding-right: 1rem; }
+@media (min-width: 768px) { .container-admin { padding-left: 2rem; padding-right: 2rem; } }
+
+/* Culorile Rentify si pentru paginare si linkurile-buton */
+.pagination { --bs-pagination-color: var(--rentify); --bs-pagination-hover-color: var(--rentify-inchis); --bs-pagination-active-bg: var(--rentify); --bs-pagination-active-border-color: var(--rentify); --bs-pagination-focus-color: var(--rentify); }
+.btn-link { --bs-btn-color: var(--rentify); --bs-btn-hover-color: var(--rentify-inchis); --bs-btn-active-color: var(--rentify-inchis); }
