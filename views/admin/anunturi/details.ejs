@@ -1,0 +1,48 @@
+<%- include('../../partials/header', { titluPagina: a.titlu }) %>
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small mb-2">
+  <li class="breadcrumb-item"><a href="/admin/anunturi">Anunțuri</a></li>
+  <li class="breadcrumb-item active" aria-current="page"><%= a.titlu %></li>
+</ol></nav>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1"><%= a.titlu %></h1>
+    <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+    <% if (a.promovat) { %><span class="badge text-bg-info">Promovat</span><% } %>
+    <% if (a.proprietateInactiva) { %><span class="badge text-bg-danger">Proprietate inactivă</span><% } %>
+  </div>
+  <div class="d-flex flex-column flex-sm-row gap-2">
+    <%- include('_buton_suna', { a: a }) %>
+    <a class="btn btn-primary" href="/admin/anunturi/<%= a.id %>/edit">Editează</a>
+    <%- include('_buton_stare', { a: a, inapoi: '/admin/anunturi/' + a.id }) %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm overflow-hidden">
+      <%- include('_continut', { a: a }) %>
+    </div>
+  </div>
+  <div class="col-lg-4 d-grid gap-4 align-content-start">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Pe scurt</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-6">Adăugat</dt><dd class="col-6"><%= a.creatLaAfisat %></dd>
+          <dt class="col-6">Imagini</dt><dd class="col-6"><%= a.imagini.length %></dd>
+          <dt class="col-6">Alte anunțuri</dt><dd class="col-6"><a href="/admin/anunturi?proprietate=<%= a.proprietate_id %>">ale acestei proprietăți</a></dd>
+        </dl>
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Istoric acțiuni</h2>
+        <%- include('../_istoric', { istoric: istoric }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

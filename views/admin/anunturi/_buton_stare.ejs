@@ -1,6 +1,7 @@
-<%# Butonul Activeaza / Dezactiveaza pentru un anunt. Primeste: a (anuntul), clase (optional). %>
+<%# Butonul Activeaza / Dezactiveaza pentru un anunt. Primeste: a (anuntul), clase (optional), inapoi (optional). %>
 <form method="post" action="/admin/anunturi/<%= a.id %>/<%= a.esteActiv ? 'dezactiveaza' : 'activeaza' %>" class="d-inline">
 <%- include('../../partials/csrf') %>
+  <input type="hidden" name="inapoi" value="<%= typeof inapoi !== 'undefined' ? inapoi : (typeof adresaCurenta !== 'undefined' ? adresaCurenta : '/admin/anunturi') %>">
   <button type="submit" class="btn <%= typeof clase !== 'undefined' ? clase : '' %> <%= a.esteActiv ? 'btn-outline-danger' : 'btn-outline-success' %>">
     <%= a.esteActiv ? 'Dezactivează' : 'Activează' %>
   </button>

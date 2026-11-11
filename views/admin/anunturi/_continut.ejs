@@ -1,0 +1,72 @@
+<%# Galeria si detaliile unui anunt: folosite si in fereastra din lista, si pe pagina de detalii. Primeste: a. %>
+<% if (a.imagini.length > 0) { %>
+<!-- Galeria: imaginile se schimba cu sagetile sau glisand pe telefon -->
+<div id="galerie-<%= a.id %>" class="carousel slide galerie" data-bs-touch="true">
+  <% if (a.imagini.length > 1) { %>
+  <div class="carousel-indicators">
+    <% a.imagini.forEach(function(img, i) { %>
+    <button type="button" data-bs-target="#galerie-<%= a.id %>" data-bs-slide-to="<%= i %>"
+            class="<%= i === 0 ? 'active' : '' %>" <%- i === 0 ? 'aria-current="true"' : '' %> aria-label="Imaginea <%= i + 1 %>"></button>
+    <% }) %>
+  </div>
+  <% } %>
+  <div class="carousel-inner">
+    <% a.imagini.forEach(function(img, i) { %>
+    <div class="carousel-item <%= i === 0 ? 'active' : '' %>">
+      <img src="<%= img.url %>" alt="<%= a.titlu %> – imaginea <%= i + 1 %>" loading="lazy">
+    </div>
+    <% }) %>
+  </div>
+  <% if (a.imagini.length > 1) { %>
+  <button class="carousel-control-prev" type="button" data-bs-target="#galerie-<%= a.id %>" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Imaginea anterioară</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#galerie-<%= a.id %>" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Imaginea următoare</span>
+  </button>
+  <% } %>
+</div>
+<% } else { %>
+<div class="fara-imagine">Anunțul nu are imagini</div>
+<% } %>
+
+<div class="p-3 p-md-4">
+            <p class="h4 mb-1"><%= a.pretAfisat %></p>
+  <% if (a.esteInchiriere) { %><p class="text-body-secondary small mb-3">pe lună, pentru toată locuința</p><% } else { %><div class="mb-3"></div><% } %>
+
+  <% if (a.preturiPePersoane.length > 1 || a.areReducereOPersoana) { %>
+  <!-- Cat plateste fiecare chirias, in functie de cati locuiesc impreuna -->
+  <h3 class="h6">Cât plătește fiecare chiriaș</h3>
+  <div class="table-responsive mb-3">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Persoane</th><th scope="col" class="text-end">Fiecare plătește</th><th scope="col" class="text-end">Total pe lună</th></tr></thead>
+      <tbody>
+        <% a.preturiPePersoane.forEach(function(r) { %>
+        <tr class="<%= r.redus ? 'table-success' : '' %>">
+          <td><%= r.persoane %> <%= r.persoane === 1 ? 'persoană' : 'persoane' %><% if (r.redus) { %> <span class="badge text-bg-success">Reducere</span><% } %></td>
+          <td class="text-end fw-semibold"><%= r.pePersoana %></td>
+          <td class="text-end text-body-secondary"><%= r.total %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Proprietate</dt>
+    <dd class="col-sm-8"><a href="/admin/proprietati/<%= a.proprietate_id %>"><%= a.proprietate_denumire %></a>, <%= a.proprietate_oras %>
+      <% if (a.proprietateInactiva) { %><span class="text-danger">(inactivă)</span><% } %></dd>
+               <dt class="col-sm-4">Proprietar</dt>
+    <dd class="col-sm-8"><a href="/admin/utilizatori/<%= a.proprietar_id %>"><%= a.proprietar_nume %></a><% if (!a.areTelefon) { %> <span class="text-body-secondary small">(fără telefon)</span><% } %></dd>
+    <dt class="col-sm-4">Tip</dt><dd class="col-sm-8"><%= a.tipAfisat %></dd>
+    <dt class="col-sm-4">Garanție</dt><dd class="col-sm-8"><%= a.garantieAfisata %></dd>
+    <dt class="col-sm-4">Disponibil</dt><dd class="col-sm-8"><%= a.disponibilAfisat %></dd>
+    <% if (a.locuri_libere !== '') { %>
+    <dt class="col-sm-4">Locuri libere</dt><dd class="col-sm-8"><%= a.locuri_libere %></dd>
+    <% } %>
+  </dl>
+  <% if (a.descriere) { %>
+  <hr>
+  <p class="mb-0 text-pre"><%= a.descriere %></p>
+  <% } %>
+</div>
