@@ -1,34 +1,67 @@
 <%- include('../../partials/header', { titluPagina: p.denumire }) %>
 
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/admin/proprietati">Proprietăți</a></li>
-    <li class="breadcrumb-item active" aria-current="page"><%= p.denumire %></li>
-  </ol>
-</nav>
+<nav aria-label="breadcrumb"><ol class="breadcrumb small mb-2">
+  <li class="breadcrumb-item"><a href="/admin/proprietati">Proprietăți</a></li>
+  <li class="breadcrumb-item active" aria-current="page"><%= p.denumire %></li>
+</ol></nav>
 
-<div class="card shadow-sm">
-  <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-    <h1 class="h4 mb-0"><%= p.denumire %></h1>
-    <span class="badge text-bg-<%= p.culoareStare %> fs-6"><%= p.stareAfisata %></span>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1"><%= p.denumire %></h1>
+    <span class="badge text-bg-<%= p.culoareStare %>"><%= p.stareAfisata %></span>
   </div>
-  <div class="card-body">
-    <dl class="row mb-0">
-      <dt class="col-sm-4">Tip</dt><dd class="col-sm-8"><%= p.tipAfisat %></dd>
-      <dt class="col-sm-4">Județ</dt><dd class="col-sm-8"><%= p.judet %></dd>
-      <dt class="col-sm-4">Oraș</dt><dd class="col-sm-8"><%= p.oras %></dd>
-      <dt class="col-sm-4">Zonă</dt><dd class="col-sm-8"><%= p.zona || '–' %></dd>
-      <dt class="col-sm-4">Număr de camere</dt><dd class="col-sm-8"><%= p.nr_camere %></dd>
-      <dt class="col-sm-4">Suprafață</dt><dd class="col-sm-8"><%= p.suprafata_mp ? p.suprafata_mp + ' mp' : '–' %></dd>
-      <dt class="col-sm-4">Maxim locatari</dt><dd class="col-sm-8"><%= p.max_locatari %></dd>
-      <dt class="col-sm-4">Balcon</dt><dd class="col-sm-8"><%= p.are_balcon ? 'Da' : 'Nu' %></dd>
-      <dt class="col-sm-4">Proprietar</dt><dd class="col-sm-8 mb-0"><%= p.proprietar_nume %></dd>
-    </dl>
-  </div>
-  <div class="card-footer bg-white d-grid gap-2 d-sm-flex py-3">
+  <div class="d-flex flex-column flex-sm-row gap-2">
     <a class="btn btn-primary" href="/admin/proprietati/<%= p.id %>/edit">Editează</a>
-    <%- include('_buton_stare', { p: p, inapoi: '/admin/proprietati/' + p.id, clase: 'w-100' }) %>
-    <a class="btn btn-outline-secondary ms-sm-auto" href="/admin/proprietati">Înapoi la listă</a>
+    <%- include('_buton_stare', { p: p, inapoi: '/admin/proprietati/' + p.id, clase: '' }) %>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7 d-grid gap-4 align-content-start">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Detalii</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-sm-4">Tip</dt><dd class="col-sm-8"><%= p.tipAfisat %></dd>
+          <dt class="col-sm-4">Adresă</dt><dd class="col-sm-8"><%= p.oras %>, jud. <%= p.judet %><%= p.zona ? ', ' + p.zona : '' %></dd>
+          <dt class="col-sm-4">Camere</dt><dd class="col-sm-8"><%= p.nr_camere %></dd>
+          <dt class="col-sm-4">Suprafață</dt><dd class="col-sm-8"><%= p.suprafata_mp ? p.suprafata_mp + ' mp' : '–' %></dd>
+          <dt class="col-sm-4">Maxim locatari</dt><dd class="col-sm-8"><%= p.max_locatari %></dd>
+          <dt class="col-sm-4">Balcon</dt><dd class="col-sm-8"><%= p.are_balcon ? 'Da' : 'Nu' %></dd>
+          <dt class="col-sm-4">Proprietar</dt><dd class="col-sm-8"><a href="/admin/utilizatori/<%= p.proprietar_id %>"><%= p.proprietar_nume %></a></dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h5 mb-0">Anunțuri</h2>
+          <% if (p.stare !== 'inactiv') { %><a class="btn btn-sm btn-outline-primary" href="/admin/anunturi/create">+ Anunț nou</a><% } %>
+        </div>
+        <% if (anunturi.length === 0) { %>
+          <p class="small text-body-secondary mb-0">Proprietatea nu are niciun anunț.</p>
+        <% } else { %>
+          <div class="list-group list-group-flush">
+            <% anunturi.forEach(function(a) { %>
+            <a class="list-group-item list-group-item-action px-0 d-flex justify-content-between align-items-center gap-2" href="/admin/anunturi/<%= a.id %>">
+              <span><span class="fw-semibold"><%= a.titlu %></span><br><span class="small text-body-secondary"><%= a.tipAfisat %> · <%= a.pretAfisat %></span></span>
+              <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+            </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Istoric acțiuni</h2>
+        <%- include('../_istoric', { istoric: istoric }) %>
+      </div>
+    </div>
   </div>
 </div>
 

@@ -1,12 +1,93 @@
 <%- include('../../partials/header', { titluPagina: 'Proprietăți' }) %>
+<%
+  const avansate = filtre.camere_min || filtre.balcon || filtre.proprietar || filtre.anunturi;
+  const sortari = { noi: 'Cele mai noi', vechi: 'Cele mai vechi', denumire: 'Denumire (A–Z)', oras: 'Oraș (A–Z)', camere: 'Nr. camere' };
+%>
 
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-4">
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
   <h1 class="h3 mb-0">Proprietăți</h1>
   <a class="btn btn-primary" href="/admin/proprietati/create">+ Adaugă proprietate</a>
 </div>
 
+<!-- Filtre: se trimit in adresa (GET), deci lista filtrata poate fi salvata sau trimisa -->
+<form method="get" class="card card-body shadow-sm mb-3 bara-filtre" role="search" aria-label="Filtrează proprietățile">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-lg-4">
+      <label for="q" class="form-label">Caută</label>
+      <input type="search" class="form-control" id="q" name="q" value="<%= filtre.q %>" placeholder="denumire, zonă, adresă sau proprietar">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="oras" class="form-label">Oraș</label>
+      <select class="form-select" id="oras" name="oras">
+        <option value="">Toate</option>
+        <% orase.forEach(function(o) { %><option value="<%= o %>" <%= filtre.oras.toLowerCase() === o.toLowerCase() ? 'selected' : '' %>><%= o %></option><% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="tip" class="form-label">Tip</label>
+      <select class="form-select" id="tip" name="tip">
+        <option value="">Toate</option>
+        <% tipuri.forEach(function(t) { %><option value="<%= t %>" <%= filtre.tip === t ? 'selected' : '' %>><%= eticheteTip[t] %></option><% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="stare" class="form-label">Stare</label>
+      <select class="form-select" id="stare" name="stare">
+        <option value="">Toate</option>
+        <% stari.forEach(function(st) { %><option value="<%= st %>" <%= filtre.stare === st ? 'selected' : '' %>><%= eticheteStare[st] %></option><% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="sort" class="form-label">Sortează</label>
+      <select class="form-select" id="sort" name="sort">
+        <% Object.keys(sortari).forEach(function(k) { %><option value="<%= k %>" <%= filtre.sort === k ? 'selected' : '' %>><%= sortari[k] %></option><% }) %>
+      </select>
+    </div>
+  </div>
+
+  <div class="collapse <%= avansate ? 'show' : '' %>" id="filtreAvansate">
+    <div class="row g-2 align-items-end mt-0 pt-2">
+      <div class="col-6 col-md-3">
+        <label for="camere_min" class="form-label">Camere (minim)</label>
+        <input type="number" class="form-control" id="camere_min" name="camere_min" min="1" step="1" value="<%= filtre.camere_min %>">
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="balcon" class="form-label">Balcon</label>
+        <select class="form-select" id="balcon" name="balcon">
+          <option value="">Oricum</option>
+          <option value="da" <%= filtre.balcon === 'da' ? 'selected' : '' %>>Cu balcon</option>
+          <option value="nu" <%= filtre.balcon === 'nu' ? 'selected' : '' %>>Fără balcon</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="proprietar" class="form-label">Proprietar</label>
+        <select class="form-select" id="proprietar" name="proprietar">
+          <option value="">Toți</option>
+          <% proprietari.forEach(function(pr) { %><option value="<%= pr.id %>" <%= filtre.proprietar === pr.id ? 'selected' : '' %>><%= pr.prenume %> <%= pr.nume %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <label for="anunturi" class="form-label">Anunțuri active</label>
+        <select class="form-select" id="anunturi" name="anunturi">
+          <option value="">Oricum</option>
+          <option value="fara" <%= filtre.anunturi === 'fara' ? 'selected' : '' %>>Fără anunț activ</option>
+          <option value="cu" <%= filtre.anunturi === 'cu' ? 'selected' : '' %>>Cu anunț activ</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <button type="submit" class="btn btn-primary">Filtrează</button>
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#filtreAvansate" aria-expanded="<%= avansate ? 'true' : 'false' %>" aria-controls="filtreAvansate">Mai multe filtre</button>
+    <% if (areFiltre) { %><a class="btn btn-link" href="/admin/proprietati">Șterge filtrele</a><% } %>
+  </div>
+</form>
+
+<%- include('../../partials/_rezultate', { singular: 'proprietate', plural: 'proprietăți' }) %>
+
 <% if (proprietati.length === 0) { %>
-  <div class="card card-body text-center text-body-secondary">Nu există încă nicio proprietate.</div>
+  <div class="card card-body text-center text-body-secondary"><%= areFiltre ? 'Nicio proprietate nu se potrivește filtrelor.' : 'Nu există încă nicio proprietate.' %></div>
 <% } else { %>
 
   <!-- Laptop si monitor: tabel (ascuns pe ecrane mici) -->
@@ -17,23 +98,24 @@
           <tr>
             <th scope="col">Denumire</th><th scope="col">Tip</th><th scope="col">Oraș</th>
             <th scope="col" class="text-center">Camere</th><th scope="col" class="text-center">Balcon</th>
-            <th scope="col">Stare</th><th scope="col">Proprietar</th><th scope="col" class="text-end">Acțiuni</th>
+            <th scope="col">Stare</th><th scope="col">Proprietar</th><th scope="col" class="text-center">Anunțuri active</th><th scope="col" class="text-end">Acțiuni</th>
           </tr>
         </thead>
         <tbody>
           <% proprietati.forEach(function(p) { %>
           <tr>
-            <td class="fw-semibold"><%= p.denumire %></td>
+            <td><a class="fw-semibold text-decoration-none" href="/admin/proprietati/<%= p.id %>"><%= p.denumire %></a></td>
             <td><%= p.tipAfisat %></td>
             <td><%= p.oras %></td>
             <td class="text-center"><%= p.nr_camere %></td>
             <td class="text-center"><%= p.are_balcon ? 'Da' : 'Nu' %></td>
             <td><span class="badge text-bg-<%= p.culoareStare %>"><%= p.stareAfisata %></span></td>
-            <td><%= p.proprietar_nume %></td>
+            <td><a class="text-decoration-none" href="/admin/utilizatori/<%= p.proprietar_id %>"><%= p.proprietar_nume %></a></td>
+            <td class="text-center"><a class="text-decoration-none" href="/admin/anunturi?proprietate=<%= p.id %>"><%= p.anunturi_active %></a></td>
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-outline-primary" href="/admin/proprietati/<%= p.id %>">Detalii</a>
               <a class="btn btn-sm btn-primary" href="/admin/proprietati/<%= p.id %>/edit">Editează</a>
-              <%- include('_buton_stare', { p: p, inapoi: '/admin/proprietati', clase: 'btn-sm' }) %>
+              <%- include('_buton_stare', { p: p, inapoi: adresaCurenta, clase: 'btn-sm' }) %>
             </td>
           </tr>
           <% }) %>
@@ -53,17 +135,19 @@
         </div>
         <p class="text-body-secondary small mb-3">
           <%= p.tipAfisat %> · <%= p.oras %> · <%= p.nr_camere %> <%= Number(p.nr_camere) === 1 ? "cameră" : "camere" %> · balcon: <%= p.are_balcon ? 'da' : 'nu' %><br>
-          Proprietar: <%= p.proprietar_nume %>
+          Proprietar: <%= p.proprietar_nume %> · anunțuri active: <%= p.anunturi_active %>
         </p>
         <div class="d-grid gap-2 d-sm-flex">
           <a class="btn btn-outline-primary" href="/admin/proprietati/<%= p.id %>">Detalii</a>
           <a class="btn btn-primary" href="/admin/proprietati/<%= p.id %>/edit">Editează</a>
-          <%- include('_buton_stare', { p: p, inapoi: '/admin/proprietati', clase: 'w-100' }) %>
+          <%- include('_buton_stare', { p: p, inapoi: adresaCurenta, clase: 'w-100' }) %>
         </div>
       </div>
     </div>
     <% }) %>
   </div>
 <% } %>
+
+<%- include('../../partials/_paginare') %>
 
 <%- include('../../partials/footer') %>
