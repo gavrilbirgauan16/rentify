@@ -17,4 +17,12 @@ function mesajFlash(req, text, tip = 'success') {
   req.session.tipMesaj = tip;
 }
 
-module.exports = { citesteId, negasit, mesajFlash };
+// Unde ne intoarcem dupa un buton (ex. Dezactiveaza din lista filtrata): doar adrese din sectiunea data,
+// ca nimeni sa nu poata trimite utilizatorul pe alt site. Altfel, inapoi la lista sectiunii.
+function adresaInapoi(req, sectiune) {
+  const a = req.body.inapoi;
+  const buna = typeof a === 'string' && !a.includes('//') && (a === sectiune || a.startsWith(`${sectiune}/`) || a.startsWith(`${sectiune}?`));
+  return buna ? a : sectiune;
+}
+
+module.exports = { citesteId, negasit, mesajFlash, adresaInapoi };

@@ -1,0 +1,29 @@
+<%# Paginarea unei liste. Primeste: pag (din servicii/filtre.paginare) si link(modificari) %>
+<% if (pag.totalPagini > 1) {
+  // Afisam prima, ultima si 2 pagini in jurul celei curente; restul devin "…"
+  const pagini = [];
+  for (let i = 1; i <= pag.totalPagini; i++) {
+    if (i === 1 || i === pag.totalPagini || Math.abs(i - pag.pagina) <= 2) pagini.push(i);
+    else if (pagini[pagini.length - 1] !== '…') pagini.push('…');
+  }
+%>
+<nav class="mt-3" aria-label="Pagini">
+  <ul class="pagination pagination-sm justify-content-center flex-wrap mb-0">
+    <li class="page-item <%= pag.pagina <= 1 ? 'disabled' : '' %>">
+      <a class="page-link" href="<%= link({ pagina: pag.pagina - 1 }) %>" aria-label="Pagina anterioară">‹</a>
+    </li>
+    <% pagini.forEach(function(p) { %>
+      <% if (p === '…') { %>
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      <% } else { %>
+        <li class="page-item <%= p === pag.pagina ? 'active' : '' %>" <%- p === pag.pagina ? 'aria-current="page"' : '' %>>
+          <a class="page-link" href="<%= link({ pagina: p }) %>"><%= p %></a>
+        </li>
+      <% } %>
+    <% }) %>
+    <li class="page-item <%= pag.pagina >= pag.totalPagini ? 'disabled' : '' %>">
+      <a class="page-link" href="<%= link({ pagina: pag.pagina + 1 }) %>" aria-label="Pagina următoare">›</a>
+    </li>
+  </ul>
+</nav>
+<% } %>
