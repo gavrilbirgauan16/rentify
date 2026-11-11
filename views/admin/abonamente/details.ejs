@@ -31,7 +31,7 @@
       <div class="card-body">
         <h2 class="h5 mb-3">Detalii</h2>
         <dl class="row mb-0 small">
-          <dt class="col-5 col-sm-4">Utilizator</dt><dd class="col-7 col-sm-8"><%= a.utilizator_nume %> (<%= a.rolAfisat %>)<br><span class="text-body-secondary"><%= a.utilizator_email %></span></dd>
+          <dt class="col-5 col-sm-4">Utilizator</dt><dd class="col-7 col-sm-8"><a href="/admin/utilizatori/<%= a.utilizator_id %>"><%= a.utilizator_nume %></a> (<%= a.rolAfisat %>)<br><span class="text-body-secondary"><%= a.utilizator_email %></span></dd>
           <dt class="col-5 col-sm-4">Plan</dt><dd class="col-7 col-sm-8"><%= a.plan_nume %></dd>
           <dt class="col-5 col-sm-4">Perioadă</dt><dd class="col-7 col-sm-8"><%= a.perioadaAfisata %>, <%= a.intervalAfisat %></dd>
           <dt class="col-5 col-sm-4">Reînnoire automată</dt><dd class="col-7 col-sm-8"><%= a.reinnoire_automata ? 'Da' : 'Nu' %></dd>
