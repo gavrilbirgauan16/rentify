@@ -1,0 +1,61 @@
+<%- include('../../partials/header', { titluPagina: q ? 'Caută: ' + q : 'Caută' }) %>
+
+<h1 class="h3 mb-3">Caută</h1>
+<form method="get" action="/admin/cautare" class="mb-4" role="search">
+  <div class="input-group latime-formular">
+    <input type="search" class="form-control form-control-lg" name="q" value="<%= q %>" placeholder="nume, email, telefon, proprietate, anunț sau #id" aria-label="Caută" autofocus>
+    <button class="btn btn-primary" type="submit">Caută</button>
+  </div>
+</form>
+
+<% if (!rezultate) { %>
+  <p class="text-body-secondary">Scrie cel puțin 2 caractere. Caut deodată în utilizatori, proprietăți și anunțuri.</p>
+<% } else if (rezultate.utilizatori.total + rezultate.proprietati.total + rezultate.anunturi.total === 0) { %>
+  <div class="card card-body text-center text-body-secondary">Nimic găsit pentru „<%= q %>”.</div>
+<% } else { %>
+  <div class="row g-4">
+    <%
+      const grupuri = [
+        { cheie: 'utilizatori', titlu: 'Utilizatori' },
+        { cheie: 'proprietati', titlu: 'Proprietăți' },
+        { cheie: 'anunturi', titlu: 'Anunțuri' },
+      ];
+    %>
+    <% grupuri.forEach(function(g) { const r = rezultate[g.cheie]; %>
+    <div class="col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-3"><%= g.titlu %> <span class="badge text-bg-light border"><%= r.total %></span></h2>
+          <% if (r.total === 0) { %>
+            <p class="small text-body-secondary mb-0">Niciun rezultat.</p>
+          <% } else { %>
+            <div class="list-group list-group-flush">
+              <% r.lista.forEach(function(x) { %>
+                <% if (g.cheie === 'utilizatori') { %>
+                  <a class="list-group-item list-group-item-action px-0" href="/admin/utilizatori/<%= x.id %>">
+                    <span class="fw-semibold"><%= x.numeComplet %></span> <span class="badge text-bg-<%= x.culoareStare %>"><%= x.stareAfisata %></span><br>
+                    <span class="small text-body-secondary"><%= x.rolAfisat %> · <%= x.email %></span>
+                  </a>
+                <% } else if (g.cheie === 'proprietati') { %>
+                  <a class="list-group-item list-group-item-action px-0" href="/admin/proprietati/<%= x.id %>">
+                    <span class="fw-semibold"><%= x.denumire %></span> <span class="badge text-bg-<%= x.culoareStare %>"><%= x.stareAfisata %></span><br>
+                    <span class="small text-body-secondary"><%= x.tipAfisat %> · <%= x.oras %> · <%= x.proprietar_nume %></span>
+                  </a>
+                <% } else { %>
+                  <a class="list-group-item list-group-item-action px-0" href="/admin/anunturi/<%= x.id %>">
+                    <span class="fw-semibold"><%= x.titlu %></span> <span class="badge text-bg-<%= x.culoareStare %>"><%= x.stareAfisata %></span><br>
+                    <span class="small text-body-secondary"><%= x.pretAfisat %> · <%= x.proprietate_denumire %>, <%= x.proprietate_oras %></span>
+                  </a>
+                <% } %>
+              <% }) %>
+            </div>
+            <% if (r.total > r.lista.length) { %><a class="d-inline-block small mt-2" href="<%= r.toate %>">Vezi toate cele <%= r.total %> ›</a><% } %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('../../partials/footer') %>
