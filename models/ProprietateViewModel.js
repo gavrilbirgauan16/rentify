@@ -30,6 +30,7 @@ class ProprietateViewModel {
     this.stare = date.stare ?? 'liber';
     this.proprietar_id = date.proprietar_id ?? '';
     this.proprietar_nume = date.proprietar_nume ?? '';
+    this.anunturi_active = date.anunturi_active ?? null; // doar in liste (cate anunturi active are)
   }
 
   // Texte si culori pentru afisare.
@@ -43,6 +44,7 @@ class ProprietateViewModel {
       ...p,
       suprafata_mp: p.suprafata_mp === null ? '' : p.suprafata_mp.toString(),
       proprietar_nume: p.utilizator ? `${p.utilizator.prenume} ${p.utilizator.nume}` : '',
+      anunturi_active: p._count?.anunt ?? null,
     });
   }
 

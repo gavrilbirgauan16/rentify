@@ -10,6 +10,32 @@ class ProprietateAccessor {
     });
   }
 
+  // O pagina din lista filtrata (admin). where si orderBy vin gata facute din controller, din filtrele alese.
+  // Aducem si cate anunturi active are fiecare proprietate.
+  async getPagina(where, orderBy, { skip, take }) {
+    return context.proprietate.findMany({
+      where,
+      include: {
+        utilizator: { select: { nume: true, prenume: true } },
+        _count: { select: { anunt: { where: { stare: 'activ' } } } },
+      },
+      orderBy,
+      skip,
+      take,
+    });
+  }
+
+  // Cate proprietati se potrivesc filtrelor (pentru paginare).
+  async numara(where) {
+    return context.proprietate.count({ where });
+  }
+
+  // Orasele in care exista proprietati (pentru lista de filtrare).
+  async getOrase() {
+    const randuri = await context.proprietate.findMany({ distinct: ['oras'], select: { oras: true }, orderBy: { oras: 'asc' } });
+    return randuri.map((r) => r.oras);
+  }
+
   // O proprietate dupa id, cu proprietarul si anunturile ei (Details si Edit).
   async getById(id) {
     return context.proprietate.findUnique({
