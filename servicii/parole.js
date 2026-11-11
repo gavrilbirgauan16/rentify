@@ -38,4 +38,11 @@ function verificaReguliParola(parola) {
   return null;
 }
 
-module.exports = { hashParola, verificaParola, verificaReguliParola };
+// Parola temporara pentru resetarea facuta de admin: 12 caractere alese aleator (criptografic),
+// fara caractere usor de confundat (0/O, 1/l/I), ca sa poata fi dictata sau copiata fara greseli.
+const ALFABET = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function genereazaParolaTemporara(lungime = 12) {
+  return Array.from({ length: lungime }, () => ALFABET[crypto.randomInt(ALFABET.length)]).join('');
+}
+
+module.exports = { hashParola, verificaParola, verificaReguliParola, genereazaParolaTemporara };

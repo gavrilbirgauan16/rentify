@@ -1,7 +1,7 @@
 // Teste automate pentru salvarea parolelor. Rulare: npm test
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { hashParola, verificaParola, verificaReguliParola } = require('../servicii/parole');
+const { hashParola, verificaParola, verificaReguliParola, genereazaParolaTemporara } = require('../servicii/parole');
 
 test('parola corecta trece, parola gresita nu', async () => {
   const salvat = await hashParola('ParolaMea123');
@@ -28,4 +28,12 @@ test('amprentele vechi sau stricate nu permit conectarea', async () => {
 test('regula de lungime minima', () => {
   assert.ok(verificaReguliParola('scurta'));
   assert.equal(verificaReguliParola('suficientdelunga'), null);
+});
+test('parola temporara: 12 caractere, fara caractere confundabile, diferita de fiecare data', () => {
+  const p1 = genereazaParolaTemporara();
+  const p2 = genereazaParolaTemporara();
+  assert.equal(p1.length, 12);
+  assert.notEqual(p1, p2);
+  assert.ok(!/[0O1lI]/.test(p1 + p2));
+  assert.equal(verificaReguliParola(p1), null); // respecta regulile pentru parole
 });
