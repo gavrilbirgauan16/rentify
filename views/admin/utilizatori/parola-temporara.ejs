@@ -1,0 +1,22 @@
+<%- include('../../partials/header', { titluPagina: 'Parolă temporară' }) %>
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small mb-2">
+  <li class="breadcrumb-item"><a href="/admin/utilizatori">Utilizatori</a></li>
+  <li class="breadcrumb-item"><a href="/admin/utilizatori/<%= u.id %>"><%= u.numeComplet %></a></li>
+  <li class="breadcrumb-item active" aria-current="page">Parolă temporară</li>
+</ol></nav>
+
+<div class="card shadow-sm latime-formular">
+  <div class="card-body p-4">
+    <h1 class="h4 mb-3">Parola lui <%= u.numeComplet %> a fost resetată</h1>
+    <p class="mb-2">Parola temporară este:</p>
+    <p class="parola-temporara user-select-all mb-3" aria-label="Parola temporară"><%= parola %></p>
+    <div class="alert alert-warning small mb-4" role="alert">
+      <strong>Copiaz-o acum:</strong> nu mai poate fi afișată din nou (nici tu, nici altcineva nu o mai poate vedea după ce părăsești pagina).
+      Comunic-o utilizatorului pe un canal sigur (de exemplu personal sau telefonic). La conectare, va fi obligat să-și aleagă o parolă nouă.
+    </div>
+    <a class="btn btn-primary" href="/admin/utilizatori/<%= u.id %>">Gata, înapoi la utilizator</a>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

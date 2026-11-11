@@ -1,0 +1,145 @@
+<%- include('../../partials/header', { titluPagina: u.numeComplet }) %>
+<% const sp = u.situatieProprietati; const ETICHETE_PROP = { liber: ['Liber', 'success'], ocupat: ['Ocupat', 'warning'], inactiv: ['Inactiv', 'secondary'] }; %>
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small mb-2">
+  <li class="breadcrumb-item"><a href="/admin/utilizatori">Utilizatori</a></li>
+  <li class="breadcrumb-item active" aria-current="page"><%= u.numeComplet %></li>
+</ol></nav>
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1"><%= u.numeComplet %></h1>
+    <span class="badge text-bg-light border"><%= u.rolAfisat %></span>
+    <span class="badge text-bg-<%= u.culoareStare %>"><%= u.stareAfisata %></span>
+  </div>
+  <div class="d-flex flex-column flex-sm-row gap-2">
+    <% if (u.areAbonamente && !u.esteBlocat) { %>
+      <a class="btn btn-primary" href="/admin/abonamente/create?utilizator=<%= u.id %>">+ Abonament</a>
+    <% } %>
+    <% if (u.poateFiAdministratDe(utilizator.id)) { %>
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#confirmareReset">Resetează parola</button>
+    <form method="post" action="/admin/utilizatori/<%= u.id %>/<%= u.esteBlocat ? 'deblocheaza' : 'blocheaza' %>" class="d-grid">
+      <%- include('../../partials/csrf') %>
+      <button type="submit" class="btn <%= u.esteBlocat ? 'btn-outline-success' : 'btn-outline-danger' %>"><%= u.esteBlocat ? 'Deblochează contul' : 'Blochează contul' %></button>
+    </form>
+    <% } %>
+  </div>
+</div>
+
+<% if (u.esteBlocat) { %>
+<div class="alert alert-danger small" role="alert">Contul este blocat: utilizatorul nu se mai poate conecta. Datele lui (proprietăți, abonamente) rămân păstrate.</div>
+<% } %>
+<% if (sp && sp.depaseste) { %>
+<div class="alert alert-warning small" role="alert">
+  <% if (sp.faraPlan) { %>
+    Are <%= sp.folosit %> <%= sp.folosit === 1 ? 'proprietate activă' : 'proprietăți active' %>, dar <strong>nu are niciun abonament în curs</strong>. Adaugă-i un abonament sau dezactivează proprietățile.
+  <% } else { %>
+    Are <%= sp.folosit %> proprietăți active, dar planul lui permite <%= sp.maxim %>. Recomandă-i un plan mai mare sau dezactivează o proprietate.
+  <% } %>
+</div>
+<% } %>
+
+<div class="row g-4">
+  <div class="col-lg-5 d-grid gap-4 align-content-start">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Date de contact</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-5">Email</dt><dd class="col-7"><a href="mailto:<%= u.email %>"><%= u.email %></a></dd>
+          <dt class="col-5">Telefon</dt><dd class="col-7"><%= u.telefon || '–' %></dd>
+          <dt class="col-5">Oraș</dt><dd class="col-7"><%= u.oras || '–' %></dd>
+          <dt class="col-5">Cont creat</dt><dd class="col-7"><%= u.creatLaAfisat %></dd>
+          <dt class="col-5">Ultima conectare</dt><dd class="col-7"><%= u.ultimaAutentificareAfisata %></dd>
+          <% if (sp) { %><dt class="col-5">Proprietăți active</dt><dd class="col-7 <%= sp.depaseste ? 'text-danger fw-semibold' : '' %>"><%= sp.text %></dd><% } %>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Securitate</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-5">Cont</dt><dd class="col-7"><%= u.esteBlocat ? 'Blocat' : 'Activ' %></dd>
+          <dt class="col-5">Parolă</dt>
+          <dd class="col-7"><%= u.areParolaTemporara ? 'Temporară – trebuie schimbată la conectare' : 'Aleasă de utilizator' %></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7 d-grid gap-4 align-content-start">
+    <% if (u.areAbonamente) { %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Abonamente</h2>
+        <% if (abonamente.length === 0) { %>
+          <p class="small text-body-secondary mb-0">Nu are niciun abonament.</p>
+        <% } else { %>
+          <div class="list-group list-group-flush">
+            <% abonamente.forEach(function(a) { %>
+            <a class="list-group-item list-group-item-action px-0 d-flex justify-content-between align-items-center gap-2" href="/admin/abonamente/<%= a.id %>">
+              <span>
+                <span class="fw-semibold"><%= a.plan_nume %></span> · <%= a.perioadaAfisata.toLowerCase() %> · <%= a.pretAfisat %><br>
+                <span class="small text-body-secondary"><%= a.intervalAfisat %></span>
+              </span>
+              <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+            </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (u.rol === 'proprietar') { %>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Proprietăți</h2>
+        <% if (u.proprietati.length === 0) { %>
+          <p class="small text-body-secondary mb-0">Nu are nicio proprietate.</p>
+        <% } else { %>
+          <div class="list-group list-group-flush">
+            <% u.proprietati.forEach(function(p) { const e = ETICHETE_PROP[p.stare] || [p.stare, 'secondary']; %>
+            <a class="list-group-item list-group-item-action px-0 d-flex justify-content-between align-items-center" href="/admin/proprietati/<%= p.id %>">
+              <span><span class="fw-semibold"><%= p.denumire %></span> <span class="small text-body-secondary">· <%= p.oras %></span></span>
+              <span class="badge text-bg-<%= e[1] %>"><%= e[0] %></span>
+            </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<% if (u.poateFiAdministratDe(utilizator.id)) { %>
+<!-- Confirmarea resetarii parolei (fereastra Bootstrap, fara alert-uri din browser) -->
+<div class="modal fade" id="confirmareReset" tabindex="-1" aria-labelledby="titluReset" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="titluReset">Resetezi parola lui <%= u.numeComplet %>?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+      </div>
+      <div class="modal-body small">
+        <ul class="mb-0 ps-3">
+          <li>Parola actuală nu va mai funcționa.</li>
+          <li>Vei primi o parolă temporară, afișată <strong>o singură dată</strong>, pe care i-o comunici utilizatorului.</li>
+          <li>La conectare, utilizatorul va fi obligat să-și aleagă o parolă nouă.</li>
+          <li>Dacă era conectat, este deconectat de pe toate dispozitivele.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Renunță</button>
+        <form method="post" action="/admin/utilizatori/<%= u.id %>/reseteaza-parola">
+          <%- include('../../partials/csrf') %>
+          <button type="submit" class="btn btn-primary">Da, resetează parola</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

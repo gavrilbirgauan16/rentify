@@ -246,7 +246,6 @@ model plata {
   referinta_externa String?   @db.VarChar(100)
   creat_la          DateTime  @default(now()) @db.Timestamp(6)
   obligatie         obligatie @relation(fields: [obligatie_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
 }
 
 model plata_abonament {
@@ -377,6 +376,7 @@ model utilizator {
   ultima_autentificare                        DateTime?          @db.Timestamp(6)
   oras                                        String?            @db.VarChar(50)
   limba_preferata                             String             @default("ro") @db.VarChar(5)
+  schimba_parola                              Boolean            @default(false)
   abonament                                   abonament[]
   contactare                                  contactare[]
   contract_chirias                            contract_chirias[]

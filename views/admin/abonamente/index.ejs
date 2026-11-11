@@ -54,7 +54,7 @@
         <tbody>
           <% abonamente.forEach(function(a) { %>
           <tr>
-            <td><span class="fw-semibold"><%= a.utilizator_nume %></span><br><span class="small text-body-secondary"><%= a.rolAfisat %></span></td>
+            <td><a class="fw-semibold text-decoration-none" href="/admin/utilizatori/<%= a.utilizator_id %>"><%= a.utilizator_nume %></a><br><span class="small text-body-secondary"><%= a.rolAfisat %></span></td>
             <td><%= a.plan_nume %></td>
             <td><%= a.perioadaAfisata %><%= a.reinnoire_automata ? ' ↻' : '' %></td>
             <td class="small text-nowrap"><%= a.intervalAfisat %></td>

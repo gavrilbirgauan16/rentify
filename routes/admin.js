@@ -6,12 +6,15 @@ const proprietatiRouter = require('./proprietati');
 const anunturiRouter = require('./anunturi');
 const planuriRouter = require('./planuri');
 const abonamenteRouter = require('./abonamente');
+const utilizatoriRouter = require('./utilizatori');
 const router = express.Router();
 
 router.use(cereAutentificare, cereRol('admin'));
-router.use('/abonamente', abonamenteRouter);
+
 router.get('/', (req, res) => res.redirect('/admin/proprietati'));
 router.use('/proprietati', proprietatiRouter);
 router.use('/anunturi', anunturiRouter);
 router.use('/planuri', planuriRouter);
+router.use('/abonamente', abonamenteRouter);
+router.use('/utilizatori', utilizatoriRouter);
 module.exports = router;

@@ -1,0 +1,97 @@
+<%- include('../../partials/header', { titluPagina: 'Utilizatori' }) %>
+
+<h1 class="h3 mb-3">Utilizatori</h1>
+
+<form method="get" class="card card-body shadow-sm mb-3 bara-filtre">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label for="q" class="form-label">Caută</label>
+      <input type="search" class="form-control" id="q" name="q" value="<%= filtre.q %>" placeholder="nume, email sau telefon">
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="rol" class="form-label">Rol</label>
+      <select class="form-select" id="rol" name="rol">
+        <option value="">Toate</option>
+        <% Object.keys(roluri).forEach(function(cod) { %>
+        <option value="<%= cod %>" <%= filtre.rol === cod ? 'selected' : '' %>><%= roluri[cod] %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="stare" class="form-label">Stare cont</label>
+      <select class="form-select" id="stare" name="stare">
+        <option value="">Toate</option>
+        <% Object.keys(stari).forEach(function(cod) { %>
+        <option value="<%= cod %>" <%= filtre.stare === cod ? 'selected' : '' %>><%= stari[cod].text %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-12 col-md-2 d-grid d-md-flex gap-2">
+      <button type="submit" class="btn btn-outline-primary flex-fill">Filtrează</button>
+      <% if (filtre.q || filtre.rol || filtre.stare) { %><a class="btn btn-link px-1" href="/admin/utilizatori">Șterge</a><% } %>
+    </div>
+  </div>
+</form>
+
+<%
+  // Ce scriem in coloana "Abonament" pentru fiecare utilizator
+  function abonamentText(u) {
+    if (!u.areAbonamente) return { text: '–', culoare: '' };
+    if (!u.abonament) return { text: 'Fără abonament', culoare: 'text-bg-light border' };
+    return { text: u.abonament.plan_nume + (u.abonament.stareCod() === 'neplatit' ? ' · neplătit' : ''), culoare: 'text-bg-' + u.abonament.culoareStare };
+  }
+%>
+
+<% if (utilizatori.length === 0) { %>
+  <div class="card card-body text-center text-body-secondary">Niciun utilizator nu se potrivește.</div>
+<% } else { %>
+  <p class="small text-body-secondary mb-2"><%= utilizatori.length %> <%= utilizatori.length === 1 ? 'utilizator' : 'utilizatori' %></p>
+
+  <div class="card shadow-sm d-none d-md-block">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Nume</th><th scope="col">Rol</th><th scope="col">Abonament</th>
+            <th scope="col" class="text-center">Proprietăți</th><th scope="col">Ultima conectare</th><th scope="col">Cont</th><th scope="col" class="text-end">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% utilizatori.forEach(function(u) { const ab = abonamentText(u); const sp = u.situatieProprietati; %>
+          <tr>
+            <td><span class="fw-semibold"><%= u.numeComplet %></span><br><span class="small text-body-secondary"><%= u.email %></span></td>
+            <td><%= u.rolAfisat %></td>
+            <td><% if (ab.culoare) { %><span class="badge <%= ab.culoare %>"><%= ab.text %></span><% } else { %><%= ab.text %><% } %></td>
+            <td class="text-center">
+              <% if (sp) { %><span class="<%= sp.depaseste ? 'text-danger fw-semibold' : '' %>" title="<%= sp.depaseste ? 'Are mai multe proprietăți active decât permite planul' : '' %>"><%= sp.text %><%= sp.depaseste ? ' ⚠' : '' %></span><% } else { %>–<% } %>
+            </td>
+            <td class="small"><%= u.ultimaAutentificareAfisata %></td>
+            <td><span class="badge text-bg-<%= u.culoareStare %>"><%= u.stareAfisata %></span></td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/admin/utilizatori/<%= u.id %>">Detalii</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-md-none d-grid gap-3">
+    <% utilizatori.forEach(function(u) { const ab = abonamentText(u); const sp = u.situatieProprietati; %>
+    <a class="card shadow-sm text-decoration-none text-body" href="/admin/utilizatori/<%= u.id %>">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+          <h2 class="h6 mb-0"><%= u.numeComplet %></h2>
+          <span class="badge text-bg-<%= u.culoareStare %>"><%= u.stareAfisata %></span>
+        </div>
+        <p class="small text-body-secondary mb-0">
+          <%= u.rolAfisat %> · <%= u.email %><br>
+          <% if (u.areAbonamente) { %>Abonament: <%= ab.text %><% } %>
+          <% if (sp) { %> · proprietăți <span class="<%= sp.depaseste ? 'text-danger fw-semibold' : '' %>"><%= sp.text %></span><% } %>
+        </p>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('../../partials/footer') %>
