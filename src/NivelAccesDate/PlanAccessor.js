@@ -17,7 +17,14 @@ class PlanAccessor {
       orderBy: [{ activ: 'desc' }, { pret_lunar: 'asc' }],
     });
   }
-
+  // Toate planurile active (pentru alegerea planului la un abonament nou), grupate apoi pe rol.
+  async getActive() {
+    return context.plan_abonament.findMany({
+      where: { activ: true },
+      include: { rol: { select: { nume: true } } },
+      orderBy: [{ rol_id: 'asc' }, { pret_lunar: 'asc' }],
+    });
+  }
   async getById(id) {
     return context.plan_abonament.findUnique({ where: { id }, include: CU_DETALII });
   }

@@ -19,7 +19,20 @@ class UtilizatorAccessor {
       orderBy: { nume: 'asc' },
     });
   }
-
+  // Lista cu filtre: rol, stare ('activ'/'blocat') si cautare (nume, prenume, email, telefon).
+  // Aducem si cate proprietati active are fiecare (pentru limita din plan). Fara parola!
+  async cauta({ rol, stare, cautare } = {}) {
+    const where = {};
+    if (rol) where.rol = { nume: rol };
+    if (stare) where.stare = stare;
+    if (cautare) where.OR = ['nume', 'prenume', 'email', 'telefon'].map((camp) => ({ [camp]: { contains: cautare, mode: 'insensitive' } }));
+    return context.utilizator.findMany({
+      where,
+      omit: { parola_hash: true },
+      include: { rol: { select: { nume: true } }, _count: { select: { proprietate: { where: { NOT: { stare: 'inactiv' } } } } } },
+      orderBy: [{ nume: 'asc' }, { prenume: 'asc' }],
+    });
+  }
   // Utilizatorul cu un anumit email, cu rolul lui (la autentificare).
   async getByEmail(email) {
     return context.utilizator.findUnique({ where: { email }, include: { rol: true } });
