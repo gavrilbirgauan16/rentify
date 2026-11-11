@@ -1,0 +1,95 @@
+<%- include('../../partials/header', { titluPagina: 'Abonamente' }) %>
+
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+  <h1 class="h3 mb-0">Abonamente</h1>
+  <a class="btn btn-primary" href="/admin/abonamente/create">+ Abonament nou</a>
+</div>
+
+<!-- Filtre: se trimit in adresa (GET), deci pagina filtrata poate fi salvata sau trimisa -->
+<form method="get" class="card card-body shadow-sm mb-3 bara-filtre">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label for="q" class="form-label">Caută utilizator</label>
+      <input type="search" class="form-control" id="q" name="q" value="<%= filtre.q %>" placeholder="nume sau email">
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="rol" class="form-label">Rol</label>
+      <select class="form-select" id="rol" name="rol">
+        <option value="">Toate</option>
+        <option value="proprietar" <%= filtre.rol === 'proprietar' ? 'selected' : '' %>>Proprietari</option>
+        <option value="chirias" <%= filtre.rol === 'chirias' ? 'selected' : '' %>>Chiriași</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label for="stare" class="form-label">Stare</label>
+      <select class="form-select" id="stare" name="stare">
+        <option value="">Toate</option>
+        <% Object.keys(stari).forEach(function(cod) { %>
+        <option value="<%= cod %>" <%= filtre.stare === cod ? 'selected' : '' %>><%= stari[cod].text %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-12 col-md-2 d-grid d-md-flex gap-2">
+      <button type="submit" class="btn btn-outline-primary flex-fill">Filtrează</button>
+      <% if (filtre.q || filtre.rol || filtre.stare) { %><a class="btn btn-link px-1" href="/admin/abonamente">Șterge</a><% } %>
+    </div>
+  </div>
+</form>
+
+<% if (abonamente.length === 0) { %>
+  <div class="card card-body text-center text-body-secondary">Niciun abonament nu se potrivește.</div>
+<% } else { %>
+  <p class="small text-body-secondary mb-2"><%= abonamente.length %> <%= abonamente.length === 1 ? 'abonament' : 'abonamente' %></p>
+
+  <div class="card shadow-sm d-none d-md-block">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Utilizator</th><th scope="col">Plan</th><th scope="col">Perioadă</th>
+            <th scope="col">Interval</th><th scope="col" class="text-end">Preț</th><th scope="col" class="text-end">Rest</th>
+            <th scope="col">Stare</th><th scope="col" class="text-end">Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% abonamente.forEach(function(a) { %>
+          <tr>
+            <td><span class="fw-semibold"><%= a.utilizator_nume %></span><br><span class="small text-body-secondary"><%= a.rolAfisat %></span></td>
+            <td><%= a.plan_nume %></td>
+            <td><%= a.perioadaAfisata %><%= a.reinnoire_automata ? ' ↻' : '' %></td>
+            <td class="small text-nowrap"><%= a.intervalAfisat %></td>
+            <td class="text-end text-nowrap"><%= a.pretAfisat %></td>
+            <td class="text-end text-nowrap <%= a.restDePlata > 0 && a.stare !== 'anulat' ? 'text-danger fw-semibold' : 'text-body-secondary' %>"><%= a.restDePlata > 0 ? a.restDePlataAfisat : '–' %></td>
+            <td>
+              <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+              <% if (a.expiraCurand) { %><span class="badge bg-warning-subtle text-warning-emphasis">expiră în <%= a.zileRamase %> <%= a.zileRamase === 1 ? 'zi' : 'zile' %></span><% } %>
+            </td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/admin/abonamente/<%= a.id %>">Detalii</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-md-none d-grid gap-3">
+    <% abonamente.forEach(function(a) { %>
+    <a class="card shadow-sm text-decoration-none text-body" href="/admin/abonamente/<%= a.id %>">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+          <h2 class="h6 mb-0"><%= a.utilizator_nume %></h2>
+          <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+        </div>
+        <p class="small text-body-secondary mb-0">
+          <%= a.plan_nume %> · <%= a.perioadaAfisata.toLowerCase() %> · <%= a.pretAfisat %><br>
+          <%= a.intervalAfisat %>
+          <% if (a.restDePlata > 0 && a.stare !== 'anulat') { %><br><span class="text-danger fw-semibold">Rest de plată: <%= a.restDePlataAfisat %></span><% } %>
+          <% if (a.expiraCurand) { %><br><span class="text-warning-emphasis">Expiră în <%= a.zileRamase %> <%= a.zileRamase === 1 ? 'zi' : 'zile' %></span><% } %>
+        </p>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('../../partials/footer') %>

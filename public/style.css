@@ -90,3 +90,9 @@ a { color: var(--rentify); }
 .lista-beneficii .neinclus .semn { color: var(--bs-secondary-color); }
 .nav-pills .nav-link.active { background-color: var(--rentify); }
 .nav-pills .nav-link { color: var(--rentify); }
+
+
+/* Bara de filtre de deasupra listelor */
+.bara-filtre .form-label { font-size: .8rem; margin-bottom: .25rem; color: var(--bs-secondary-color); }
+.latime-formular { max-width: 820px; }
+.latime-camp { max-width: 320px; }

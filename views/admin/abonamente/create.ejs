@@ -1,0 +1,115 @@
+<%- include('../../partials/header', { titluPagina: 'Abonament nou' }) %>
+<%
+  const areEroare = (camp) => Boolean(erori[camp]);
+  const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+  const grupuri = [
+    { rol: 'proprietar', eticheta: 'Proprietari', oameni: proprietari },
+    { rol: 'chirias', eticheta: 'Chiriași', oameni: chiriasi },
+  ];
+%>
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small mb-2">
+  <li class="breadcrumb-item"><a href="/admin/abonamente">Abonamente</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Nou</li>
+</ol></nav>
+<h1 class="h3 mb-3">Abonament nou</h1>
+
+<div class="card shadow-sm latime-formular">
+  <div class="card-body p-4">
+    <% if (Object.keys(erori).length > 0) { %>
+    <div class="alert alert-danger" role="alert">Verifică câmpurile marcate cu roșu.</div>
+    <% } %>
+
+    <form method="post" action="/admin/abonamente/create" novalidate>
+      <%- include('../../partials/csrf') %>
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <label for="utilizator_id" class="form-label">Utilizator</label>
+          <select class="form-select<%= clasaCamp('utilizator_id') %>" id="utilizator_id" name="utilizator_id" required>
+            <option value="">Alege…</option>
+            <% grupuri.forEach(function(g) { %>
+            <optgroup label="<%= g.eticheta %>">
+              <% g.oameni.forEach(function(o) { %>
+              <option value="<%= o.id %>" data-rol="<%= g.rol %>" <%= a.utilizator_id === o.id ? 'selected' : '' %>><%= o.prenume %> <%= o.nume %> (<%= o.email %>)</option>
+              <% }) %>
+            </optgroup>
+            <% }) %>
+          </select>
+          <% if (areEroare('utilizator_id')) { %><div class="invalid-feedback"><%= erori.utilizator_id %></div><% } %>
+          <div class="form-text">Doar conturile active. Conturile blocate nu pot primi abonament.</div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="plan_id" class="form-label">Plan</label>
+          <select class="form-select<%= clasaCamp('plan_id') %>" id="plan_id" name="plan_id" required>
+            <option value="">Alege…</option>
+            <% grupuri.forEach(function(g) { %>
+            <optgroup label="Pentru <%= g.eticheta.toLowerCase() %>" data-rol="<%= g.rol %>">
+              <% planuriPeRol[g.rol].forEach(function(p) { %>
+              <option value="<%= p.id %>" <%= a.plan_id === p.id ? 'selected' : '' %>>
+                <%= p.nume %> – <%= Number(p.pret_lunar) === 0 ? 'gratuit' : lei(p.pret_lunar) + '/lună · ' + lei(p.pret_anual) + '/an' %>
+              </option>
+              <% }) %>
+            </optgroup>
+            <% }) %>
+          </select>
+          <% if (areEroare('plan_id')) { %><div class="invalid-feedback"><%= erori.plan_id %></div><% } %>
+        </div>
+
+        <div class="col-md-6">
+          <span class="form-label d-block">Perioadă</span>
+          <div class="btn-group w-100" role="group" aria-label="Perioadă">
+            <% Object.keys(perioade).forEach(function(cod) { %>
+            <input type="radio" class="btn-check" name="perioada" id="perioada_<%= cod %>" value="<%= cod %>" <%= a.perioada === cod ? 'checked' : '' %>>
+            <label class="btn btn-outline-primary" for="perioada_<%= cod %>"><%= perioade[cod] %></label>
+            <% }) %>
+          </div>
+          <% if (areEroare('perioada')) { %><div class="text-danger small mt-1"><%= erori.perioada %></div><% } %>
+        </div>
+
+        <div class="col-md-6">
+          <label for="data_inceput" class="form-label">Începe pe</label>
+          <input type="date" class="form-control<%= clasaCamp('data_inceput') %>" id="data_inceput" name="data_inceput" value="<%= a.data_inceput %>" required aria-describedby="ajutor_data">
+          <% if (areEroare('data_inceput')) { %><div class="invalid-feedback"><%= erori.data_inceput %></div><% } %>
+          <div id="ajutor_data" class="form-text">Se termină automat după o lună sau un an. Prețul se ia din plan și rămâne fix.</div>
+        </div>
+
+        <div class="col-12">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="reinnoire_automata" name="reinnoire_automata" <%= a.reinnoire_automata ? 'checked' : '' %>>
+            <label class="form-check-label" for="reinnoire_automata">Reînnoire automată la final</label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <fieldset class="border rounded p-3">
+            <legend class="float-none w-auto px-2 fs-6 mb-0">Plata</legend>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="plata_acum" name="plata_acum" <%= a.plata_acum ? 'checked' : '' %>>
+              <label class="form-check-label" for="plata_acum">A plătit acum suma întreagă</label>
+            </div>
+            <div id="bloc_metoda" class="mt-2 latime-camp">
+              <label for="metoda" class="form-label">Metoda</label>
+              <select class="form-select<%= clasaCamp('metoda') %>" id="metoda" name="metoda">
+                <% Object.keys(metode).forEach(function(cod) { %>
+                <option value="<%= cod %>" <%= a.metoda === cod ? 'selected' : '' %>><%= metode[cod] %></option>
+                <% }) %>
+              </select>
+              <% if (areEroare('metoda')) { %><div class="invalid-feedback"><%= erori.metoda %></div><% } %>
+            </div>
+            <div class="form-text">Dacă nu bifezi, abonamentul apare „Neplătit” și poți adăuga plata mai târziu, din pagina lui. Planurile gratuite nu au nevoie de plată.</div>
+          </fieldset>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">Creează abonamentul</button>
+        <a class="btn btn-outline-secondary" href="/admin/abonamente">Renunță</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/abonament-nou.js"></script>
+<%- include('../../partials/footer') %>

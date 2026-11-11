@@ -11,6 +11,7 @@ model abonament {
   utilizator_id      Int
   plan_id            Int
   perioada           String            @db.VarChar(10)
+  pret               Decimal           @default(0) @db.Decimal(8, 2)
   data_inceput       DateTime          @db.Date
   data_sfarsit       DateTime          @db.Date
   reinnoire_automata Boolean           @default(false)
@@ -20,6 +21,9 @@ model abonament {
   plan_abonament     plan_abonament    @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   utilizator         utilizator        @relation(fields: [utilizator_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   plata_abonament    plata_abonament[]
+
+  @@index([utilizator_id])
+  @@index([plan_id])
 }
 
 model anunt {
@@ -156,6 +160,9 @@ model jurnal_admin {
   detalii     String?
   creat_la    DateTime   @default(now()) @db.Timestamp(6)
   utilizator  utilizator @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([creat_la])
+  @@index([entitate, entitate_id])
 }
 
 model limita_plan {
@@ -239,6 +246,7 @@ model plata {
   referinta_externa String?   @db.VarChar(100)
   creat_la          DateTime  @default(now()) @db.Timestamp(6)
   obligatie         obligatie @relation(fields: [obligatie_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
 }
 
 model plata_abonament {
@@ -251,6 +259,8 @@ model plata_abonament {
   stare        String    @default("reusita") @db.VarChar(20)
   referinta    String?   @db.VarChar(100)
   abonament    abonament @relation(fields: [abonament_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([abonament_id])
 }
 
 model proprietate {
