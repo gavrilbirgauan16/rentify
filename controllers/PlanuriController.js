@@ -2,6 +2,7 @@
 const PlanAccessor = require('../src/NivelAccesDate/PlanAccessor');
 const PlanViewModel = require('../models/PlanViewModel');
 const { citesteId, negasit, mesajFlash } = require('../utils/http');
+const { noteaza } = require('../servicii/jurnal');
 
 const planuri = new PlanAccessor();
 
@@ -36,6 +37,7 @@ async function createPost(req, res) {
     return res.status(400).render('admin/planuri/create', { p: model, erori, ...dateFormular(rol) });
   }
   const nou = await planuri.addEntity(rol, model.catreEntitate(), model.catreLimite());
+  await noteaza(res, 'creare', 'plan', nou.id, nou.nume);
   mesajFlash(req, `Planul „${nou.nume}” a fost adăugat.`);
   res.redirect(`/admin/planuri?rol=${rol}`);
 }
@@ -64,6 +66,7 @@ async function editPost(req, res) {
     return res.status(400).render('admin/planuri/edit', { p: model, erori, ...dateFormular(rol) });
   }
   await planuri.updateEntity(id, model.catreEntitate(), model.catreLimite());
+  await noteaza(res, 'modificare', 'plan', id, model.nume);
   mesajFlash(req, `Planul „${model.nume}” a fost modificat.`);
   res.redirect(`/admin/planuri?rol=${rol}`);
 }
@@ -74,6 +77,7 @@ async function schimbaActiv(req, res, activ) {
   const entitate = id && (await planuri.getById(id));
   if (!entitate) return planNegasit(res);
   await planuri.schimbaActiv(id, activ);
+  await noteaza(res, activ ? 'activare' : 'dezactivare', 'plan', id, entitate.nume);
   const nota = !activ && entitate._count.abonament > 0 ? ' Abonații actuali îl păstrează până la expirare, dar nimeni nu-l mai poate alege.' : '';
   mesajFlash(req, `Planul „${entitate.nume}” a fost ${activ ? 'activat' : 'dezactivat'}.${nota}`);
   res.redirect(`/admin/planuri?rol=${entitate.rol.nume}`);

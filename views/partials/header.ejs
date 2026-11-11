@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="bg-body-tertiary">
-  <nav class="navbar navbar-expand-lg navbar-dark bara-rentify">
+  <nav class="navbar navbar-expand-xl navbar-dark bara-rentify">
     <div class="container-fluid px-3 px-md-4 px-xl-5">
       <a class="navbar-brand fw-semibold" href="/">Rentify<% if (utilizator && utilizator.rol === 'admin') { %> <span class="fw-normal opacity-75">Admin</span><% } %></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#meniu"
@@ -21,11 +21,13 @@
           // Meniul depinde de rol. Sectiunile fara adresa (href: null) nu sunt gata inca.
           const meniuri = {
             admin: [
+              { cheie: 'panou', text: 'Panou', href: '/admin' },
               { cheie: 'proprietati', text: 'Proprietăți', href: '/admin/proprietati' },
               { cheie: 'anunturi', text: 'Anunțuri', href: '/admin/anunturi' },
-              { cheie: 'planuri', text: 'Planuri', href: '/admin/planuri' },
-              { cheie: 'abonamente', text: 'Abonamente', href: '/admin/abonamente' },
               { cheie: 'utilizatori', text: 'Utilizatori', href: '/admin/utilizatori' },
+              { cheie: 'abonamente', text: 'Abonamente', href: '/admin/abonamente' },
+              { cheie: 'planuri', text: 'Planuri', href: '/admin/planuri' },
+              { cheie: 'jurnal', text: 'Jurnal', href: '/admin/jurnal' },
             ],
           };
           const meniu = utilizator ? meniuri[utilizator.rol] || [] : [];
@@ -45,26 +47,34 @@
           <% }) %>
         </ul>
 
+        <% if (utilizator && utilizator.rol === 'admin') { %>
+        <!-- Cautarea rapida: utilizatori, proprietati, anunturi -->
+        <form class="d-flex ms-xl-3 my-2 my-xl-0" role="search" method="get" action="/admin/cautare">
+          <input class="form-control form-control-sm cautare-antet" type="search" name="q" placeholder="Caută…" aria-label="Caută în utilizatori, proprietăți și anunțuri">
+        </form>
+        <% } %>
+
         <!-- Contul: numele si iesirea (sau linkul de autentificare) -->
-        <div class="d-lg-flex align-items-center ms-lg-4 pt-2 pt-lg-0 border-top cont-bara">
+        <div class="d-xl-flex align-items-center ms-xl-3 pt-2 pt-xl-0 border-top cont-bara">
           <% if (utilizator) { %>
-            <span class="navbar-text me-lg-2 d-block d-lg-inline small text-nowrap">
+            <span class="navbar-text me-xl-2 d-block d-xl-inline small text-nowrap">
               <%= utilizator.nume %> <span class="opacity-75">(<%= utilizator.rol %>)</span>
             </span>
-            <a class="btn btn-sm btn-link link-light link-opacity-75 link-opacity-100-hover px-0 me-3 text-nowrap" href="/cont/parola">Schimbă parola</a>
+            <a class="btn btn-sm btn-link link-light link-opacity-75 link-opacity-100-hover px-0 me-xl-3 text-nowrap" href="/cont/parola">Schimbă parola</a>
             <form method="post" action="/iesire" class="d-inline">
               <%- include('csrf') %>
-              <button type="submit" class="btn btn-sm btn-outline-light my-2 my-lg-0">Ieșire</button>
+              <button type="submit" class="btn btn-sm btn-outline-light my-2 my-xl-0">Ieșire</button>
             </form>
           <% } else if (curenta !== 'autentificare') { %>
-            <a class="btn btn-sm btn-outline-light my-2 my-lg-0" href="/autentificare">Autentificare</a>
+            <a class="btn btn-sm btn-outline-light my-2 my-xl-0" href="/autentificare">Autentificare</a>
           <% } %>
         </div>
       </div>
     </div>
   </nav>
 
-  <main class="container py-4">
+  <!-- Adminul lucreaza cu tabele mari: zona de continut e mai lata (dar nu nelimitata) -->
+  <main class="<%= utilizator && utilizator.rol === 'admin' ? 'container-fluid container-admin' : 'container' %> py-4">
     <% if (mesaj) { %>
     <div class="alert alert-<%= tipMesaj %> alert-dismissible fade show" role="alert">
       <%= mesaj %>

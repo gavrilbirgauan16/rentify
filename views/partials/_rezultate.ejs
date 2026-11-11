@@ -1,0 +1,13 @@
+<%# Randul de deasupra listei: "21–40 din 45 proprietăți".
+    Primeste: pag, singular, plural (stergerea filtrelor e in formular) %>
+<div class="d-flex flex-wrap align-items-center gap-2 small text-body-secondary mb-2">
+  <span>
+    <% if (pag.total === 0) { %>
+      Niciun rezultat
+    <% } else if (pag.totalPagini > 1) { %>
+      <%= pag.de %>–<%= pag.pana %> din <strong><%= pag.total %></strong> <%= pag.total === 1 ? singular : plural %>
+    <% } else { %>
+      <strong><%= pag.total %></strong> <%= pag.total === 1 ? singular : plural %>
+    <% } %>
+  </span>
+</div>

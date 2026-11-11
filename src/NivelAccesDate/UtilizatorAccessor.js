@@ -22,7 +22,7 @@ class UtilizatorAccessor {
 
   // Lista cu filtre: rol, stare ('activ'/'blocat') si cautare (nume, prenume, email, telefon).
   // Aducem si cate proprietati active are fiecare (pentru limita din plan). Fara parola!
-  async cauta({ rol, stare, cautare } = {}) {
+  async cauta({ rol, stare, cautare } = {}, orderBy = [{ nume: 'asc' }, { prenume: 'asc' }]) {
     const where = {};
     if (rol) where.rol = { nume: rol };
     if (stare) where.stare = stare;
@@ -31,8 +31,17 @@ class UtilizatorAccessor {
       where,
       omit: { parola_hash: true },
       include: { rol: { select: { nume: true } }, _count: { select: { proprietate: { where: { NOT: { stare: 'inactiv' } } } } } },
-      orderBy: [{ nume: 'asc' }, { prenume: 'asc' }],
+      orderBy,
     });
+  }
+
+  // Cati utilizatori are fiecare rol si cati sunt blocati (pentru panou).
+  async statistici() {
+    const [peRol, blocati] = await Promise.all([
+      context.rol.findMany({ select: { nume: true, _count: { select: { utilizator: true } } } }),
+      context.utilizator.count({ where: { stare: 'blocat' } }),
+    ]);
+    return { peRol: Object.fromEntries(peRol.map((r) => [r.nume, r._count.utilizator])), blocati };
   }
 
   // Utilizatorul cu un anumit email, cu rolul lui (la autentificare).

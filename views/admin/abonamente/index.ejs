@@ -5,14 +5,18 @@
   <a class="btn btn-primary" href="/admin/abonamente/create">+ Abonament nou</a>
 </div>
 
-<!-- Filtre: se trimit in adresa (GET), deci pagina filtrata poate fi salvata sau trimisa -->
-<form method="get" class="card card-body shadow-sm mb-3 bara-filtre">
+<!-- Filtre: se trimit in adresa (GET), deci lista filtrata poate fi salvata sau trimisa -->
+<%
+  const avansate = filtre.plan || filtre.perioada || filtre.expira;
+  const sortari = { noi: 'Începute recent', sfarsit: 'Se termină primele', pret: 'Preț descrescător' };
+%>
+<form method="get" class="card card-body shadow-sm mb-3 bara-filtre" role="search" aria-label="Filtrează abonamentele">
   <div class="row g-2 align-items-end">
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-4">
       <label for="q" class="form-label">Caută utilizator</label>
       <input type="search" class="form-control" id="q" name="q" value="<%= filtre.q %>" placeholder="nume sau email">
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-lg-2">
       <label for="rol" class="form-label">Rol</label>
       <select class="form-select" id="rol" name="rol">
         <option value="">Toate</option>
@@ -20,7 +24,7 @@
         <option value="chirias" <%= filtre.rol === 'chirias' ? 'selected' : '' %>>Chiriași</option>
       </select>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-4 col-lg-3">
       <label for="stare" class="form-label">Stare</label>
       <select class="form-select" id="stare" name="stare">
         <option value="">Toate</option>
@@ -29,17 +33,59 @@
         <% }) %>
       </select>
     </div>
-    <div class="col-12 col-md-2 d-grid d-md-flex gap-2">
-      <button type="submit" class="btn btn-outline-primary flex-fill">Filtrează</button>
-      <% if (filtre.q || filtre.rol || filtre.stare) { %><a class="btn btn-link px-1" href="/admin/abonamente">Șterge</a><% } %>
+    <div class="col-12 col-md-4 col-lg-3">
+      <label for="sort" class="form-label">Sortează</label>
+      <select class="form-select" id="sort" name="sort">
+        <% Object.keys(sortari).forEach(function(k) { %><option value="<%= k %>" <%= filtre.sort === k ? 'selected' : '' %>><%= sortari[k] %></option><% }) %>
+      </select>
     </div>
+  </div>
+
+  <div class="collapse <%= avansate ? 'show' : '' %>" id="filtreAvansate">
+    <div class="row g-2 align-items-end mt-0 pt-2">
+      <div class="col-12 col-md-4">
+        <label for="plan" class="form-label">Plan</label>
+        <select class="form-select" id="plan" name="plan">
+          <option value="">Toate</option>
+          <% ['proprietar', 'chirias'].forEach(function(rol) { %>
+          <optgroup label="<%= rol === 'proprietar' ? 'Proprietari' : 'Chiriași' %>">
+            <% planuri.filter(function(p) { return p.rol.nume === rol; }).forEach(function(p) { %>
+            <option value="<%= p.id %>" <%= filtre.plan === p.id ? 'selected' : '' %>><%= p.nume %><%= p.activ ? '' : ' (inactiv)' %></option>
+            <% }) %>
+          </optgroup>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <label for="perioada" class="form-label">Perioadă</label>
+        <select class="form-select" id="perioada" name="perioada">
+          <option value="">Oricare</option>
+          <% Object.keys(perioade).forEach(function(cod) { %><option value="<%= cod %>" <%= filtre.perioada === cod ? 'selected' : '' %>><%= perioade[cod] %></option><% }) %>
+        </select>
+      </div>
+      <div class="col-6 col-md-4">
+        <label for="expira" class="form-label">Expiră în</label>
+        <select class="form-select" id="expira" name="expira">
+          <option value="">Oricând</option>
+          <option value="7" <%= filtre.expira === '7' ? 'selected' : '' %>>următoarele 7 zile</option>
+          <option value="30" <%= filtre.expira === '30' ? 'selected' : '' %>>următoarele 30 de zile</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <button type="submit" class="btn btn-primary">Filtrează</button>
+    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#filtreAvansate" aria-expanded="<%= avansate ? 'true' : 'false' %>" aria-controls="filtreAvansate">Mai multe filtre</button>
+    <% if (areFiltre) { %><a class="btn btn-link" href="/admin/abonamente">Șterge filtrele</a><% } %>
   </div>
 </form>
 
+<%- include('../../partials/_rezultate', { singular: 'abonament', plural: 'abonamente' }) %>
+
 <% if (abonamente.length === 0) { %>
-  <div class="card card-body text-center text-body-secondary">Niciun abonament nu se potrivește.</div>
+  <div class="card card-body text-center text-body-secondary"><%= areFiltre ? 'Niciun abonament nu se potrivește filtrelor.' : 'Nu există încă niciun abonament.' %></div>
 <% } else { %>
-  <p class="small text-body-secondary mb-2"><%= abonamente.length %> <%= abonamente.length === 1 ? 'abonament' : 'abonamente' %></p>
 
   <div class="card shadow-sm d-none d-md-block">
     <div class="table-responsive">
@@ -91,5 +137,7 @@
     <% }) %>
   </div>
 <% } %>
+
+<%- include('../../partials/_paginare') %>
 
 <%- include('../../partials/footer') %>

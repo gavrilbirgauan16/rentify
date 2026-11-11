@@ -1,0 +1,14 @@
+<%# Lista cu ce s-a facut pe o inregistrare (din jurnal_admin). Primeste: istoric %>
+<% const ACT = { creare: 'Creat', modificare: 'Modificat', activare: 'Activat', dezactivare: 'Dezactivat', anulare: 'Anulat', plata: 'Plată înregistrată', blocare: 'Blocat', deblocare: 'Deblocat', resetare_parola: 'Parolă resetată' }; %>
+<% if (istoric.length === 0) { %>
+  <p class="small text-body-secondary mb-0">Nicio acțiune înregistrată încă.</p>
+<% } else { %>
+  <ul class="istoric small">
+    <% istoric.forEach(function(r) { %>
+    <li>
+      <span class="fw-semibold"><%= ACT[r.actiune] || r.actiune %></span><% if (r.detalii) { %> – <%= r.detalii %><% } %><br>
+      <span class="text-body-secondary"><%= new Date(r.creat_la).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }) %> · <%= r.utilizator.prenume %> <%= r.utilizator.nume %></span>
+    </li>
+    <% }) %>
+  </ul>
+<% } %>

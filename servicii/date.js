@@ -41,4 +41,14 @@ const afiseaza = (text) => (text ? catreDate(text).toLocaleDateString('ro-RO', {
 // Prima zi a lunii curente (pentru "incasari luna aceasta").
 const inceputLuna = (text = azi()) => `${text.slice(0, 7)}-01`;
 
-module.exports = { azi, eDataValida, catreDate, dinDate, adunaZile, adunaLuni, sfarsitPerioada, zileIntre, afiseaza, inceputLuna };
+// Momentul exact (UTC) in care incepe o zi in Romania, ex. '2026-11-10' -> 2026-11-09T22:00:00Z (iarna, UTC+2)
+// sau '2026-07-10' -> 2026-07-09T21:00:00Z (vara, UTC+3). Folosit la filtrele pe zile ale orelor salvate in UTC.
+const PARTI_RO = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Bucharest', hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+function inceputZiRomania(text) {
+  const utc = catreDate(text);
+  const p = Object.fromEntries(PARTI_RO.formatToParts(utc).map((x) => [x.type, Number(x.value)]));
+  const decalaj = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute) - utc.getTime();
+  return new Date(utc.getTime() - decalaj);
+}
+
+module.exports = { inceputZiRomania, azi, eDataValida, catreDate, dinDate, adunaZile, adunaLuni, sfarsitPerioada, zileIntre, afiseaza, inceputLuna };

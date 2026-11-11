@@ -64,12 +64,15 @@ class AnuntViewModel {
     this.proprietate_stare = date.proprietate_stare ?? '';
     this.proprietate_max_locatari = date.proprietate_max_locatari ?? 1;
     this.proprietar_nume = date.proprietar_nume ?? '';
+    this.proprietar_id = date.proprietar_id ?? null;
+    this.creat_la = date.creat_la ?? null;
     this.proprietar_telefon = date.proprietar_telefon ?? '';
     // imaginile anuntului (din tabelul fisier): [{ id, url, nume }]
     this.imagini = date.imagini ?? [];
   }
 
   // Texte si culori pentru afisare.
+  get creatLaAfisat() { return this.creat_la ? new Date(this.creat_la).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }) : '–'; }
   get tipAfisat() { return ETICHETE_TIP[this.tip] || this.tip; }
   get stareAfisata() { return ETICHETE_STARE[this.stare] || this.stare; }
   get culoareStare() { return CULORI_STARE[this.stare] || 'secondary'; }
@@ -123,6 +126,8 @@ class AnuntViewModel {
       proprietate_stare: p ? p.stare : '',
       proprietate_max_locatari: p ? p.max_locatari : 1,
       proprietar_nume: p && p.utilizator ? `${p.utilizator.prenume} ${p.utilizator.nume}` : '',
+      proprietar_id: p ? p.proprietar_id : null,
+      creat_la: a.creat_la ?? null,
       proprietar_telefon: p && p.utilizator ? p.utilizator.telefon ?? '' : '',
       imagini: imagini.map((f) => ({ id: f.id, url: f.cale, nume: f.nume_fisier })),
     });

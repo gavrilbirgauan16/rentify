@@ -10,17 +10,9 @@ const CU_DETALII = {
 };
 
 class AbonamentAccessor {
-  // Lista, cu filtre optionale: rol ('proprietar'/'chirias') si cautare dupa nume / email.
-  async getAll({ rol, cautare } = {}) {
-    const where = {};
-    if (rol) where.utilizator = { rol: { nume: rol } };
-    if (cautare) {
-      where.utilizator = {
-        ...where.utilizator,
-        OR: ['nume', 'prenume', 'email'].map((camp) => ({ [camp]: { contains: cautare, mode: 'insensitive' } })),
-      };
-    }
-    return context.abonament.findMany({ where, include: CU_DETALII, orderBy: [{ data_inceput: 'desc' }, { id: 'desc' }] });
+  // Lista filtrata (admin). where si orderBy vin din controller, din filtrele alese.
+  async getLista(where, orderBy) {
+    return context.abonament.findMany({ where, include: CU_DETALII, orderBy });
   }
 
   async getById(id) {

@@ -4,10 +4,64 @@ const AnuntAccessor = require('../src/NivelAccesDate/AnuntAccessor');
 const ProprietateAccessor = require('../src/NivelAccesDate/ProprietateAccessor');
 const AnuntViewModel = require('../models/AnuntViewModel');
 const { stergeFisiere, MAX_IMAGINI, MAX_MB } = require('../middleware/incarcareImagini');
-const { citesteId, negasit, mesajFlash } = require('../utils/http');
+const { citesteId, negasit, mesajFlash, adresaInapoi } = require('../utils/http');
+const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
+const F = require('../servicii/filtre');
+const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
+const { noteaza } = require('../servicii/jurnal');
 
 const anunturi = new AnuntAccessor();
 const proprietati = new ProprietateAccessor();
+const utilizatori = new UtilizatorAccessor();
+const jurnal = new JurnalAccessor();
+
+// Unde ne intoarcem dupa Activeaza / Dezactiveaza (lista cu filtrele ei sau pagina anuntului).
+const inapoi = (req) => adresaInapoi(req, '/admin/anunturi');
+
+// Filtrele listei de anunturi si sortarile.
+const FILTRE = {
+  q: { tip: 'text' },
+  tip: { tip: 'enum', valori: AnuntViewModel.TIPURI },
+  stare: { tip: 'enum', valori: AnuntViewModel.STARI },
+  oras: { tip: 'text' },
+  proprietar: { tip: 'id' },
+  proprietate: { tip: 'id' },
+  pret_min: { tip: 'numar' },
+  pret_max: { tip: 'numar' },
+  promovat: { tip: 'enum', valori: ['da', 'nu'] },
+  problema: { tip: 'enum', valori: ['proprietate_inactiva', 'fara_disponibilitate'] },
+  sort: { tip: 'enum', valori: ['noi', 'vechi', 'pret_asc', 'pret_desc', 'titlu'], implicit: 'noi' },
+};
+const SORTARI = {
+  noi: [{ creat_la: 'desc' }, { id: 'desc' }],
+  vechi: [{ creat_la: 'asc' }, { id: 'asc' }],
+  pret_asc: [{ pret: 'asc' }, { id: 'desc' }],
+  pret_desc: [{ pret: 'desc' }, { id: 'desc' }],
+  titlu: [{ titlu: 'asc' }],
+};
+const PE_PAGINA = 20;
+
+// Filtrele alese -> conditia pentru baza de date (Prisma "where").
+function conditie(f) {
+  const where = {};
+  const prop = {};
+  if (f.q) where.OR = F.contineText(['titlu', 'descriere', 'proprietate.denumire', 'proprietate.oras'], f.q);
+  if (f.tip) where.tip = f.tip;
+  if (f.stare) where.stare = f.stare;
+  if (f.proprietate) where.proprietate_id = f.proprietate;
+  if (f.pret_min !== '' || f.pret_max !== '') {
+    where.pret = {};
+    if (f.pret_min !== '') where.pret.gte = f.pret_min;
+    if (f.pret_max !== '') where.pret.lte = f.pret_max;
+  }
+  if (f.promovat) where.promovat = f.promovat === 'da';
+  if (f.oras) prop.oras = { equals: f.oras, mode: 'insensitive' };
+  if (f.proprietar) prop.proprietar_id = f.proprietar;
+  if (f.problema === 'proprietate_inactiva') prop.stare = 'inactiv';
+  if (f.problema === 'fara_disponibilitate') where.disponibil_de_la = null;
+  if (Object.keys(prop).length) where.proprietate = prop;
+  return where;
+}
 
 // Pagina 404 pentru un anunt care nu exista.
 const anuntNegasit = (res) => negasit(res, 'Anunțul nu există', 'Anunțul căutat nu a fost găsit.');
@@ -67,10 +121,37 @@ function verificaImaginile(req, numarRamase, erori) {
 
 // GET /admin/anunturi - lista anunturilor, cu date din anunt, proprietate, proprietar si imagini
 async function index(req, res) {
-  const entitati = await anunturi.getAll();
+  const f = F.citesteFiltre(req.query, FILTRE);
+  const where = conditie(f);
+  const pag = F.paginare(await anunturi.numara(where), f.pagina, PE_PAGINA);
+  const [entitati, orase, proprietari, proprietateAleasa] = await Promise.all([
+    anunturi.getPagina(where, SORTARI[f.sort], pag),
+    proprietati.getOrase(),
+    utilizatori.getByRol('proprietar'),
+    f.proprietate ? proprietati.getById(f.proprietate) : null,
+  ]);
   const imagini = await anunturi.getImagini(entitati.map((a) => a.id));
-  const lista = entitati.map((a) => AnuntViewModel.dinEntitate(a, imagini.filter((f) => f.entitate_id === a.id)));
-  res.render('admin/anunturi/index', { anunturi: lista });
+  const lista = entitati.map((a) => AnuntViewModel.dinEntitate(a, imagini.filter((img) => img.entitate_id === a.id)));
+  res.render('admin/anunturi/index', {
+    anunturi: lista,
+    ...F.pentruPagina('/admin/anunturi', f, FILTRE, pag),
+    orase,
+    proprietari,
+    proprietateAleasa,
+    tipuri: AnuntViewModel.TIPURI,
+    stari: AnuntViewModel.STARI,
+    eticheteTip: AnuntViewModel.ETICHETE_TIP,
+    eticheteStare: AnuntViewModel.ETICHETE_STARE,
+  });
+}
+
+// GET /admin/anunturi/:id - pagina unui anunt (aceleasi detalii ca fereastra din lista + istoricul)
+async function details(req, res) {
+  const id = citesteId(req);
+  const entitate = id && (await anunturi.getById(id));
+  if (!entitate) return anuntNegasit(res);
+  const [imagini, istoric] = await Promise.all([anunturi.getImagini([id]), jurnal.getPentru('anunt', id)]);
+  res.render('admin/anunturi/details', { a: AnuntViewModel.dinEntitate(entitate, imagini), istoric });
 }
 
 // GET /admin/anunturi/create - formularul gol
@@ -92,6 +173,7 @@ async function createPost(req, res) {
     return res.status(400).render('admin/anunturi/create', { a: model, erori, ...date });
   }
   const nou = await anunturi.addEntity(model.catreEntitate(), imagini, res.locals.utilizator.id); // cine a incarcat pozele
+  await noteaza(res, 'creare', 'anunt', nou.id, nou.titlu);
   mesajFlash(req, `Anunțul „${nou.titlu}” a fost adăugat.`);
   res.redirect('/admin/anunturi'); // Post/Redirect/Get
 }
@@ -133,6 +215,7 @@ async function editPost(req, res) {
   }
   const { caiSterse } = await anunturi.updateEntity(id, model.catreEntitate(), imaginiNoi, deSters, res.locals.utilizator.id);
   stergeFisiere(caiSterse); // imaginile sterse dispar si de pe disc
+  await noteaza(res, 'modificare', 'anunt', id, model.titlu);
   mesajFlash(req, `Anunțul „${model.titlu}” a fost modificat.`);
   res.redirect('/admin/anunturi');
 }
@@ -144,11 +227,12 @@ async function activeaza(req, res) {
   if (!entitate) return anuntNegasit(res);
   if (entitate.proprietate.stare === 'inactiv') {
     mesajFlash(req, `Anunțul nu poate fi activat: proprietatea „${entitate.proprietate.denumire}” este inactivă. Activează întâi proprietatea.`, 'warning');
-    return res.redirect('/admin/anunturi');
+    return res.redirect(inapoi(req));
   }
   await anunturi.schimbaStare(id, 'activ');
+  await noteaza(res, 'activare', 'anunt', id, entitate.titlu);
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost activat.`);
-  res.redirect('/admin/anunturi');
+  res.redirect(inapoi(req));
 }
 
 // POST /admin/anunturi/:id/dezactiveaza - butonul Dezactiveaza
@@ -157,8 +241,9 @@ async function dezactiveaza(req, res) {
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
   await anunturi.schimbaStare(id, 'inactiv');
+  await noteaza(res, 'dezactivare', 'anunt', id, entitate.titlu);
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost dezactivat.`);
-  res.redirect('/admin/anunturi');
+  res.redirect(inapoi(req));
 }
 
-module.exports = { index, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, verificaProprietatea };
+module.exports = { index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, verificaProprietatea };

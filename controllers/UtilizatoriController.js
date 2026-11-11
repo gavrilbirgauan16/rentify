@@ -6,31 +6,63 @@ const UtilizatorViewModel = require('../models/UtilizatorViewModel');
 const AbonamentViewModel = require('../models/AbonamentViewModel');
 const { hashParola, genereazaParolaTemporara } = require('../servicii/parole');
 const { citesteId, negasit, mesajFlash } = require('../utils/http');
+const F = require('../servicii/filtre');
 const { azi } = require('../servicii/date');
+const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
+const { noteaza } = require('../servicii/jurnal');
 
 const utilizatori = new UtilizatorAccessor();
 const abonamente = new AbonamentAccessor();
+const jurnal = new JurnalAccessor();
 
 const utilizatorNegasit = (res) => negasit(res, 'Utilizatorul nu există', 'Utilizatorul căutat nu a fost găsit.');
 
-// Filtrele din adresa (?rol=&stare=&q=), curatate: orice valoare necunoscuta e ignorata.
-function filtreDin(query) {
-  return {
-    rol: UtilizatorViewModel.ROLURI[query.rol] ? query.rol : '',
-    stare: UtilizatorViewModel.STARI[query.stare] ? query.stare : '',
-    q: String(query.q ?? '').trim().slice(0, 100),
-  };
-}
+// Filtrele listei de utilizatori si sortarile.
+const SITUATII = {
+  peste_limita: 'Proprietari peste limita planului',
+  fara_abonament: 'Fără abonament în curs',
+  neplatit: 'Abonament neplătit',
+  parola_temporara: 'Parolă temporară nefolosită',
+};
+const FILTRE = {
+  q: { tip: 'text' },
+  rol: { tip: 'enum', valori: Object.keys(UtilizatorViewModel.ROLURI) },
+  stare: { tip: 'enum', valori: Object.keys(UtilizatorViewModel.STARI) },
+  situatie: { tip: 'enum', valori: Object.keys(SITUATII) },
+  sort: { tip: 'enum', valori: ['nume', 'noi', 'conectare'], implicit: 'nume' },
+};
+const SORTARI = {
+  nume: [{ nume: 'asc' }, { prenume: 'asc' }],
+  noi: [{ creat_la: 'desc' }, { id: 'desc' }],
+  conectare: [{ ultima_autentificare: { sort: 'desc', nulls: 'last' } }, { nume: 'asc' }],
+};
+const PE_PAGINA = 25;
+
+// Situatiile "de verificat" se calculeaza din abonamentul curent si proprietati.
+const SE_POTRIVESTE = {
+  peste_limita: (u) => Boolean(u.situatieProprietati?.depaseste),
+  fara_abonament: (u) => u.areAbonamente && !u.abonament,
+  neplatit: (u) => u.abonament?.stareCod() === 'neplatit',
+  parola_temporara: (u) => u.areParolaTemporara,
+};
 
 // GET /admin/utilizatori
 async function index(req, res) {
-  const filtre = filtreDin(req.query);
-  const entitati = await utilizatori.cauta({ rol: filtre.rol, stare: filtre.stare, cautare: filtre.q });
+  const f = F.citesteFiltre(req.query, FILTRE);
+  const entitati = await utilizatori.cauta({ rol: f.rol, stare: f.stare, cautare: f.q }, SORTARI[f.sort]);
   // Abonamentele curente le aducem pe toate dintr-o singura interogare (nu cate una pentru fiecare utilizator).
   const curente = await abonamente.getCurente(entitati.map((u) => u.id), azi());
   const peUtilizator = new Map(curente.map((a) => [a.utilizator_id, a]));
-  const lista = entitati.map((u) => new UtilizatorViewModel(u, peUtilizator.get(u.id) ?? null));
-  res.render('admin/utilizatori/index', { utilizatori: lista, filtre, roluri: UtilizatorViewModel.ROLURI, stari: UtilizatorViewModel.STARI });
+  let lista = entitati.map((u) => new UtilizatorViewModel(u, peUtilizator.get(u.id) ?? null));
+  if (f.situatie) lista = lista.filter(SE_POTRIVESTE[f.situatie]);
+  const pag = F.paginareLista(lista, f.pagina, PE_PAGINA);
+  res.render('admin/utilizatori/index', {
+    utilizatori: pag.randuri,
+    ...F.pentruPagina('/admin/utilizatori', f, FILTRE, pag),
+    roluri: UtilizatorViewModel.ROLURI,
+    stari: UtilizatorViewModel.STARI,
+    situatii: SITUATII,
+  });
 }
 
 // GET /admin/utilizatori/:id
@@ -38,10 +70,15 @@ async function details(req, res) {
   const id = citesteId(req);
   const entitate = id && (await utilizatori.getDetalii(id));
   if (!entitate) return utilizatorNegasit(res);
-  const [toate, curente] = await Promise.all([abonamente.getByUtilizator(id), abonamente.getCurente([id], azi())]);
+  const [toate, curente, istoric] = await Promise.all([
+    abonamente.getByUtilizator(id),
+    abonamente.getCurente([id], azi()),
+    jurnal.getPentru('utilizator', id, 10),
+  ]);
   res.render('admin/utilizatori/details', {
     u: new UtilizatorViewModel(entitate, curente[0] ?? null),
     abonamente: toate.map(AbonamentViewModel.dinEntitate),
+    istoric,
   });
 }
 
@@ -69,6 +106,7 @@ async function schimbaStare(req, res, stare) {
   if (!u) return;
   if (u.stare !== stare) {
     await utilizatori.schimbaStare(u.id, stare);
+    await noteaza(res, stare === 'blocat' ? 'blocare' : 'deblocare', 'utilizator', u.id, u.numeComplet);
     mesajFlash(req, stare === 'blocat'
       ? `Contul lui ${u.numeComplet} a fost blocat. Dacă era conectat, este deconectat imediat.`
       : `Contul lui ${u.numeComplet} a fost deblocat.`);
@@ -85,6 +123,7 @@ async function reseteazaParola(req, res) {
   const parola = genereazaParolaTemporara();
   await utilizatori.seteazaParola(u.id, await hashParola(parola), { temporara: true });
   await utilizatori.inchideSesiunile(u.id);
+  await noteaza(res, 'resetare_parola', 'utilizator', u.id, u.numeComplet); // parola NU se scrie in jurnal
 
   // Parola NU se pune in mesajul flash (care se salveaza in sesiune, in baza de date):
   // o afisam direct, in raspuns, si cerem browserului sa nu pastreze pagina.

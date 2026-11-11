@@ -6,7 +6,7 @@ const { mesajFlash } = require('../utils/http');
 const utilizatori = new UtilizatorAccessor();
 
 // Pagina de start a fiecarui rol dupa conectare.
-const PAGINA_ROL = { admin: '/admin/proprietati' };
+const PAGINA_ROL = { admin: '/admin' };
 
 // Acceptam doar adrese din aplicatia noastra (ex. "/admin/anunturi"), nu catre alte site-uri.
 function adresaSigura(adresa) {
