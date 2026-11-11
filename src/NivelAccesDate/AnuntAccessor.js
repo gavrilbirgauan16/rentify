@@ -13,6 +13,7 @@ const CU_PROPRIETATE = {
       oras: true,
       stare: true,
       max_locatari: true,
+      proprietar_id: true,
       utilizator: { select: { nume: true, prenume: true, telefon: true } },
     },
   },
@@ -66,6 +67,16 @@ class AnuntAccessor {
   // Toate anunturile, cu proprietatea si proprietarul ei (pagina Index din admin).
   async getAll() {
     return context.anunt.findMany({ include: CU_PROPRIETATE, orderBy: { creat_la: 'desc' } });
+  }
+
+  // O pagina din lista filtrata (admin). where si orderBy vin din filtrele alese in controller.
+  async getPagina(where, orderBy, { skip, take }) {
+    return context.anunt.findMany({ where, include: CU_PROPRIETATE, orderBy, skip, take });
+  }
+
+  // Cate anunturi se potrivesc filtrelor (pentru paginare).
+  async numara(where) {
+    return context.anunt.count({ where });
   }
 
   // Un anunt dupa id, cu proprietatea lui (Edit si butoanele de stare).

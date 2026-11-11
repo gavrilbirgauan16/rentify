@@ -14,6 +14,7 @@ router.use((req, res, next) => {
 router.get('/', controller.index);
 router.get('/create', controller.createGet);
 router.post('/create', incarcaImagini, controller.createPost); // intai se primesc imaginile, apoi se salveaza
+router.get('/:id', controller.details);
 router.get('/:id/edit', controller.editGet);
 router.post('/:id/edit', incarcaImagini, controller.editPost);
 router.post('/:id/activeaza', controller.activeaza);
