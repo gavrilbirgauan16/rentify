@@ -1,0 +1,80 @@
+<%- include('../../partials/header', { titluPagina: 'Jurnal' }) %>
+<% const ora = (d) => new Date(d).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }); %>
+
+<div class="mb-3">
+  <h1 class="h3 mb-0">Jurnal de administrare</h1>
+  <p class="small text-body-secondary mb-0">Cine ce a modificat și când. Înregistrările nu se pot modifica sau șterge.</p>
+</div>
+
+<form method="get" class="card card-body shadow-sm mb-3 bara-filtre" role="search" aria-label="Filtrează jurnalul">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-lg-2">
+      <label for="q" class="form-label">Caută în detalii</label>
+      <input type="search" class="form-control" id="q" name="q" value="<%= filtre.q %>" placeholder="ex. un nume sau un titlu">
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label for="entitate" class="form-label">Ce</label>
+      <select class="form-select" id="entitate" name="entitate">
+        <option value="">Toate</option>
+        <% Object.keys(ENTITATI_PLURAL).forEach(function(cod) { %><option value="<%= cod %>" <%= filtre.entitate === cod ? 'selected' : '' %>><%= ENTITATI_PLURAL[cod] %></option><% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label for="actiune" class="form-label">Acțiune</label>
+      <select class="form-select" id="actiune" name="actiune">
+        <option value="">Toate</option>
+        <% Object.keys(ACTIUNI).forEach(function(cod) { %><option value="<%= cod %>" <%= filtre.actiune === cod ? 'selected' : '' %>><%= ACTIUNI[cod].replace(/^a /, '').replace(/ (la|pentru)$/, '') %></option><% }) %>
+      </select>
+    </div>
+    <div class="col-12 col-md-4 col-lg-2">
+      <label for="admin" class="form-label">Cine</label>
+      <select class="form-select" id="admin" name="admin">
+        <option value="">Toți</option>
+        <% admini.forEach(function(a) { %><option value="<%= a.id %>" <%= filtre.admin === a.id ? 'selected' : '' %>><%= a.prenume %> <%= a.nume %></option><% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-6 col-lg-2">
+      <label for="de_la" class="form-label">De la</label>
+      <input type="date" class="form-control" id="de_la" name="de_la" value="<%= filtre.de_la %>">
+    </div>
+    <div class="col-6 col-md-6 col-lg-2">
+      <label for="pana_la" class="form-label">Până la</label>
+      <input type="date" class="form-control" id="pana_la" name="pana_la" value="<%= filtre.pana_la %>">
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <button type="submit" class="btn btn-primary">Filtrează</button>
+    <% if (areFiltre) { %><a class="btn btn-link" href="/admin/jurnal">Șterge filtrele</a><% } %>
+  </div>
+</form>
+
+<%- include('../../partials/_rezultate', { singular: 'acțiune', plural: 'acțiuni' }) %>
+
+<% if (randuri.length === 0) { %>
+  <div class="card card-body text-center text-body-secondary"><%= areFiltre ? 'Nicio acțiune nu se potrivește filtrelor.' : 'Nicio acțiune înregistrată încă.' %></div>
+<% } else { %>
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light"><tr><th scope="col">Când</th><th scope="col">Cine</th><th scope="col">Ce a făcut</th><th scope="col">Detalii</th></tr></thead>
+        <tbody>
+          <% randuri.forEach(function(r) { %>
+          <tr>
+            <td class="small text-nowrap"><%= ora(r.creat_la) %></td>
+            <td class="small text-nowrap"><%= r.utilizator.prenume %> <%= r.utilizator.nume %></td>
+            <td class="small">
+              <%= ACTIUNI[r.actiune] || r.actiune %> <%= ENTITATI[r.entitate] || r.entitate %>
+              <% if (r.entitate_id && ADRESE[r.entitate]) { %><a href="<%= ADRESE[r.entitate](r.entitate_id) %>">#<%= r.entitate_id %></a><% } %>
+            </td>
+            <td class="small text-body-secondary"><%= r.detalii || '–' %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } %>
+
+<%- include('../../partials/_paginare') %>
+
+<%- include('../../partials/footer') %>

@@ -1,0 +1,104 @@
+<%- include('../../partials/header', { titluPagina: 'Panou' }) %>
+<% const ora = (d) => new Date(d).toLocaleString('ro-RO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }); %>
+
+<div class="mb-4">
+  <h1 class="h3 mb-1">Panou</h1>
+  <p class="text-body-secondary mb-0">Ce se întâmplă acum în Rentify.</p>
+</div>
+
+<!-- Cifrele importante. Fiecare card duce la lista lui. -->
+<div class="row row-cols-2 row-cols-md-3 row-cols-xl-6 g-3 mb-4">
+  <div class="col"><a class="kpi-link" href="/admin/proprietati?stare=liber"><div class="card kpi shadow-sm h-100"><div class="card-body">
+    <div class="kpi-valoare"><%= n.proprietatiActive %></div><div class="kpi-eticheta">proprietăți active <span class="opacity-75">din <%= n.proprietati %></span></div>
+  </div></div></a></div>
+  <div class="col"><a class="kpi-link" href="/admin/anunturi?stare=activ"><div class="card kpi shadow-sm h-100"><div class="card-body">
+    <div class="kpi-valoare"><%= n.anunturiActive %></div><div class="kpi-eticheta">anunțuri active <span class="opacity-75">din <%= n.anunturi %></span></div>
+  </div></div></a></div>
+  <div class="col"><a class="kpi-link" href="/admin/utilizatori?rol=proprietar"><div class="card kpi shadow-sm h-100"><div class="card-body">
+    <div class="kpi-valoare"><%= oameni.peRol.proprietar || 0 %></div><div class="kpi-eticheta">proprietari</div>
+  </div></div></a></div>
+  <div class="col"><a class="kpi-link" href="/admin/utilizatori?rol=chirias"><div class="card kpi shadow-sm h-100"><div class="card-body">
+    <div class="kpi-valoare"><%= oameni.peRol.chirias || 0 %></div><div class="kpi-eticheta">chiriași</div>
+  </div></div></a></div>
+  <div class="col"><a class="kpi-link" href="/admin/abonamente?stare=platit"><div class="card kpi kpi-bine shadow-sm h-100"><div class="card-body">
+    <div class="kpi-valoare"><%= abonamenteInCurs %></div><div class="kpi-eticheta">abonamente în curs</div>
+  </div></div></a></div>
+  <div class="col"><div class="card kpi kpi-bine shadow-sm h-100"><div class="card-body">
+    <div class="kpi-valoare text-nowrap fs-4"><%= incasari %></div><div class="kpi-eticheta">încasat în <%= lunaCurenta %></div>
+  </div></div></div>
+</div>
+
+<div class="row g-4">
+  <!-- De rezolvat: fiecare rand duce la lista deja filtrata -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h2 class="h5 mb-3">De rezolvat</h2>
+        <% if (deRezolvat.length === 0) { %>
+          <p class="text-body-secondary small mb-0">Totul e în regulă. Nimic de rezolvat acum.</p>
+        <% } else { %>
+          <div class="list-group list-group-flush">
+            <% deRezolvat.forEach(function(r) { %>
+            <a class="list-group-item list-group-item-action px-0 d-flex align-items-center gap-3" href="<%= r.link %>">
+              <span class="badge rounded-pill text-bg-<%= r.culoare %> fs-6 eticheta-numar"><%= r.numar %></span>
+              <span class="flex-grow-1"><%= r.text %></span>
+              <span class="text-body-secondary" aria-hidden="true">›</span>
+            </a>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <% if (neplatite.length > 0) { %>
+          <h3 class="h6 text-danger mt-4">Neplătite</h3>
+          <div class="list-group list-group-flush">
+            <% neplatite.forEach(function(a) { %>
+            <a class="list-group-item list-group-item-action px-0 d-flex justify-content-between gap-2 small" href="/admin/abonamente/<%= a.id %>">
+              <span><span class="fw-semibold"><%= a.utilizator_nume %></span> · <%= a.plan_nume %></span>
+              <span class="text-danger text-nowrap">rest <%= a.restDePlataAfisat %></span>
+            </a>
+            <% }) %>
+          </div>
+        <% } %>
+        <% if (expiraCurand.length > 0) { %>
+          <h3 class="h6 text-warning-emphasis mt-4">Expiră în 7 zile</h3>
+          <div class="list-group list-group-flush">
+            <% expiraCurand.forEach(function(a) { %>
+            <a class="list-group-item list-group-item-action px-0 d-flex justify-content-between gap-2 small" href="/admin/abonamente/<%= a.id %>">
+              <span><span class="fw-semibold"><%= a.utilizator_nume %></span> · <%= a.plan_nume %><%= a.reinnoire_automata ? ' · se reînnoiește' : '' %></span>
+              <span class="text-nowrap"><%= a.zileRamase === 0 ? 'azi' : 'în ' + a.zileRamase + (a.zileRamase === 1 ? ' zi' : ' zile') %></span>
+            </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ultimele actiuni -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h5 mb-0">Ultimele acțiuni</h2>
+          <a class="small" href="/admin/jurnal">Tot jurnalul</a>
+        </div>
+        <% if (ultimele.length === 0) { %>
+          <p class="text-body-secondary small mb-0">Nicio acțiune înregistrată încă.</p>
+        <% } else { %>
+          <ul class="istoric small">
+            <% ultimele.forEach(function(r) { %>
+            <li>
+              <span class="fw-semibold"><%= r.utilizator.prenume %></span> <%= ACTIUNI[r.actiune] || r.actiune %>
+              <% if (r.entitate_id && ADRESE[r.entitate]) { %><a href="<%= ADRESE[r.entitate](r.entitate_id) %>"><%= ENTITATI[r.entitate] %></a><% } else { %><%= ENTITATI[r.entitate] || r.entitate %><% } %>
+              <% if (r.detalii) { %> „<%= r.detalii %>”<% } %><br>
+              <span class="text-body-secondary"><%= ora(r.creat_la) %></span>
+            </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>
