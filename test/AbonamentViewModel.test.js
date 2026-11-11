@@ -53,3 +53,8 @@ test('formularul: pretul si sfarsitul vin din plan, nu din ce scrie adminul', ()
   assert.equal(m.pret, 4500);
   assert.equal(m.data_sfarsit, D.sfarsitPerioada(D.azi(), 'anual'));
 });
+
+test('inceputul zilei in Romania, iarna (UTC+2) si vara (UTC+3)', () => {
+  assert.equal(D.inceputZiRomania('2026-11-10').toISOString(), '2026-11-09T22:00:00.000Z');
+  assert.equal(D.inceputZiRomania('2026-07-10').toISOString(), '2026-07-09T21:00:00.000Z');
+});
