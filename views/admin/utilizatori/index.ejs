@@ -2,13 +2,13 @@
 
 <h1 class="h3 mb-3">Utilizatori</h1>
 
-<form method="get" class="card card-body shadow-sm mb-3 bara-filtre">
+<form method="get" class="card card-body shadow-sm mb-3 bara-filtre" role="search" aria-label="Filtrează utilizatorii">
   <div class="row g-2 align-items-end">
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-lg-3">
       <label for="q" class="form-label">Caută</label>
       <input type="search" class="form-control" id="q" name="q" value="<%= filtre.q %>" placeholder="nume, email sau telefon">
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-3 col-lg-2">
       <label for="rol" class="form-label">Rol</label>
       <select class="form-select" id="rol" name="rol">
         <option value="">Toate</option>
@@ -17,8 +17,8 @@
         <% }) %>
       </select>
     </div>
-    <div class="col-6 col-md-3">
-      <label for="stare" class="form-label">Stare cont</label>
+    <div class="col-6 col-md-3 col-lg-2">
+      <label for="stare" class="form-label">Cont</label>
       <select class="form-select" id="stare" name="stare">
         <option value="">Toate</option>
         <% Object.keys(stari).forEach(function(cod) { %>
@@ -26,10 +26,27 @@
         <% }) %>
       </select>
     </div>
-    <div class="col-12 col-md-2 d-grid d-md-flex gap-2">
-      <button type="submit" class="btn btn-outline-primary flex-fill">Filtrează</button>
-      <% if (filtre.q || filtre.rol || filtre.stare) { %><a class="btn btn-link px-1" href="/admin/utilizatori">Șterge</a><% } %>
+    <div class="col-12 col-md-6 col-lg-3">
+      <label for="situatie" class="form-label">De verificat</label>
+      <select class="form-select" id="situatie" name="situatie">
+        <option value="">—</option>
+        <% Object.keys(situatii).forEach(function(cod) { %>
+        <option value="<%= cod %>" <%= filtre.situatie === cod ? 'selected' : '' %>><%= situatii[cod] %></option>
+        <% }) %>
+      </select>
     </div>
+    <div class="col-12 col-md-6 col-lg-2">
+      <label for="sort" class="form-label">Sortează</label>
+      <select class="form-select" id="sort" name="sort">
+        <option value="nume" <%= filtre.sort === 'nume' ? 'selected' : '' %>>Nume (A–Z)</option>
+        <option value="noi" <%= filtre.sort === 'noi' ? 'selected' : '' %>>Conturi noi</option>
+        <option value="conectare" <%= filtre.sort === 'conectare' ? 'selected' : '' %>>Ultima conectare</option>
+      </select>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2 mt-3">
+    <button type="submit" class="btn btn-primary">Filtrează</button>
+    <% if (areFiltre) { %><a class="btn btn-link" href="/admin/utilizatori">Șterge filtrele</a><% } %>
   </div>
 </form>
 
@@ -42,10 +59,11 @@
   }
 %>
 
+<%- include('../../partials/_rezultate', { singular: 'utilizator', plural: 'utilizatori' }) %>
+
 <% if (utilizatori.length === 0) { %>
-  <div class="card card-body text-center text-body-secondary">Niciun utilizator nu se potrivește.</div>
+  <div class="card card-body text-center text-body-secondary">Niciun utilizator nu se potrivește filtrelor.</div>
 <% } else { %>
-  <p class="small text-body-secondary mb-2"><%= utilizatori.length %> <%= utilizatori.length === 1 ? 'utilizator' : 'utilizatori' %></p>
 
   <div class="card shadow-sm d-none d-md-block">
     <div class="table-responsive">
@@ -93,5 +111,7 @@
     <% }) %>
   </div>
 <% } %>
+
+<%- include('../../partials/_paginare') %>
 
 <%- include('../../partials/footer') %>

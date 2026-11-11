@@ -25,7 +25,7 @@
 </div>
 
 <div class="row g-4">
-  <div class="<%= a.poatePrimiPlata ? 'col-lg-7' : 'col-lg-9 col-xl-8' %> d-grid gap-4 align-content-start">
+  <div class="col-lg-7 d-grid gap-4 align-content-start">
 
     <div class="card shadow-sm">
       <div class="card-body">
@@ -105,6 +105,12 @@
     </div>
     <% } %>
 
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Istoric acțiuni</h2>
+        <%- include('../_istoric', { istoric: istoric }) %>
+      </div>
+    </div>
   </div>
 </div>
 
