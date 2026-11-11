@@ -1,0 +1,39 @@
+<%- include('../partials/header', { titluPagina: 'Schimbă parola' }) %>
+<%
+  const areEroare = (camp) => Boolean(erori[camp]);
+  const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+%>
+
+<div class="card shadow-sm mx-auto latime-cont">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4 mb-1 text-center">Schimbă parola</h1>
+    <% if (obligatoriu) { %>
+      <p class="text-body-secondary text-center mb-4">Te-ai conectat cu o parolă temporară. Alege-ți acum o parolă nouă, pe care o știi doar tu.</p>
+    <% } else { %>
+      <p class="text-body-secondary text-center mb-4">După schimbare vei fi deconectat de pe celelalte dispozitive.</p>
+    <% } %>
+
+    <form method="post" action="/cont/parola" novalidate>
+      <%- include('../partials/csrf') %>
+      <div class="mb-3">
+        <label for="parola_curenta" class="form-label"><%= obligatoriu ? 'Parola temporară' : 'Parola curentă' %></label>
+        <input type="password" class="form-control<%= clasaCamp('parola_curenta') %>" id="parola_curenta" name="parola_curenta" autocomplete="current-password" required autofocus>
+        <% if (areEroare('parola_curenta')) { %><div class="invalid-feedback"><%= erori.parola_curenta %></div><% } %>
+      </div>
+      <div class="mb-3">
+        <label for="parola_noua" class="form-label">Parola nouă</label>
+        <input type="password" class="form-control<%= clasaCamp('parola_noua') %>" id="parola_noua" name="parola_noua" autocomplete="new-password" minlength="8" required aria-describedby="ajutor_parola">
+        <% if (areEroare('parola_noua')) { %><div class="invalid-feedback"><%= erori.parola_noua %></div><% } %>
+        <div id="ajutor_parola" class="form-text">Cel puțin 8 caractere. O frază scurtă e mai sigură decât un cuvânt.</div>
+      </div>
+      <div class="mb-4">
+        <label for="confirmare" class="form-label">Repetă parola nouă</label>
+        <input type="password" class="form-control<%= clasaCamp('confirmare') %>" id="confirmare" name="confirmare" autocomplete="new-password" required>
+        <% if (areEroare('confirmare')) { %><div class="invalid-feedback"><%= erori.confirmare %></div><% } %>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Salvează parola nouă</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

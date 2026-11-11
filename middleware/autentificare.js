@@ -16,7 +16,7 @@ async function incarcaUtilizator(req, res, next) {
     delete req.session.utilizatorId; // contul nu mai exista sau a fost blocat: il deconectam
     return next();
   }
-  res.locals.utilizator = { id: u.id, nume: `${u.prenume} ${u.nume}`, email: u.email, rol: u.rol.nume };
+  res.locals.utilizator = { id: u.id, nume: `${u.prenume} ${u.nume}`, email: u.email, rol: u.rol.nume, schimbaParola: u.schimba_parola };
   next();
 }
 
@@ -36,4 +36,14 @@ function cereRol(...roluri) {
   };
 }
 
-module.exports = { incarcaUtilizator, cereAutentificare, cereRol };
+// Cine s-a conectat cu o parola temporara (data de admin la resetare) trebuie sa-si aleaga una noua
+// inainte de orice altceva. Are voie doar pe pagina de schimbare a parolei si la iesire.
+const PERMISE_CU_PAROLA_TEMPORARA = ['/cont/parola', '/iesire'];
+function cereParolaNoua(req, res, next) {
+  const u = res.locals.utilizator;
+  if (!u || !u.schimbaParola || PERMISE_CU_PAROLA_TEMPORARA.includes(req.path)) return next();
+  mesajFlash(req, 'Ai primit o parolă temporară. Alege-ți acum o parolă nouă.', 'warning');
+  res.redirect('/cont/parola');
+}
+
+module.exports = { incarcaUtilizator, cereAutentificare, cereRol, cereParolaNoua };

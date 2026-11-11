@@ -6,11 +6,13 @@ const PgSesiuni = require('connect-pg-simple')(session);
 const helmet = require('helmet');
 const path = require('path');
 const context = require('./src/Repository_CodeFirst/context');
-const { incarcaUtilizator } = require('./middleware/autentificare');
+const { incarcaUtilizator, cereParolaNoua } = require('./middleware/autentificare');
 const { pregatesteToken, verificaToken } = require('./middleware/csrf');
 const autentificareRouter = require('./routes/autentificare');
+const contRouter = require('./routes/cont');
 const adminRouter = require('./routes/admin');
 const apiRouter = require('./routes/api');
+
 const app = express();
 
 // Configurare
@@ -28,8 +30,10 @@ app.use(helmet({
   },
   strictTransportSecurity: config.esteProductie,
 }));
+
 // API-ul (JSON, laboratorul 7): inaintea sesiunilor si a CSRF, pentru ca nu foloseste cookie-uri.
 app.use('/api', apiRouter);
+
 app.use(express.urlencoded({ extended: false })); // citeste datele trimise de formulare
 
 // Fisiere statice: CSS-ul nostru, Bootstrap (instalat cu npm, merge si fara internet) si imaginile incarcate
@@ -69,6 +73,7 @@ app.use(incarcaUtilizator);
 // Protectie CSRF: token pentru formulare + verificarea lui la fiecare trimitere (POST)
 app.use(pregatesteToken);
 app.use(verificaToken);
+app.use(cereParolaNoua); // parola temporara -> intai alegi una noua
 
 // Rute
 app.get('/', (req, res) => {
@@ -76,6 +81,7 @@ app.get('/', (req, res) => {
   res.render('acasa');
 });
 app.use(autentificareRouter);    // /autentificare, /iesire
+app.use('/cont', contRouter);     // /cont/parola - schimbarea parolei (orice utilizator conectat)
 app.use('/admin', adminRouter);  // tot ce e de admin (protejat)
 
 // 404 - nicio ruta nu s-a potrivit
