@@ -378,6 +378,7 @@ model utilizator {
   limba_preferata                             String             @default("ro") @db.VarChar(5)
   schimba_parola                              Boolean            @default(false)
   abonament                                   abonament[]
+  token_cont                                  token_cont[]
   contactare                                  contactare[]
   contract_chirias                            contract_chirias[]
   favorit                                     favorit[]
@@ -427,4 +428,19 @@ model sesiune {
   expire DateTime @db.Timestamp(6)
 
   @@index([expire])
+}
+/// Linkurile trimise pe email (confirmarea contului, resetarea parolei, schimbarea emailului).
+/// Salvam doar amprenta SHA-256 a tokenului, nu tokenul: cine vede baza de date nu poate folosi linkurile.
+model token_cont {
+  id            Int        @id @default(autoincrement())
+  utilizator_id Int
+  tip           String     @db.VarChar(30)
+  hash_token    String     @unique @db.Char(64)
+  email_nou     String?    @db.VarChar(150)
+  expira_la     DateTime   @db.Timestamp(6)
+  folosit_la    DateTime?  @db.Timestamp(6)
+  creat_la      DateTime   @default(now()) @db.Timestamp(6)
+  utilizator    utilizator @relation(fields: [utilizator_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([utilizator_id, tip])
 }

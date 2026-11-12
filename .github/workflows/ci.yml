@@ -22,6 +22,11 @@ jobs:
 
       - name: Instaleaza pachetele (exact versiunile din package-lock.json)
         run: npm ci
+        
+      # npm nu mai ruleaza automat scripturile pachetelor (deci nici "prisma generate").
+      # Generam clientul Prisma explicit: codul care foloseste baza de date are nevoie de el. Nu cere o baza de date.
+      - name: Genereaza clientul Prisma
+        run: npx prisma generate
 
       - name: Verifica codul (ESLint)
         run: npm run lint

@@ -4,10 +4,15 @@
   <div class="card-body p-4 p-md-5">
     <h1 class="h4">Bine ai venit pe Rentify</h1>
     <% if (utilizator) { %>
-      <p class="text-body-secondary mb-0">Ești conectat ca <strong><%= utilizator.nume %></strong>. Partea pentru contul tău va fi disponibilă în curând.</p>
+      <p class="text-body-secondary">Ești conectat ca <strong><%= utilizator.nume %></strong>. Celelalte pagini pentru contul tău vor fi disponibile în curând.</p>
+      <a class="btn btn-primary" href="/cont">Contul meu</a>
     <% } else { %>
       <p class="text-body-secondary">Platforma pentru chiriași și proprietari.</p>
-      <a class="btn btn-primary" href="/autentificare">Intră în cont</a>
+      <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+        <a class="btn btn-primary" href="/inregistrare">Caut o locuință</a>
+        <a class="btn btn-outline-primary" href="/inregistrare?rol=proprietar">Închiriez o locuință</a>
+      </div>
+      <p class="small text-body-secondary mb-0">Ai deja cont? <a href="/autentificare">Intră în cont</a></p>
     <% } %>
   </div>
 </div>

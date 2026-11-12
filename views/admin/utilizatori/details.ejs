@@ -60,6 +60,18 @@
         <h2 class="h5 mb-3">Securitate</h2>
         <dl class="row mb-0 small">
           <dt class="col-5">Cont</dt><dd class="col-7"><%= u.esteBlocat ? 'Blocat' : 'Activ' %></dd>
+          <dt class="col-5">Email</dt>
+          <dd class="col-7">
+            <% if (u.emailConfirmat) { %>Confirmat<% } else { %>
+              <span class="text-warning-emphasis fw-semibold">Neconfirmat</span> – nu se poate conecta
+              <% if (u.poateFiAdministratDe(utilizator.id)) { %>
+              <form method="post" action="/admin/utilizatori/<%= u.id %>/retrimite-confirmare" class="mt-1">
+                <%- include('../../partials/csrf') %>
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Retrimite linkul de confirmare</button>
+              </form>
+              <% } %>
+            <% } %>
+          </dd>
           <dt class="col-5">Parolă</dt>
           <dd class="col-7"><%= u.areParolaTemporara ? 'Temporară – trebuie schimbată la conectare' : 'Aleasă de utilizator' %></dd>
         </dl>
@@ -126,23 +138,30 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title fs-5" id="titluReset">Resetezi parola lui <%= u.numeComplet %>?</h2>
+        <h2 class="modal-title fs-5" id="titluReset">Resetează parola lui <%= u.numeComplet %></h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
       </div>
       <div class="modal-body small">
-        <ul class="mb-0 ps-3">
-          <li>Parola actuală nu va mai funcționa.</li>
-          <li>Vei primi o parolă temporară, afișată <strong>o singură dată</strong>, pe care i-o comunici utilizatorului.</li>
-          <li>La conectare, utilizatorul va fi obligat să-și aleagă o parolă nouă.</li>
-          <li>Dacă era conectat, este deconectat de pe toate dispozitivele.</li>
+        <p class="fw-semibold mb-1">Varianta recomandată: link pe email</p>
+        <p class="mb-2">Utilizatorul primește pe <strong><%= u.email %></strong> un link (valabil o oră) și își alege singur parola. Tu nu afli nicio parolă.</p>
+        <form method="post" action="/admin/utilizatori/<%= u.id %>/trimite-link-resetare" class="mb-4">
+          <%- include('../../partials/csrf') %>
+          <button type="submit" class="btn btn-primary">Trimite linkul pe email</button>
+        </form>
+
+        <p class="fw-semibold mb-1">Dacă nu are acces la email: parolă temporară</p>
+        <ul class="mb-2 ps-3">
+          <li>Parola actuală nu va mai funcționa; dacă era conectat, este deconectat peste tot.</li>
+          <li>Vei vedea parola temporară <strong>o singură dată</strong> și i-o comunici tu.</li>
+          <li>La conectare, va fi obligat să-și aleagă o parolă nouă.</li>
         </ul>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Renunță</button>
         <form method="post" action="/admin/utilizatori/<%= u.id %>/reseteaza-parola">
           <%- include('../../partials/csrf') %>
-          <button type="submit" class="btn btn-primary">Da, resetează parola</button>
+          <button type="submit" class="btn btn-outline-secondary">Generează parolă temporară</button>
         </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-link" data-bs-dismiss="modal">Renunță</button>
       </div>
     </div>
   </div>

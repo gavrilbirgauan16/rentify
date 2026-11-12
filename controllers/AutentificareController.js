@@ -6,7 +6,7 @@ const { mesajFlash } = require('../utils/http');
 const utilizatori = new UtilizatorAccessor();
 
 // Pagina de start a fiecarui rol dupa conectare.
-const PAGINA_ROL = { admin: '/admin' };
+const PAGINA_ROL = { admin: '/admin', proprietar: '/cont', chirias: '/cont' };
 
 // Acceptam doar adrese din aplicatia noastra (ex. "/admin/anunturi"), nu catre alte site-uri.
 function adresaSigura(adresa) {
@@ -31,6 +31,10 @@ async function autentificarePost(req, res) {
   }
   if (u.stare === 'blocat') {
     return res.status(403).render('autentificare', { email, eroare: 'Contul tău este blocat. Contactează administratorul.', sectiune: 'autentificare' });
+  }
+  // Fara email confirmat nu intra (parola era corecta, deci putem spune de ce).
+  if (!u.email_verificat) {
+    return res.status(403).render('autentificare', { email, eroare: 'Nu ți-ai confirmat încă adresa de email. Caută emailul de la Rentify (verifică și Spam) sau cere un link nou.', neconfirmat: true, sectiune: 'autentificare' });
   }
 
   // Sesiune noua dupa conectare (protectie impotriva furtului de sesiune), pastrand doar adresa dorita.

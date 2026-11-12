@@ -1,0 +1,13 @@
+<%- include('../partials/header', { titluPagina: 'Verifică-ți emailul' }) %>
+
+<div class="card shadow-sm mx-auto text-center latime-cont">
+  <div class="card-body p-4 p-md-5">
+    <div class="icon-mesaj mb-3" aria-hidden="true">✉</div>
+    <h1 class="h4">Verifică-ți emailul</h1>
+    <p class="text-body-secondary">Dacă adresa <strong><%= email %></strong> poate fi folosită, ți-am trimis acolo un link de confirmare. Apasă pe el ca să-ți activezi contul.</p>
+    <p class="small text-body-secondary mb-4">Linkul e valabil 24 de ore. Nu găsești emailul? Uită-te și în Spam sau Promoții.</p>
+    <a class="btn btn-outline-primary" href="/confirmare/retrimite">Trimite-mi alt link</a>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,29 @@
+<%- include('../partials/header', { titluPagina: 'Parolă nouă' }) %>
+<% const clasa = (camp) => (erori[camp] ? ' is-invalid' : ''); %>
+
+<div class="card shadow-sm mx-auto latime-cont">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4 mb-1 text-center">Alege o parolă nouă</h1>
+    <p class="text-body-secondary text-center mb-4">pentru contul <strong><%= email %></strong>. După salvare vei fi deconectat de pe toate dispozitivele.</p>
+
+    <form method="post" action="/resetare/<%= token %>" novalidate>
+      <%- include('../partials/csrf') %>
+      <%# Ajuta managerul de parole al browserului sa salveze parola pentru contul potrivit %>
+      <input type="hidden" name="email" value="<%= email %>" autocomplete="username">
+      <div class="mb-3">
+        <label for="parola_noua" class="form-label">Parola nouă</label>
+        <input type="password" class="form-control<%= clasa('parola_noua') %>" id="parola_noua" name="parola_noua" autocomplete="new-password" minlength="8" required autofocus aria-describedby="ajutor_parola">
+        <% if (erori.parola_noua) { %><div class="invalid-feedback"><%= erori.parola_noua %></div><% } %>
+        <div id="ajutor_parola" class="form-text">Cel puțin 8 caractere. O frază scurtă e mai sigură decât un cuvânt.</div>
+      </div>
+      <div class="mb-4">
+        <label for="confirmare" class="form-label">Repetă parola nouă</label>
+        <input type="password" class="form-control<%= clasa('confirmare') %>" id="confirmare" name="confirmare" autocomplete="new-password" required>
+        <% if (erori.confirmare) { %><div class="invalid-feedback"><%= erori.confirmare %></div><% } %>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Salvează parola nouă</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

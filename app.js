@@ -9,9 +9,11 @@ const context = require('./src/Repository_CodeFirst/context');
 const { incarcaUtilizator, cereParolaNoua } = require('./middleware/autentificare');
 const { pregatesteToken, verificaToken } = require('./middleware/csrf');
 const autentificareRouter = require('./routes/autentificare');
+const conturiRouter = require('./routes/conturi');
 const contRouter = require('./routes/cont');
 const adminRouter = require('./routes/admin');
 const apiRouter = require('./routes/api');
+const { verificaConexiunea } = require('./servicii/email');
 
 const app = express();
 
@@ -81,7 +83,8 @@ app.get('/', (req, res) => {
   res.render('acasa');
 });
 app.use(autentificareRouter);    // /autentificare, /iesire
-app.use('/cont', contRouter);     // /cont/parola - schimbarea parolei (orice utilizator conectat)
+app.use(conturiRouter);          // /inregistrare, /confirmare, /parola-uitata, /resetare (publice)
+app.use('/cont', contRouter);     // /cont - profil, parola, email (orice utilizator conectat)
 app.use('/admin', adminRouter);  // tot ce e de admin (protejat)
 
 // 404 - nicio ruta nu s-a potrivit
@@ -96,7 +99,10 @@ app.use((err, req, res, next) => {
   res.status(500).render('eroare', { titlu: 'A apărut o eroare', mesaj_eroare: 'Încearcă din nou mai târziu.' });
 });
 
-const server = app.listen(config.port, () => console.log(`Rentify ruleaza la http://localhost:${config.port}`));
+const server = app.listen(config.port, () => {
+  console.log(`Rentify ruleaza la http://localhost:${config.port}`);
+  verificaConexiunea(); // afiseaza daca emailurile pot pleca (SMTP din .env)
+});
 
 // La oprire (Ctrl+C sau oprire de catre server) se inchide si conexiunea la baza de date.
 async function opreste() {

@@ -6,22 +6,31 @@
     <p class="text-body-secondary text-center mb-4">Intră în contul tău Rentify</p>
 
     <% if (eroare) { %>
-    <div class="alert alert-danger" role="alert"><%= eroare %></div>
+    <div class="alert alert-danger" role="alert">
+      <%= eroare %>
+      <% if (typeof neconfirmat !== 'undefined' && neconfirmat) { %>
+        <div class="mt-2"><a class="alert-link" href="/confirmare/retrimite">Trimite-mi un link nou</a></div>
+      <% } %>
+    </div>
     <% } %>
 
     <form method="post" action="/autentificare" novalidate>
-	<%- include('partials/csrf') %>
+      <%- include('partials/csrf') %>
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>
         <input type="email" class="form-control" id="email" name="email" value="<%= email %>"
                autocomplete="username" required autofocus>
       </div>
       <div class="mb-4">
-        <label for="parola" class="form-label">Parolă</label>
+        <div class="d-flex justify-content-between align-items-baseline">
+          <label for="parola" class="form-label">Parolă</label>
+          <a class="small" href="/parola-uitata">Ai uitat parola?</a>
+        </div>
         <input type="password" class="form-control" id="parola" name="parola" autocomplete="current-password" required>
       </div>
       <button class="btn btn-primary w-100" type="submit">Intră în cont</button>
     </form>
+    <p class="text-center small text-body-secondary mt-4 mb-0">Nu ai cont? <a href="/inregistrare">Fă-ți unul gratuit</a></p>
   </div>
 </div>
 

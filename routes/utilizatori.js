@@ -10,5 +10,7 @@ router.get('/:id', controller.details);
 router.post('/:id/blocheaza', controller.blocheaza);
 router.post('/:id/deblocheaza', controller.deblocheaza);
 router.post('/:id/reseteaza-parola', controller.reseteazaParola);
+router.post('/:id/trimite-link-resetare', controller.trimiteLinkParola);
+router.post('/:id/retrimite-confirmare', controller.retrimiteConfirmare);
 
 module.exports = router;

@@ -1,0 +1,27 @@
+<%- include('../partials/header', { titluPagina: 'Schimbă emailul' }) %>
+<% const clasa = (camp) => (erori[camp] ? ' is-invalid' : ''); %>
+
+<div class="card shadow-sm mx-auto latime-cont">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4 mb-1 text-center">Schimbă adresa de email</h1>
+    <p class="text-body-secondary text-center mb-4">Îți trimitem un link pe adresa nouă. Până îl apeși, contul rămâne pe adresa <strong><%= utilizator.email %></strong>.</p>
+
+    <form method="post" action="/cont/email" novalidate>
+      <%- include('../partials/csrf') %>
+      <div class="mb-3">
+        <label for="email" class="form-label">Adresa nouă</label>
+        <input type="email" class="form-control<%= clasa('email') %>" id="email" name="email" value="<%= email %>" autocomplete="email" maxlength="150" required autofocus>
+        <% if (erori.email) { %><div class="invalid-feedback"><%= erori.email %></div><% } %>
+      </div>
+      <div class="mb-4">
+        <label for="parola_curenta" class="form-label">Parola curentă</label>
+        <input type="password" class="form-control<%= clasa('parola_curenta') %>" id="parola_curenta" name="parola_curenta" autocomplete="current-password" required>
+        <% if (erori.parola_curenta) { %><div class="invalid-feedback"><%= erori.parola_curenta %></div><% } %>
+      </div>
+      <button class="btn btn-primary w-100" type="submit">Trimite linkul de confirmare</button>
+      <a class="btn btn-link w-100 mt-2" href="/cont">Renunță</a>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
