@@ -29,6 +29,15 @@
               { cheie: 'planuri', text: 'Planuri', href: '/admin/planuri' },
               { cheie: 'jurnal', text: 'Jurnal', href: '/admin/jurnal' },
             ],
+            proprietar: [
+              { cheie: 'proprietati', text: 'Proprietățile mele', href: null },
+              { cheie: 'anunturi', text: 'Anunțurile mele', href: null },
+              { cheie: 'abonament', text: 'Abonament', href: null },
+            ],
+            chirias: [
+              { cheie: 'cauta', text: 'Caută locuință', href: null },
+              { cheie: 'favorite', text: 'Favorite', href: null },
+            ],
           };
           const meniu = utilizator ? meniuri[utilizator.rol] || [] : [];
           const curenta = typeof sectiune !== 'undefined' ? sectiune : '';
@@ -60,13 +69,18 @@
             <span class="navbar-text me-xl-2 d-block d-xl-inline small text-nowrap">
               <%= utilizator.nume %> <span class="opacity-75">(<%= utilizator.rol %>)</span>
             </span>
-            <a class="btn btn-sm btn-link link-light link-opacity-75 link-opacity-100-hover px-0 me-xl-3 text-nowrap" href="/cont/parola">Schimbă parola</a>
+            <a class="btn btn-sm btn-link link-light <%= curenta === 'cont' ? '' : 'link-opacity-75' %> link-opacity-100-hover px-0 me-xl-3 text-nowrap" href="/cont"<%- curenta === 'cont' ? ' aria-current="page"' : '' %>>Contul meu</a>
             <form method="post" action="/iesire" class="d-inline">
               <%- include('csrf') %>
               <button type="submit" class="btn btn-sm btn-outline-light my-2 my-xl-0">Ieșire</button>
             </form>
-          <% } else if (curenta !== 'autentificare') { %>
-            <a class="btn btn-sm btn-outline-light my-2 my-xl-0" href="/autentificare">Autentificare</a>
+          <% } else { %>
+            <% if (curenta !== 'autentificare') { %>
+            <a class="btn btn-sm btn-link link-light link-opacity-75 link-opacity-100-hover px-0 me-3 text-nowrap" href="/autentificare">Autentificare</a>
+            <% } %>
+            <% if (curenta !== 'inregistrare') { %>
+            <a class="btn btn-sm btn-outline-light my-2 my-xl-0" href="/inregistrare">Cont nou</a>
+            <% } %>
           <% } %>
         </div>
       </div>
