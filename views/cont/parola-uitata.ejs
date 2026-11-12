@@ -1,0 +1,24 @@
+<%- include('../partials/header', { titluPagina: 'Am uitat parola' }) %>
+
+<div class="card shadow-sm mx-auto latime-cont">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4 mb-1 text-center">Am uitat parola</h1>
+    <% if (trimis) { %>
+      <div class="alert alert-success mt-3 mb-0" role="status">Dacă există un cont cu adresa <strong><%= email %></strong>, ți-am trimis un link pentru o parolă nouă. Linkul e valabil o oră. Verifică și Spam.</div>
+      <p class="text-center small mt-3 mb-0"><a href="/autentificare">Înapoi la autentificare</a></p>
+    <% } else { %>
+      <p class="text-body-secondary text-center mb-4">Scrie adresa contului și îți trimitem un link pentru o parolă nouă.</p>
+      <form method="post" action="/parola-uitata" novalidate>
+        <%- include('../partials/csrf') %>
+        <div class="mb-4">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" name="email" value="<%= email %>" autocomplete="email" required autofocus>
+        </div>
+        <button class="btn btn-primary w-100" type="submit">Trimite linkul</button>
+      </form>
+      <p class="text-center small mt-3 mb-0"><a href="/autentificare">Mi-am amintit parola</a></p>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

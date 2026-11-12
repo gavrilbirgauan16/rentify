@@ -1,0 +1,11 @@
+<%- include('../partials/header', { titluPagina: titlu }) %>
+
+<div class="card shadow-sm mx-auto text-center latime-cont">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4"><%= titlu %></h1>
+    <p class="text-body-secondary mb-4"><%= mesaj %></p>
+    <a class="btn btn-primary" href="<%= actiune.href %>"><%= actiune.text %></a>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
