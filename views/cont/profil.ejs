@@ -1,0 +1,64 @@
+<%- include('../partials/header', { titluPagina: 'Contul meu' }) %>
+<%
+  const clasa = (camp) => (erori[camp] ? ' is-invalid' : '');
+  const ROLURI = { admin: 'Administrator', proprietar: 'Proprietar', chirias: 'Chiriaș' };
+%>
+
+<div class="mx-auto latime-profil">
+  <h1 class="h3 mb-1">Contul meu</h1>
+  <p class="text-body-secondary mb-4"><%= ROLURI[profil.rol.nume] || profil.rol.nume %> · cont creat pe <%= profil.creat_la.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Bucharest' }) %></p>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body p-4">
+      <h2 class="h5 mb-3">Datele mele</h2>
+      <form method="post" action="/cont" novalidate>
+        <%- include('../partials/csrf') %>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label for="prenume" class="form-label">Prenume</label>
+            <input class="form-control<%= clasa('prenume') %>" id="prenume" name="prenume" value="<%= model.prenume %>" autocomplete="given-name" maxlength="60" required>
+            <% if (erori.prenume) { %><div class="invalid-feedback"><%= erori.prenume %></div><% } %>
+          </div>
+          <div class="col-sm-6">
+            <label for="nume" class="form-label">Nume</label>
+            <input class="form-control<%= clasa('nume') %>" id="nume" name="nume" value="<%= model.nume %>" autocomplete="family-name" maxlength="60" required>
+            <% if (erori.nume) { %><div class="invalid-feedback"><%= erori.nume %></div><% } %>
+          </div>
+          <div class="col-sm-6">
+            <label for="telefon" class="form-label">Telefon<% if (profil.rol.nume !== 'proprietar') { %> <span class="text-body-secondary small">(opțional)</span><% } %></label>
+            <input type="tel" class="form-control<%= clasa('telefon') %>" id="telefon" name="telefon" value="<%= model.telefon %>" autocomplete="tel" placeholder="07xx xxx xxx" maxlength="20">
+            <% if (erori.telefon) { %><div class="invalid-feedback"><%= erori.telefon %></div><% } %>
+          </div>
+          <div class="col-sm-6">
+            <label for="oras" class="form-label">Oraș <span class="text-body-secondary small">(opțional)</span></label>
+            <input class="form-control<%= clasa('oras') %>" id="oras" name="oras" value="<%= model.oras %>" autocomplete="address-level2" maxlength="50">
+            <% if (erori.oras) { %><div class="invalid-feedback"><%= erori.oras %></div><% } %>
+          </div>
+        </div>
+        <button class="btn btn-primary mt-4" type="submit">Salvează</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <h2 class="h5 mb-3">Autentificare</h2>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 py-2 border-bottom">
+        <div>
+          <div class="small text-body-secondary">Email</div>
+          <div class="text-break"><%= profil.email %></div>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="/cont/email">Schimbă emailul</a>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2">
+        <div>
+          <div class="small text-body-secondary">Parolă</div>
+          <div>••••••••</div>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="/cont/parola">Schimbă parola</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

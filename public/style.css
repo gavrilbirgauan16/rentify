@@ -124,3 +124,9 @@ a.kpi-link:hover .kpi, a.kpi-link:focus-visible .kpi { box-shadow: 0 .25rem .75r
 /* Culorile Rentify si pentru paginare si linkurile-buton */
 .pagination { --bs-pagination-color: var(--rentify); --bs-pagination-hover-color: var(--rentify-inchis); --bs-pagination-active-bg: var(--rentify); --bs-pagination-active-border-color: var(--rentify); --bs-pagination-focus-color: var(--rentify); }
 .btn-link { --bs-btn-color: var(--rentify); --bs-btn-hover-color: var(--rentify-inchis); --bs-btn-active-color: var(--rentify-inchis); }
+
+/* ===== Conturi (inregistrare, profil) ===== */
+.latime-inregistrare { max-width: 600px; }
+.latime-profil { max-width: 720px; }
+.icon-mesaj { font-size: 2.5rem; line-height: 1; color: var(--rentify); }
+.alegere-rol .btn { white-space: normal; }
