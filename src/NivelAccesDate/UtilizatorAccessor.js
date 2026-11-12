@@ -100,6 +100,58 @@ class UtilizatorAccessor {
   async inchideSesiunile(id, pastreazaSid = '') {
     return context.$executeRaw`DELETE FROM "sesiune" WHERE "sess"->>'utilizatorId' = ${String(id)} AND "sid" <> ${pastreazaSid}`;
   }
+
+  // ---- Conturi (inregistrare, confirmare, profil) ----
+
+  // true daca emailul e deja folosit de alt cont (exceptId = contul curent, la schimbarea emailului).
+  async emailFolosit(email, exceptId = null) {
+    const u = await context.utilizator.findUnique({ where: { email }, select: { id: true } });
+    return Boolean(u) && u.id !== exceptId;
+  }
+
+  // Cont nou (neconfirmat). Rolul se leaga dupa nume ('proprietar' / 'chirias').
+  async creeazaCont(numeRol, date, parolaHash) {
+    return context.utilizator.create({
+      data: { ...date, parola_hash: parolaHash, rol: { connect: { nume: numeRol } } },
+      select: { id: true, email: true, prenume: true, nume: true },
+    });
+  }
+
+  // Confirma emailul. Optional, in aceeasi tranzactie, primul abonament (planul gratuit al chiriasului),
+  // doar daca utilizatorul nu are inca niciun abonament (ex. linkul deschis de doua ori).
+  async confirmaEmail(id, abonamentInitial = null) {
+    return context.$transaction(async (tx) => {
+      await tx.utilizator.update({ where: { id }, data: { email_verificat: true, actualizat_la: new Date() } });
+      if (abonamentInitial && (await tx.abonament.count({ where: { utilizator_id: id } })) === 0) {
+        await tx.abonament.create({ data: { ...abonamentInitial, utilizator_id: id } });
+      }
+    });
+  }
+
+  // Parola noua aleasa din linkul de resetare: daca a primit linkul pe email, emailul e confirmat,
+  // iar o eventuala parola temporara de la admin nu mai e valabila.
+  async reseteazaParola(id, parolaHash) {
+    return context.utilizator.update({
+      where: { id },
+      data: { parola_hash: parolaHash, schimba_parola: false, email_verificat: true, actualizat_la: new Date() },
+    });
+  }
+
+  // Datele pentru pagina "Contul meu" (fara parola).
+  async getProfil(id) {
+    return context.utilizator.findUnique({
+      where: { id },
+      select: { id: true, email: true, prenume: true, nume: true, telefon: true, oras: true, creat_la: true, email_verificat: true, rol: { select: { nume: true } } },
+    });
+  }
+
+  async actualizeazaProfil(id, date) {
+    return context.utilizator.update({ where: { id }, data: { ...date, actualizat_la: new Date() } });
+  }
+
+  async schimbaEmail(id, email) {
+    return context.utilizator.update({ where: { id }, data: { email, email_verificat: true, actualizat_la: new Date() } });
+  }
 }
 
 module.exports = UtilizatorAccessor;

@@ -35,6 +35,14 @@ class PlanAccessor {
     });
   }
 
+  // Planul gratuit al chiriasilor (pret 0), dat automat la confirmarea contului. Null daca nu exista.
+  async getGratuitChirias() {
+    return context.plan_abonament.findFirst({
+      where: { activ: true, pret_lunar: 0, pret_anual: 0, rol: { nume: 'chirias' } },
+      orderBy: { id: 'asc' },
+    });
+  }
+
   async getById(id) {
     return context.plan_abonament.findUnique({ where: { id }, include: CU_DETALII });
   }
