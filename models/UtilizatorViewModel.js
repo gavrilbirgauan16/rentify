@@ -22,6 +22,7 @@ class UtilizatorViewModel {
     this.creat_la = e.creat_la;
     this.ultima_autentificare = e.ultima_autentificare;
     this.schimba_parola = e.schimba_parola ?? false;
+    this.email_verificat = e.email_verificat ?? true;
     this.nrProprietati = e._count?.proprietate ?? 0;
     this.proprietati = e.proprietate ?? [];
     this.abonamentEntitate = abonamentCurent;
@@ -34,6 +35,7 @@ class UtilizatorViewModel {
   get culoareStare() { return (STARI[this.stare] || STARI.activ).culoare; }
   get esteBlocat() { return this.stare === 'blocat'; }
   get areParolaTemporara() { return this.schimba_parola; }
+  get emailConfirmat() { return this.email_verificat; }
   get areAbonamente() { return this.rol === 'proprietar' || this.rol === 'chirias'; }
   get ultimaAutentificareAfisata() { return dataOra(this.ultima_autentificare); }
   get creatLaAfisat() { return dataOra(this.creat_la); }

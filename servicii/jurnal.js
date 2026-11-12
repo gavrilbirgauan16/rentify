@@ -15,6 +15,8 @@ const ACTIUNI = {
   blocare: 'a blocat',
   deblocare: 'a deblocat',
   resetare_parola: 'a resetat parola pentru',
+  link_resetare: 'a trimis un link de resetare a parolei către',
+  link_confirmare: 'a retrimis linkul de confirmare către',
 };
 const ENTITATI = {
   proprietate: 'proprietatea', anunt: 'anunțul', plan: 'planul', abonament: 'abonamentul', utilizator: 'utilizatorul',

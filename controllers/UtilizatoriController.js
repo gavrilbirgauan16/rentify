@@ -10,6 +10,8 @@ const F = require('../servicii/filtre');
 const { azi } = require('../servicii/date');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
 const { noteaza } = require('../servicii/jurnal');
+const { trimiteLinkResetare } = require('./ParolaUitataController');
+const { trimiteConfirmarea } = require('./InregistrareController');
 
 const utilizatori = new UtilizatorAccessor();
 const abonamente = new AbonamentAccessor();
@@ -23,6 +25,7 @@ const SITUATII = {
   fara_abonament: 'Fără abonament în curs',
   neplatit: 'Abonament neplătit',
   parola_temporara: 'Parolă temporară nefolosită',
+  email_neconfirmat: 'Email neconfirmat',
 };
 const FILTRE = {
   q: { tip: 'text' },
@@ -44,6 +47,7 @@ const SE_POTRIVESTE = {
   fara_abonament: (u) => u.areAbonamente && !u.abonament,
   neplatit: (u) => u.abonament?.stareCod() === 'neplatit',
   parola_temporara: (u) => u.areParolaTemporara,
+  email_neconfirmat: (u) => !u.emailConfirmat,
 };
 
 // GET /admin/utilizatori
@@ -131,8 +135,43 @@ async function reseteazaParola(req, res) {
   res.render('admin/utilizatori/parola-temporara', { u, parola });
 }
 
+// POST /admin/utilizatori/:id/trimite-link-resetare - varianta recomandata: utilizatorul isi alege singur
+// parola din linkul primit pe email (adminul nu afla nicio parola). Parola veche merge pana foloseste linkul.
+async function trimiteLinkParola(req, res) {
+  const u = await utilizatorAdministrabil(req, res);
+  if (!u) return;
+  if (u.esteBlocat) {
+    mesajFlash(req, 'Contul este blocat: deblochează-l întâi, altfel utilizatorul nu se poate conecta oricum.', 'warning');
+    return res.redirect(`/admin/utilizatori/${u.id}`);
+  }
+  const plecat = await trimiteLinkResetare(u);
+  if (!plecat) {
+    mesajFlash(req, 'Emailul nu a putut fi trimis (verifică setările SMTP). Poți folosi parola temporară.', 'warning');
+    return res.redirect(`/admin/utilizatori/${u.id}`);
+  }
+  await noteaza(res, 'link_resetare', 'utilizator', u.id, u.numeComplet);
+  mesajFlash(req, `I-am trimis lui ${u.numeComplet} un link de resetare pe ${u.email} (valabil o oră).`);
+  res.redirect(`/admin/utilizatori/${u.id}`);
+}
+
+// POST /admin/utilizatori/:id/retrimite-confirmare - pentru cine nu a gasit emailul de confirmare
+async function retrimiteConfirmare(req, res) {
+  const u = await utilizatorAdministrabil(req, res);
+  if (!u) return;
+  if (u.emailConfirmat) {
+    mesajFlash(req, 'Adresa de email este deja confirmată.', 'warning');
+    return res.redirect(`/admin/utilizatori/${u.id}`);
+  }
+  await trimiteConfirmarea(u);
+  await noteaza(res, 'link_confirmare', 'utilizator', u.id, u.numeComplet);
+  mesajFlash(req, `Am retrimis linkul de confirmare pe ${u.email}.`);
+  res.redirect(`/admin/utilizatori/${u.id}`);
+}
+
 module.exports = {
   index,
+  trimiteLinkParola,
+  retrimiteConfirmare,
   details,
   blocheaza: (req, res) => schimbaStare(req, res, 'blocat'),
   deblocheaza: (req, res) => schimbaStare(req, res, 'activ'),
