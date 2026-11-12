@@ -1,0 +1,93 @@
+<%- include('../partials/header', { titluPagina: 'Cont nou' }) %>
+<%
+  const clasa = (camp) => (erori[camp] ? ' is-invalid' : '');
+  const eroare = (camp) => (erori[camp] ? `<div class="invalid-feedback">${erori[camp]}</div>` : '');
+%>
+
+<div class="card shadow-sm mx-auto latime-inregistrare">
+  <div class="card-body p-4 p-md-5">
+    <h1 class="h4 mb-1 text-center">Cont nou</h1>
+    <p class="text-body-secondary text-center mb-4">Ai deja cont? <a href="/autentificare">Intră în cont</a></p>
+
+    <form method="post" action="/inregistrare" novalidate>
+      <%- include('../partials/csrf') %>
+
+      <fieldset class="mb-4">
+        <legend class="form-label fs-6">Îmi fac cont ca</legend>
+        <div class="row g-2 alegere-rol">
+          <div class="col-6">
+            <input type="radio" class="btn-check" name="rol" id="rol_chirias" value="chirias" <%= model.rol === 'chirias' ? 'checked' : '' %>>
+            <label class="btn btn-outline-primary w-100 h-100 text-start p-3" for="rol_chirias">
+              <span class="fw-semibold d-block">Chiriaș</span><span class="small">Caut o locuință</span>
+            </label>
+          </div>
+          <div class="col-6">
+            <input type="radio" class="btn-check" name="rol" id="rol_proprietar" value="proprietar" <%= model.rol === 'proprietar' ? 'checked' : '' %>>
+            <label class="btn btn-outline-primary w-100 h-100 text-start p-3" for="rol_proprietar">
+              <span class="fw-semibold d-block">Proprietar</span><span class="small">Închiriez locuințe</span>
+            </label>
+          </div>
+        </div>
+        <% if (erori.rol) { %><div class="text-danger small mt-1"><%= erori.rol %></div><% } %>
+      </fieldset>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+          <label for="prenume" class="form-label">Prenume</label>
+          <input class="form-control<%= clasa('prenume') %>" id="prenume" name="prenume" value="<%= model.prenume %>" autocomplete="given-name" maxlength="60" required>
+          <%- eroare('prenume') %>
+        </div>
+        <div class="col-sm-6">
+          <label for="nume" class="form-label">Nume</label>
+          <input class="form-control<%= clasa('nume') %>" id="nume" name="nume" value="<%= model.nume %>" autocomplete="family-name" maxlength="60" required>
+          <%- eroare('nume') %>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control<%= clasa('email') %>" id="email" name="email" value="<%= model.email %>" autocomplete="email" maxlength="150" required aria-describedby="ajutor_email">
+        <%- eroare('email') %>
+        <div id="ajutor_email" class="form-text">Îți trimitem aici un link de confirmare.</div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+          <label for="telefon" class="form-label">Telefon <span class="text-body-secondary small" id="tel_optional"><%= model.rol === 'proprietar' ? '' : '(opțional)' %></span></label>
+          <input type="tel" class="form-control<%= clasa('telefon') %>" id="telefon" name="telefon" value="<%= model.telefon %>" autocomplete="tel" placeholder="07xx xxx xxx" maxlength="20">
+          <%- eroare('telefon') %>
+        </div>
+        <div class="col-sm-6">
+          <label for="oras" class="form-label">Oraș <span class="text-body-secondary small">(opțional)</span></label>
+          <input class="form-control<%= clasa('oras') %>" id="oras" name="oras" value="<%= model.oras %>" autocomplete="address-level2" maxlength="50">
+          <%- eroare('oras') %>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+          <label for="parola" class="form-label">Parolă</label>
+          <input type="password" class="form-control<%= clasa('parola') %>" id="parola" name="parola" autocomplete="new-password" minlength="8" required aria-describedby="ajutor_parola">
+          <%- eroare('parola') %>
+        </div>
+        <div class="col-sm-6">
+          <label for="confirmare" class="form-label">Repetă parola</label>
+          <input type="password" class="form-control<%= clasa('confirmare') %>" id="confirmare" name="confirmare" autocomplete="new-password" required>
+          <%- eroare('confirmare') %>
+        </div>
+        <div id="ajutor_parola" class="form-text mt-1">Cel puțin 8 caractere. O frază scurtă e mai sigură decât un cuvânt.</div>
+      </div>
+
+      <div class="form-check mb-4">
+        <input class="form-check-input<%= clasa('termeni') %>" type="checkbox" id="termeni" name="termeni" <%= model.termeni ? 'checked' : '' %> required>
+        <label class="form-check-label small" for="termeni">Accept termenii de utilizare și prelucrarea datelor mele pentru folosirea platformei.</label>
+        <%- eroare('termeni') %>
+      </div>
+
+      <button class="btn btn-primary w-100" type="submit">Creează contul</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/inregistrare.js"></script>
+<%- include('../partials/footer') %>
