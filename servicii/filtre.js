@@ -5,6 +5,15 @@
 
 const LUNGIME_MAXIMA_TEXT = 100;
 
+// Un numar scris romaneste: punctul separa miile, virgula e zecimala ("1.500" = 1500, "1.500,50" = 1500,5, "99,90" = 99,9).
+// Merge si scris "englezeste" ("1500.50"): un punct e separator de mii doar daca e urmat de exact 3 cifre.
+// Bug gasit la cautare (16 nov): "1.500" era citit 1,5, deci "pret maxim 1.500" nu gasea nimic peste 1,5 lei.
+function numarRomanesc(text) {
+  const t = String(text).trim().replace(/\s/g, '');
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) return Number(t.replace(/\./g, '').replace(',', '.'));
+  return Number(t.replace(',', '.'));
+}
+
 // Citeste o valoare dupa tipul ei. Intoarce '' daca lipseste sau nu e valida.
 function citesteValoare(brut, def) {
   const text = String(brut ?? '').trim();
@@ -23,7 +32,7 @@ function citesteValoare(brut, def) {
       return Number.isInteger(n) && n >= (def.min ?? 0) ? n : '';
     }
     case 'numar': {
-      const n = Number(text.replace(',', '.'));
+      const n = numarRomanesc(text);
       return Number.isFinite(n) && n >= 0 ? n : '';
     }
     case 'data':
@@ -98,4 +107,4 @@ const contineText = (campuri, text) => campuri.map((camp) => {
   return parti.reduceRight((interior, parte) => ({ [parte]: interior }), { contains: text, mode: 'insensitive' });
 });
 
-module.exports = { citesteFiltre, areFiltre, paginare, paginareLista, adresa, pentruPagina, contineText };
+module.exports = { citesteFiltre, areFiltre, paginare, paginareLista, adresa, pentruPagina, contineText, numarRomanesc };

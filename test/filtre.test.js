@@ -49,3 +49,16 @@ test('cautarea in campuri legate (ex. proprietate.oras)', () => {
     { proprietate: { oras: { contains: 'sv', mode: 'insensitive' } } },
   ]);
 });
+
+// Bug gasit la cautare (16 nov): "1.500" era citit ca 1,5 in loc de 1500.
+test('numerele scrise romaneste: punctul separa miile, virgula e zecimala', () => {
+  const { numarRomanesc } = F;
+  assert.equal(numarRomanesc('1.500'), 1500);
+  assert.equal(numarRomanesc('12.500'), 12500);
+  assert.equal(numarRomanesc('1.250.000'), 1250000);
+  assert.equal(numarRomanesc('1.500,50'), 1500.5);
+  assert.equal(numarRomanesc('99,90'), 99.9);
+  assert.equal(numarRomanesc('1500.50'), 1500.5); // scris "englezeste": tot corect
+  assert.equal(numarRomanesc('2.5'), 2.5); // punct urmat de mai putin de 3 cifre = zecimal
+  assert.equal(numarRomanesc(' 1 500 '), 1500); // spatii intre cifre
+});
