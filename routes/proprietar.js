@@ -39,7 +39,11 @@ router.post('/anunturi/:id/edit', incarcaImagini, anunturi.editPost);
 router.post('/anunturi/:id/activeaza', anunturi.activeaza);
 router.post('/anunturi/:id/dezactiveaza', anunturi.dezactiveaza);
 
-// Abonamentul meu (deocamdata doar afisare).
-router.get('/abonament', sectiune('abonament'), abonament.index);
+// Abonamentul meu: afisare, schimbarea planului (confirmare + plata simulata), anularea unei schimbari programate.
+router.use('/abonament', sectiune('abonament'));
+router.get('/abonament', abonament.index);
+router.get('/abonament/schimba', abonament.schimbaGet);
+router.post('/abonament/schimba', abonament.schimbaPost);
+router.post('/abonament/anuleaza-programat', abonament.anuleazaProgramatPost);
 
 module.exports = router;
