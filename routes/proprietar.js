@@ -4,6 +4,7 @@ const express = require('express');
 const { cereAutentificare, cereRol } = require('../middleware/autentificare');
 const proprietati = require('../controllers/proprietar/ProprietatiController');
 const anunturi = require('../controllers/proprietar/AnunturiController');
+const abonament = require('../controllers/proprietar/AbonamentController');
 const { incarcaImagini } = require('../middleware/incarcareImagini');
 
 const router = express.Router();
@@ -37,5 +38,8 @@ router.get('/anunturi/:id/edit', anunturi.editGet);
 router.post('/anunturi/:id/edit', incarcaImagini, anunturi.editPost);
 router.post('/anunturi/:id/activeaza', anunturi.activeaza);
 router.post('/anunturi/:id/dezactiveaza', anunturi.dezactiveaza);
+
+// Abonamentul meu (deocamdata doar afisare).
+router.get('/abonament', sectiune('abonament'), abonament.index);
 
 module.exports = router;
