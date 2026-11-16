@@ -6,6 +6,7 @@
 const ProprietateAccessor = require('../../src/NivelAccesDate/ProprietateAccessor');
 const ProprietateViewModel = require('../../models/ProprietateViewModel');
 const { situatieProprietati } = require('../../servicii/verificariPlan');
+const { textBlocare, CUVINTE_PROPRIETATI } = require('../../servicii/limite');
 const { citesteId, negasit, mesajFlash } = require('../../utils/http');
 
 const proprietati = new ProprietateAccessor();
@@ -18,18 +19,8 @@ const STARI_FORMULAR = ['liber', 'ocupat'];
 
 const proprietateNegasita = (res) => negasit(res, 'Proprietatea nu există', 'Proprietatea căutată nu a fost găsită printre proprietățile tale.');
 
-// "1 proprietate activă" / "3 proprietăți active"
-const proprietatiActive = (n) => (n === 1 ? '1 proprietate activă' : `${n} proprietăți active`);
-
-// Textul afisat cand planul nu mai permite inca o proprietate. Peste limita (ex. dupa trecerea la un plan
-// mai mic) spunem exact cate trebuie dezactivate ca sa poata adauga alta.
-function textLimita(s) {
-  if (!s.plan) return 'Nu ai un abonament în curs, așa că nu poți avea proprietăți active.';
-  const deDezactivat = s.folosit - s.maxim + 1;
-  const ce = deDezactivat === 1 ? 'una' : `${deDezactivat}`;
-  return `Planul tău „${s.plan}” permite ${proprietatiActive(s.maxim)}, iar tu ai ${s.folosit}. `
-    + `Ca să adaugi alta, dezactivează ${ce} sau treci la un plan mai mare.`;
-}
+// Textul afisat cand planul nu mai permite inca o proprietate (comun cu anunturile, din servicii/limite.js).
+const textLimita = (s) => textBlocare(s, CUVINTE_PROPRIETATI);
 
 // Textul despre anunturi pentru mesajul verde, de ex. " 2 anunțuri ale ei au fost dezactivate."
 function textAnunturi({ anunturiDezactivate = 0, anunturiActivate = 0 }) {
@@ -138,7 +129,8 @@ async function dezactiveaza(req, res) {
   res.redirect(LISTA);
 }
 
-// POST /proprietar/proprietati/:id/activeaza - o pune din nou in uz, doar daca planul mai permite
+// POST /proprietar/proprietati/:id/activeaza - o pune din nou in uz, doar daca planul mai permite.
+// Anunturile ei raman inactive: proprietarul le activeaza unul cate unul, cu limita de anunturi verificata.
 async function activeaza(req, res) {
   const id = citesteId(req);
   const entitate = id && (await proprietati.getByIdSiProprietar(id, req.idUtilizator));
@@ -149,8 +141,8 @@ async function activeaza(req, res) {
       mesajFlash(req, textLimita(limita), 'warning');
       return res.redirect(LISTA);
     }
-    const rezultat = await proprietati.schimbaStare(id, 'liber');
-    mesajFlash(req, `Proprietatea „${entitate.denumire}” a fost activată.` + textAnunturi(rezultat));
+    await proprietati.schimbaStare(id, 'liber', { reactiveazaAnunturi: false });
+    mesajFlash(req, `Proprietatea „${entitate.denumire}” a fost activată. Anunțurile ei au rămas inactive: le poți activa din „Anunțurile mele”.`);
   }
   res.redirect(LISTA);
 }

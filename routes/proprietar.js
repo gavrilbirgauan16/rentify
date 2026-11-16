@@ -3,6 +3,8 @@
 const express = require('express');
 const { cereAutentificare, cereRol } = require('../middleware/autentificare');
 const proprietati = require('../controllers/proprietar/ProprietatiController');
+const anunturi = require('../controllers/proprietar/AnunturiController');
+const { incarcaImagini } = require('../middleware/incarcareImagini');
 
 const router = express.Router();
 
@@ -25,5 +27,15 @@ router.get('/proprietati/:id/edit', proprietati.editGet);
 router.post('/proprietati/:id/edit', proprietati.editPost);
 router.post('/proprietati/:id/dezactiveaza', proprietati.dezactiveaza);
 router.post('/proprietati/:id/activeaza', proprietati.activeaza);
+
+// Anunturile mele. Formularele cu imagini trec intai prin incarcaImagini (care verifica si tokenul CSRF).
+router.use('/anunturi', sectiune('anunturi'));
+router.get('/anunturi', anunturi.index);
+router.get('/anunturi/create', anunturi.createGet);
+router.post('/anunturi/create', incarcaImagini, anunturi.createPost);
+router.get('/anunturi/:id/edit', anunturi.editGet);
+router.post('/anunturi/:id/edit', incarcaImagini, anunturi.editPost);
+router.post('/anunturi/:id/activeaza', anunturi.activeaza);
+router.post('/anunturi/:id/dezactiveaza', anunturi.dezactiveaza);
 
 module.exports = router;
