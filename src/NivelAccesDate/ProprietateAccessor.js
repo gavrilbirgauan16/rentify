@@ -59,6 +59,23 @@ class ProprietateAccessor {
     });
   }
 
+  // ===== Zona proprietarului: cautam MEREU dupa id si proprietar impreuna =====
+  // Asa un proprietar nu poate ajunge la proprietatea altuia schimband numarul din adresa (IDOR).
+
+  // Proprietatile unui proprietar, cu numarul de anunturi active (pagina "Proprietatile mele").
+  async getAleProprietarului(proprietarId) {
+    return context.proprietate.findMany({
+      where: { proprietar_id: proprietarId },
+      include: { _count: { select: { anunt: { where: { stare: 'activ' } } } } },
+      orderBy: [{ creat_la: 'desc' }, { id: 'desc' }],
+    });
+  }
+
+  // O proprietate, doar daca apartine acestui proprietar; altfel null (pagina 404).
+  async getByIdSiProprietar(id, proprietarId) {
+    return context.proprietate.findFirst({ where: { id, proprietar_id: proprietarId } });
+  }
+
   // Adauga o proprietate noua (Create).
   async addEntity(date) {
     return context.proprietate.create({ data: date });

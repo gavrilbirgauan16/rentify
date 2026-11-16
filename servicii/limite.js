@@ -1,6 +1,5 @@
 // Limitele din planul de abonament al unui utilizator (ex. cate proprietati poate avea un proprietar).
-// Momentan le folosim ca sa AVERTIZAM adminul; cand vor exista paginile proprietarului si chiriasului,
-// aceleasi functii vor BLOCA depasirea.
+// Pe adminul le folosim doar ca sa-l AVERTIZAM; pe proprietar (si mai tarziu pe chirias) le folosim ca sa BLOCAM depasirea.
 
 // Transforma randurile din limita_plan intr-un obiect { max_proprietati: 3, sesizari: 1, ... }.
 // O limita care lipseste inseamna "nelimitat" (sau, la beneficii, "neinclus").
@@ -21,4 +20,7 @@ function situatie(folosit, maxim) {
   return { folosit, maxim, depaseste: folosit > maxim, text: `${folosit} / ${maxim}` };
 }
 
-module.exports = { dinRanduri, limita, situatie };
+// Mai are voie sa adauge inca unul? (null = nelimitat). Ex. 0 din 1 -> da; 1 din 1 -> nu.
+const maiPoate = (folosit, maxim) => maxim === null || folosit < maxim;
+
+module.exports = { dinRanduri, limita, situatie, maiPoate };
