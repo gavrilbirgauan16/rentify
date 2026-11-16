@@ -14,9 +14,16 @@ function pregatesteToken(req, res, next) {
   next();
 }
 
-// true daca tokenul trimis de formular e cel din sesiune (comparatie in timp constant).
+// Tokenul sesiunii, creat daca nu exista inca (pentru API: React il cere o data, la pornire).
+function asiguraToken(req) {
+  if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  return req.session.csrfToken;
+}
+
+// true daca tokenul trimis e cel din sesiune (comparatie in timp constant).
+// Formularele HTML il trimit in campul ascuns "_csrf"; React (API) il trimite in antetul "x-csrf-token".
 function tokenValid(req) {
-  const trimis = Buffer.from(String((req.body && req.body._csrf) || ''));
+  const trimis = Buffer.from(String((req.body && req.body._csrf) || req.get('x-csrf-token') || ''));
   const asteptat = Buffer.from(String(req.session.csrfToken || ''));
   return trimis.length > 0 && trimis.length === asteptat.length && crypto.timingSafeEqual(trimis, asteptat);
 }
@@ -38,4 +45,19 @@ function verificaToken(req, res, next) {
   next();
 }
 
-module.exports = { pregatesteToken, verificaToken, tokenValid, refuza };
+// Varianta pentru API (raspunde cu JSON, nu cu pagina):
+//  - cererile care trimit antetul x-api-key sunt de la programe (Postman, alte aplicatii): nu folosesc cookie-uri,
+//    deci nu pot fi victime CSRF -> trec; cheia (corecta sau nu) o verifica mai departe cereCheie, cu mesajul ei;
+//  - cererile din browser (React, cu cookie de sesiune) trebuie sa aiba antetul x-csrf-token.
+function verificaTokenApi(req, res, next) {
+  if (METODE_SIGURE.includes(req.method) || req.get('x-api-key')) return next();
+  if (!req.session || !tokenValid(req)) {
+    return res.status(403).json({
+      eroare: 'Cerere respinsă: din browser trimite tokenul CSRF în antetul x-csrf-token (îl primești de la GET /api/auth/csrf); '
+        + 'dintr-un program trimite cheia API în antetul x-api-key.',
+    });
+  }
+  next();
+}
+
+module.exports = { pregatesteToken, verificaToken, tokenValid, refuza, asiguraToken, verificaTokenApi };
