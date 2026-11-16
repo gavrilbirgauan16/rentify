@@ -11,14 +11,13 @@ const { catreDto, catreListaDto, dinBody } = require('../../models/api/AnuntDto'
 const { verificaProprietatea } = require('../AnunturiController');
 const { areCheie } = require('../../middleware/cheieApi');
 const { citesteId } = require('../../utils/http');
+const { citesteCautarea, conditie, SORTARI } = require('../../servicii/cautareAnunturi');
+const F = require('../../servicii/filtre');
 
 const anunturi = new AnuntAccessor();
 const proprietati = new ProprietateAccessor();
 
 const negasit = (res) => res.status(404).json({ eroare: 'Anunțul nu există.' });
-
-// Fara cheie se vad doar anunturile active (ce vede orice vizitator). Cu cheie se vad toate.
-const vizibil = (req, anunt) => anunt.stare === 'activ' || areCheie(req);
 
 // Body-ul trebuie sa fie un obiect JSON (nu o lista, nu text).
 const bodyValid = (body) => body !== null && typeof body === 'object' && !Array.isArray(body);
@@ -34,20 +33,43 @@ async function valideaza(body, proprietateActuala = null, stareActuala = null) {
   return { model, erori };
 }
 
-// GET /api/anunturi  (optional ?stare=activ|ciorna|inactiv, doar cu cheie)
+// GET /api/anunturi
+//  - cu cheie API (admin / programe): toate anunturile, ca la laboratorul 7 (optional ?stare=activ|ciorna|...);
+//  - fara cheie (chirias / vizitator): CAUTAREA PUBLICA - doar anunturile active, cu filtre si paginare:
+//    ?q=&oras=&tip=&pret_min=&pret_max=&camere_min=&persoane=&sort=noi|pret_asc|pret_desc&pagina=&pe_pagina=
+// Raspunsul ramane o LISTA (ca sa nu se strice clientii existenti); paginarea vine in antete:
+//    X-Total-Count (cate rezultate in total), X-Pagina, X-Total-Pagini.
 async function getAll(req, res) {
-  let entitati = (await anunturi.getAll()).filter((a) => vizibil(req, a));
-  if (req.query.stare && areCheie(req)) entitati = entitati.filter((a) => a.stare === req.query.stare);
+  if (areCheie(req)) {
+    let entitati = await anunturi.getAll();
+    if (req.query.stare) entitati = entitati.filter((a) => a.stare === req.query.stare);
+    const imagini = await anunturi.getImagini(entitati.map((a) => a.id));
+    return res.json(catreListaDto(entitati, imagini));
+  }
+  const f = citesteCautarea(req.query);
+  const where = conditie(f);
+  const pag = F.paginare(await anunturi.numaraPublice(where), f.pagina, f.pe_pagina);
+  const entitati = await anunturi.cautaPublice(where, SORTARI[f.sort], pag);
   const imagini = await anunturi.getImagini(entitati.map((a) => a.id));
+  res.set({ 'X-Total-Count': pag.total, 'X-Pagina': pag.pagina, 'X-Total-Pagini': pag.totalPagini });
   res.json(catreListaDto(entitati, imagini));
 }
 
 // GET /api/anunturi/:id
+//  - cu cheie API: orice anunt (ca la laboratorul 7);
+//  - fara cheie: doar un anunt public (altfel 404, ca si cum n-ar exista); fiecare deschidere numara o vizualizare.
 async function getById(req, res) {
   const id = citesteId(req);
-  const entitate = id && (await anunturi.getById(id));
-  if (!entitate || !vizibil(req, entitate)) return negasit(res);
-  res.json(catreDto(entitate, await anunturi.getImagini([id])));
+  if (!id) return negasit(res);
+  if (areCheie(req)) {
+    const entitate = await anunturi.getById(id);
+    if (!entitate) return negasit(res);
+    return res.json(catreDto(entitate, await anunturi.getImagini([id])));
+  }
+  const entitate = await anunturi.getPublicById(id);
+  if (!entitate) return negasit(res);
+  await anunturi.inregistreazaVizualizare(id);
+  res.json(catreDto({ ...entitate, vizualizari: entitate.vizualizari + 1 }, await anunturi.getImagini([id])));
 }
 
 // POST /api/anunturi - raspunde 201 Created cu anuntul nou si adresa lui (antetul Location)
