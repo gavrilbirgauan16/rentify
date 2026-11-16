@@ -38,6 +38,7 @@ async function index(req, res) {
 
   // "De rezolvat": doar ce are cel putin un caz, fiecare cu link catre lista filtrata
   const deRezolvat = [
+    { numar: n.anunturiInAsteptare, text: 'anunțuri de aprobat', link: '/admin/anunturi?stare=in_asteptare&sort=vechi', culoare: 'warning' },
     { numar: neplatite.length, text: 'abonamente neplătite', link: '/admin/abonamente?stare=neplatit', culoare: 'danger' },
     { numar: expiraCurand.length, text: 'abonamente expiră în 7 zile', link: '/admin/abonamente?expira=7', culoare: 'warning' },
     { numar: vm.filter((u) => u.situatieProprietati?.depaseste).length, text: 'proprietari peste limita planului', link: '/admin/utilizatori?situatie=peste_limita', culoare: 'danger' },

@@ -70,4 +70,28 @@ const contExistent = (u) => ({
   }),
 });
 
-module.exports = { contExistent, confirmareCont, resetareParola, schimbareEmail, emailSchimbat };
+// Moderarea: anuntul proprietarului a fost aprobat / respins de admin.
+// u = proprietarul ({ prenume }), titlu = titlul anuntului. Textele trec prin sablon, care face escaparea HTML.
+const anuntAprobat = (u, titlu) => ({
+  subiect: 'Anunțul tău a fost aprobat',
+  ...sablon({
+    salut: `Bună, ${u.prenume}!`,
+    paragrafe: [`Anunțul „${titlu}” a fost aprobat și apare acum pe Rentify.`],
+    buton: 'Vezi anunțurile mele',
+    link: `${config.appUrl}/proprietar/anunturi`,
+    nota: 'Dacă modifici conținutul anunțului, el va fi verificat din nou înainte să apară.',
+  }),
+});
+
+const anuntRespins = (u, titlu, motiv) => ({
+  subiect: 'Anunțul tău are nevoie de corecturi',
+  ...sablon({
+    salut: `Bună, ${u.prenume}!`,
+    paragrafe: [`Anunțul „${titlu}” nu a fost aprobat.`, `Motivul: ${motiv}`, 'Corectează anunțul și trimite-l din nou; îl verificăm cât mai repede.'],
+    buton: 'Corectează anunțul',
+    link: `${config.appUrl}/proprietar/anunturi`,
+    nota: 'Dacă ai întrebări, răspunde la acest email sau contactează administratorul.',
+  }),
+});
+
+module.exports = { contExistent, confirmareCont, resetareParola, schimbareEmail, emailSchimbat, anuntAprobat, anuntRespins };
