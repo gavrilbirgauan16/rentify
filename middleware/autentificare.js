@@ -16,7 +16,11 @@ async function incarcaUtilizator(req, res, next) {
     delete req.session.utilizatorId; // contul nu mai exista sau a fost blocat: il deconectam
     return next();
   }
-  res.locals.utilizator = { id: u.id, nume: `${u.prenume} ${u.nume}`, email: u.email, rol: u.rol.nume, schimbaParola: u.schimba_parola };
+  // nume = numele complet pentru afisare; prenume / numeFamilie separat (ex. pentru API: "Ana Maria" + "Popescu").
+  res.locals.utilizator = {
+    id: u.id, nume: `${u.prenume} ${u.nume}`, prenume: u.prenume, numeFamilie: u.nume,
+    email: u.email, rol: u.rol.nume, schimbaParola: u.schimba_parola,
+  };
   next();
 }
 

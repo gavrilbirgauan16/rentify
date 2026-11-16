@@ -6,6 +6,7 @@ const { rateLimit } = require('express-rate-limit');
 const { cereCheie } = require('../middleware/cheieApi');
 const { asiguraToken, verificaTokenApi } = require('../middleware/csrf');
 const anunturi = require('../controllers/api/AnunturiApiController');
+const auth = require('../controllers/api/AutentificareApiController');
 
 const router = express.Router();
 
@@ -21,6 +22,15 @@ router.use(verificaTokenApi);
 
 // Tokenul CSRF pentru interfata React: il cere o data (si din nou dupa login / logout, cand sesiunea se schimba).
 router.get('/auth/csrf', (req, res) => res.json({ csrfToken: asiguraToken(req) }));
+
+// Ca la pagina de login: cel mult 10 incercari GRESITE in 15 minute, de pe acelasi calculator (impotriva ghicirii parolei).
+const limitaLogin = rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 10, skipSuccessfulRequests: true, standardHeaders: 'draft-8', legacyHeaders: false,
+  message: { eroare: 'Prea multe încercări greșite. Încearcă din nou peste 15 minute.' },
+});
+router.post('/auth/login', limitaLogin, auth.login);
+router.post('/auth/logout', auth.logout);
+router.get('/auth/eu', auth.eu);
 
 router.get('/anunturi', anunturi.getAll);
 router.get('/anunturi/:id', anunturi.getById);
