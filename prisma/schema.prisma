@@ -12,6 +12,7 @@ model abonament {
   plan_id            Int
   perioada           String            @db.VarChar(10)
   pret               Decimal           @default(0) @db.Decimal(8, 2)
+  credit_aplicat     Decimal           @default(0) @db.Decimal(8, 2)
   data_inceput       DateTime          @db.Date
   data_sfarsit       DateTime          @db.Date
   reinnoire_automata Boolean           @default(false)

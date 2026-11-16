@@ -105,6 +105,31 @@ test('acelasi plan si aceeasi perioada: nimic de schimbat; perioada inventata: r
   assert.ok(calculeazaSchimbarea({ curent: null, planNou: BASIC, perioada: 'saptamanal', azi: '2026-11-11' }).eroare);
 });
 
+// Bug gasit la testarea in browser (16 nov): la doua upgrade-uri la rand se pierdea creditul primului.
+// Toate in aceeasi zi: totalul platit cash trebuie sa fie exact pretul planului final.
+test('lant de upgrade-uri in aceeasi zi: nu se pierde niciun ban', () => {
+  const azi = '2026-11-16';
+  const sf = (inceput, perioada) => (perioada === 'anual' ? '2027-11-15' : '2026-12-15');
+  let curent = abonament(GRATUIT, { perioada: 'anual', data_inceput: azi, data_sfarsit: '2027-11-15' });
+  let totalCash = 0;
+  for (const [plan, perioada] of [[BASIC, 'lunar'], [BASIC, 'anual'], [STANDARD, 'anual']]) {
+    const r = calculeazaSchimbarea({ curent, planNou: plan, perioada, azi });
+    assert.equal(r.eroare, null);
+    totalCash += r.dePlata;
+    // abonamentul nou, cum il salveaza aplicatia: pret = cash, credit_aplicat = creditul adus
+    curent = {
+      plan_id: plan.id, plan_pret_lunar: plan.pret_lunar, perioada, pret: r.dePlata, platit: r.dePlata,
+      credit_aplicat: r.credit, data_inceput: azi, data_sfarsit: sf(azi, perioada),
+    };
+  }
+  assert.equal(totalCash, 4500); // 250 + 2250 + 2000 = pretul Standard anual (inainte de reparatie: 4750)
+});
+
+test('creditul adus intra in valoarea abonamentului (si cand cash-ul e 0)', () => {
+  const curent = abonament(BASIC, { pret: 0, platit: 0, credit_aplicat: 250 }); // platit integral din credit
+  assert.equal(creditRamas(curent, '2026-11-16'), 12500); // 250 * 15/30
+});
+
 test('suma de plata nu e niciodata negativa, iar creditul nu depaseste pretul planului nou', () => {
   const curent = abonament(STANDARD, { perioada: 'anual', data_inceput: '2026-11-10', data_sfarsit: '2027-11-09' });
   const PREMIUM = { id: 3, nume: 'Premium', pret_lunar: 600, pret_anual: 6000 };

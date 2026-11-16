@@ -18,12 +18,14 @@ const lei = (b) => b / 100;
 const pretPlan = (plan, perioada) => bani(perioada === 'anual' ? plan.pret_anual : plan.pret_lunar);
 
 // Cat valoreaza zilele nefolosite din abonamentul curent, daca se opreste AZI (azi intra in planul nou).
-// Se socoteste doar din ce s-a platit efectiv (un abonament neplatit nu da credit).
+// Valoarea abonamentului = ce s-a platit efectiv cash (cel mult pretul) + creditul adus la randul lui dintr-un
+// upgrade anterior. Fara creditul adus, la doua upgrade-uri la rand primul credit s-ar pierde.
+// Un abonament neplatit da credit doar din creditul adus.
 function creditRamas(curent, azi) {
   const zileTotale = D.zileIntre(curent.data_inceput, curent.data_sfarsit) + 1;
   const zileRamase = Math.max(0, Math.min(zileTotale, D.zileIntre(azi, curent.data_sfarsit) + 1));
-  const platit = Math.min(bani(curent.platit), bani(curent.pret));
-  return Math.floor((platit * zileRamase) / zileTotale); // rotunjim in jos: nu dam mai mult decat a platit
+  const valoare = Math.min(bani(curent.platit), bani(curent.pret)) + bani(curent.credit_aplicat ?? 0);
+  return Math.floor((valoare * zileRamase) / zileTotale); // rotunjim in jos: nu dam mai mult decat a platit
 }
 
 // Este planul nou un "pas in sus"? Comparam planurile dupa pretul lunar; la acelasi plan, dupa perioada.
@@ -33,7 +35,7 @@ function esteUpgrade(curent, planNou, perioadaNoua) {
 }
 
 // curent = abonamentul in curs sau null:
-//   { plan_id, plan_pret_lunar, perioada, pret, platit, data_inceput, data_sfarsit } (datele ca 'AAAA-LL-ZZ')
+//   { plan_id, plan_pret_lunar, perioada, pret, platit, credit_aplicat, data_inceput, data_sfarsit } (datele ca 'AAAA-LL-ZZ')
 // planNou = { id, nume, pret_lunar, pret_anual }; perioada = 'lunar' | 'anual'; azi = 'AAAA-LL-ZZ'
 // Intoarce { tip, eroare, pretIntreg, credit, dePlata, data_inceput, data_sfarsit } (sumele in lei).
 function calculeazaSchimbarea({ curent, planNou, perioada, azi }) {
