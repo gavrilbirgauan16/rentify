@@ -52,6 +52,7 @@ model anunt {
   favorit          favorit[]
   vizionare        vizionare[]
   @@index([proprietate_id])
+  @@index([stare])
 }
 
 model cerere_prelungire {
@@ -76,6 +77,8 @@ model contactare {
   raspuns_la DateTime?  @db.Timestamp(6)
   anunt      anunt      @relation(fields: [anunt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   utilizator utilizator @relation(fields: [chirias_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([chirias_id, creat_la])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
