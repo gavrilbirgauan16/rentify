@@ -1,0 +1,64 @@
+<%# "Anunturile mele": anunturile proprietarului conectat si cate anunturi active mai permite planul. %>
+<%- include('../../partials/header', { titluPagina: 'Anunțurile mele' }) %>
+
+<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+  <h1 class="h3 mb-0">Anunțurile mele</h1>
+  <% if (areProprietatiActive) { %>
+  <a class="btn btn-primary" href="/proprietar/anunturi/create">+ Adaugă anunț</a>
+  <% } else { %>
+  <a class="btn btn-outline-primary" href="/proprietar/proprietati">Adaugă întâi o proprietate</a>
+  <% } %>
+</div>
+
+<!-- Cat permite planul. Un anunt nou se poate salva oricand ca Ciorna; limita conteaza doar la publicare. -->
+<div class="alert <%= limita.poateAdauga ? 'alert-light border' : 'alert-warning' %>" role="status">
+  <% if (limita.plan) { %>
+    Plan <strong><%= limita.plan %></strong>:
+    <% if (limita.maxim === null) { %><strong><%= limita.folosit %></strong> anunțuri active (fără limită).
+    <% } else { %><strong><%= limita.text %></strong> anunțuri active.<% } %>
+  <% } else { %>
+    Nu ai un abonament în curs.
+  <% } %>
+  <% if (textLimita) { %><div class="small mt-1"><%= textLimita %> Anunțurile noi le poți salva ca Ciornă.</div><% } %>
+</div>
+
+<% if (anunturi.length === 0) { %>
+  <div class="card card-body shadow-sm text-center py-5">
+    <p class="mb-1 fw-semibold">Nu ai încă niciun anunț.</p>
+    <p class="text-body-secondary mb-0">Un anunț prezintă una dintre proprietățile tale: preț, descriere și poze.</p>
+  </div>
+<% } else { %>
+  <div class="d-grid gap-3">
+    <% anunturi.forEach(function(a) { %>
+    <div class="card shadow-sm">
+      <div class="row g-0">
+        <div class="col-4 col-md-2">
+          <% if (a.primaImagine) { %>
+            <img src="<%= a.primaImagine %>" alt="<%= a.titlu %>" class="img-fluid rounded-start h-100 object-fit-cover" style="max-height: 140px; width: 100%;">
+          <% } else { %>
+            <div class="bg-body-secondary h-100 d-flex align-items-center justify-content-center text-body-secondary small rounded-start" style="min-height: 100px;">fără poze</div>
+          <% } %>
+        </div>
+        <div class="col-8 col-md-10">
+          <div class="card-body py-2 py-md-3">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+              <h2 class="h6 mb-0"><%= a.titlu %></h2>
+              <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
+            </div>
+            <p class="text-body-secondary small mb-2">
+              <%= a.tipAfisat %> · <strong><%= a.pretAfisat %></strong> · <%= a.proprietate_denumire %>, <%= a.proprietate_oras %>
+              <% if (a.proprietateInactiva) { %><br><span class="text-danger">Proprietatea este inactivă.</span><% } %>
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+              <a class="btn btn-sm btn-primary" href="/proprietar/anunturi/<%= a.id %>/edit">Editează</a>
+              <%- include('../../admin/anunturi/_buton_stare', { a: a, baza: '/proprietar/anunturi', inapoi: '/proprietar/anunturi', clase: 'btn-sm' }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('../../partials/footer') %>
