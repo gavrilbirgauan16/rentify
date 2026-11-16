@@ -76,6 +76,14 @@ class ProprietateAccessor {
     return context.proprietate.findFirst({ where: { id, proprietar_id: proprietarId } });
   }
 
+  // Proprietatile active ale unui proprietar (lista din formularul lui de anunt).
+  async getDisponibileAleProprietarului(proprietarId) {
+    return context.proprietate.findMany({
+      where: { proprietar_id: proprietarId, NOT: { stare: 'inactiv' } },
+      orderBy: { denumire: 'asc' },
+    });
+  }
+
   // Adauga o proprietate noua (Create).
   async addEntity(date) {
     return context.proprietate.create({ data: date });
@@ -96,15 +104,17 @@ class ProprietateAccessor {
   }
 
   // Schimba doar starea (butoanele Dezactiveaza / Activeaza).
-  async schimbaStare(id, stare) {
-    return this.#salveazaCuAnunturi(id, { stare, actualizat_la: new Date() });
+  // reactiveazaAnunturi: false -> la reactivare anunturile raman inactive (proprietarul le activeaza
+  // unul cate unul, ca sa se verifice limita de anunturi active din planul lui).
+  async schimbaStare(id, stare, { reactiveazaAnunturi = true } = {}) {
+    return this.#salveazaCuAnunturi(id, { stare, actualizat_la: new Date() }, reactiveazaAnunturi);
   }
 
   // Tranzactie: proprietatea si anunturile ei se salveaza impreuna sau deloc.
   // Proprietatea devine inactiva -> anunturile ei devin inactive.
-  // Proprietatea e reactivata   -> anunturile ei inactive redevin active.
-  // Intoarce si cate anunturi s-au schimbat, ca sa-l anuntam pe admin.
-  async #salveazaCuAnunturi(id, date) {
+  // Proprietatea e reactivata   -> anunturile ei inactive redevin active (doar daca reactiveazaAnunturi).
+  // Intoarce si cate anunturi s-au schimbat, ca sa-l anuntam pe utilizator.
+  async #salveazaCuAnunturi(id, date, reactiveazaAnunturi = true) {
     return context.$transaction(async (tx) => {
       const inainte = await tx.proprietate.findUnique({ where: { id }, select: { stare: true } });
       const proprietate = await tx.proprietate.update({ where: { id }, data: date });
@@ -118,7 +128,7 @@ class ProprietateAccessor {
         });
         anunturiDezactivate = rezultat.count;
       }
-      if (proprietate.stare !== 'inactiv' && inainte.stare === 'inactiv') {
+      if (reactiveazaAnunturi && proprietate.stare !== 'inactiv' && inainte.stare === 'inactiv') {
         const rezultat = await tx.anunt.updateMany({
           where: { proprietate_id: id, stare: 'inactiv' },
           data: { stare: 'activ' },

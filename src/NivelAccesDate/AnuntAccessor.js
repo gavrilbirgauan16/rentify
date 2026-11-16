@@ -79,6 +79,27 @@ class AnuntAccessor {
     return context.anunt.count({ where });
   }
 
+  // ===== Zona proprietarului: un anunt e "al lui" daca proprietatea anuntului e a lui =====
+
+  // Anunturile proprietarului, cele mai noi primele (pagina "Anunturile mele").
+  async getAleProprietarului(proprietarId) {
+    return context.anunt.findMany({
+      where: { proprietate: { proprietar_id: proprietarId } },
+      include: CU_PROPRIETATE,
+      orderBy: [{ creat_la: 'desc' }, { id: 'desc' }],
+    });
+  }
+
+  // Un anunt, doar daca e al acestui proprietar; altfel null (pagina 404, protectie IDOR).
+  async getByIdSiProprietar(id, proprietarId) {
+    return context.anunt.findFirst({ where: { id, proprietate: { proprietar_id: proprietarId } }, include: CU_PROPRIETATE });
+  }
+
+  // Cate anunturi active are un proprietar (pentru limita max_anunturi_active din plan).
+  async numaraActiveAleProprietarului(proprietarId) {
+    return context.anunt.count({ where: { stare: 'activ', proprietate: { proprietar_id: proprietarId } } });
+  }
+
   // Un anunt dupa id, cu proprietatea lui (Edit si butoanele de stare).
   async getById(id) {
     return context.anunt.findUnique({ where: { id }, include: CU_PROPRIETATE });
@@ -94,24 +115,25 @@ class AnuntAccessor {
 
   // Adauga un anunt nou impreuna cu imaginile lui (Create).
   // Tranzactie: daca imaginile nu se pot salva, nu se salveaza nici anuntul.
-  async addEntity(date, imagini = [], adminId) {
+  // incarcatDe = cine a incarcat imaginile (adminul sau proprietarul).
+  async addEntity(date, imagini = [], incarcatDe) {
     return context.$transaction(async (tx) => {
       const anunt = await tx.anunt.create({ data: date });
-      await this.#adaugaImagini(tx, anunt.id, imagini, adminId);
+      await this.#adaugaImagini(tx, anunt.id, imagini, incarcatDe);
       return anunt;
     });
   }
 
   // Modifica un anunt: datele, imaginile noi si imaginile bifate pentru stergere (Edit).
   // Intoarce caile imaginilor sterse, ca sa fie sterse si de pe disc.
-  async updateEntity(id, date, imaginiNoi = [], idImaginiDeSters = [], adminId) {
+  async updateEntity(id, date, imaginiNoi = [], idImaginiDeSters = [], incarcatDe) {
     return context.$transaction(async (tx) => {
       const anunt = await tx.anunt.update({ where: { id }, data: date });
       const deSters = await tx.fisier.findMany({
         where: { ...IMAGINE_ANUNT, entitate_id: id, id: { in: idImaginiDeSters } }, // doar imaginile ACESTUI anunt
       });
       await tx.fisier.deleteMany({ where: { id: { in: deSters.map((f) => f.id) } } });
-      await this.#adaugaImagini(tx, id, imaginiNoi, adminId);
+      await this.#adaugaImagini(tx, id, imaginiNoi, incarcatDe);
       return { anunt, caiSterse: deSters.map((f) => f.cale) };
     });
   }
@@ -122,13 +144,13 @@ class AnuntAccessor {
   }
 
   // Salveaza in tabelul fisier imaginile primite de la formular.
-  async #adaugaImagini(tx, anuntId, imagini, adminId) {
+  async #adaugaImagini(tx, anuntId, imagini, incarcatDe) {
     if (imagini.length === 0) return;
     await tx.fisier.createMany({
       data: imagini.map((img) => ({
         ...IMAGINE_ANUNT,
         entitate_id: anuntId,
-        incarcat_de: adminId,
+        incarcat_de: incarcatDe,
         nume_fisier: img.nume,
         cale: img.cale,
       })),
