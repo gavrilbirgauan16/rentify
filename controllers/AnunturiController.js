@@ -9,7 +9,7 @@ const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
 const F = require('../servicii/filtre');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
 const { noteaza } = require('../servicii/jurnal');
-const { valideazaMotiv } = require('../servicii/moderare');
+const { valideazaMotiv, amprentaContinut } = require('../servicii/moderare');
 const emailuri = require('../servicii/emailuri');
 const { trimite } = require('../servicii/email');
 
@@ -157,7 +157,19 @@ async function details(req, res) {
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
   const [imagini, istoric] = await Promise.all([anunturi.getImagini([id]), jurnal.getPentru('anunt', id)]);
-  res.render('admin/anunturi/details', { a: AnuntViewModel.dinEntitate(entitate, imagini), istoric });
+  res.render('admin/anunturi/details', {
+    a: AnuntViewModel.dinEntitate(entitate, imagini),
+    istoric,
+    versiune: amprentaContinut(entitate, imagini.map((f) => f.id)), // ce varianta vede adminul acum
+  });
+}
+
+// Un anunt "In asteptare" e al proprietarului: adminul nu-i schimba continutul, doar il aproba sau il respinge cu motiv.
+function blocatInAsteptare(req, res, entitate) {
+  if (entitate.stare !== 'in_asteptare') return false;
+  mesajFlash(req, 'Anunțul așteaptă aprobarea: nu-l poți modifica. Dacă trebuie corectat, respinge-l cu motivul, iar proprietarul îl corectează.', 'warning');
+  res.redirect(`/admin/anunturi/${entitate.id}`);
+  return true;
 }
 
 // GET /admin/anunturi/create - formularul gol
@@ -191,6 +203,7 @@ async function editGet(req, res) {
   const id = citesteId(req);
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
+  if (blocatInAsteptare(req, res, entitate)) return;
   const model = AnuntViewModel.dinEntitate(entitate, await anunturi.getImagini([id]));
   res.render('admin/anunturi/edit', { a: model, erori: {}, ...(await dateFormular(entitate.proprietate, entitate.stare)) });
 }
@@ -202,6 +215,10 @@ async function editPost(req, res) {
   if (!entitate) {
     stergeFisiere(imaginiIncarcate(req).map((i) => i.cale));
     return anuntNegasit(res);
+  }
+  if (entitate.stare === 'in_asteptare') {
+    stergeFisiere(imaginiIncarcate(req).map((i) => i.cale));
+    if (blocatInAsteptare(req, res, entitate)) return;
   }
 
   const imaginiActuale = await anunturi.getImagini([id]);
@@ -236,6 +253,11 @@ async function activeaza(req, res) {
   const id = citesteId(req);
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
+  // Un anunt in asteptare se aproba doar de pe pagina lui (unde adminul il vede), nu dintr-un buton din lista.
+  if (entitate.stare === 'in_asteptare') {
+    mesajFlash(req, 'Anunțul așteaptă aprobarea: deschide-l, verifică-l și apasă „Aprobă”.', 'warning');
+    return res.redirect(`/admin/anunturi/${id}`);
+  }
   if (entitate.proprietate.stare === 'inactiv') {
     mesajFlash(req, `Anunțul nu poate fi activat: proprietatea „${entitate.proprietate.denumire}” este inactivă. Activează întâi proprietatea.`, 'warning');
     return res.redirect(inapoi(req));
@@ -274,6 +296,13 @@ async function aproba(req, res) {
   if (entitate.proprietate.stare === 'inactiv') {
     mesajFlash(req, `Anunțul nu poate fi aprobat: proprietatea „${entitate.proprietate.denumire}” este inactivă.`, 'warning');
     return res.redirect(inapoi(req));
+  }
+  // Blocare optimista: adminul aproba exact varianta pe care a vazut-o. Daca proprietarul a modificat-o intre timp,
+  // amprenta trimisa de formular nu mai e cea de acum -> nu aprobam, il trimitem sa o vada din nou.
+  const imagini = await anunturi.getImagini([id]);
+  if (String(req.body.versiune || '') !== amprentaContinut(entitate, imagini.map((f) => f.id))) {
+    mesajFlash(req, 'Proprietarul a modificat anunțul între timp. Verifică varianta nouă și apoi aprobă-l.', 'warning');
+    return res.redirect(`/admin/anunturi/${id}`);
   }
   // Conditia "in asteptare" e verificata chiar in baza de date (vezi accesorul): doi admini deodata nu-l aproba de doua ori.
   if (!(await anunturi.aproba(id))) {

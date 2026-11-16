@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 // Moderarea anunturilor (functii PURE, testate in test/moderare.test.js).
 // Un anunt publicat de proprietar ajunge pe site doar dupa aprobarea adminului.
 // Regula anti "bait and switch": orice schimbare de CONTINUT a unui anunt aprobat ii sterge aprobarea
@@ -25,6 +27,16 @@ function normalizeaza(v) {
 function continutSchimbat(vechi, nou, imaginiSchimbate = false) {
   if (imaginiSchimbate) return true;
   return CAMPURI_CONTINUT.some((camp) => normalizeaza(vechi[camp]) !== normalizeaza(nou[camp]));
+}
+
+// Amprenta (versiunea) continutului unui anunt: SHA-256 din campurile de continut + imaginile lui.
+// Adminul o primeste cand deschide anuntul; la "Aproba" serverul o recalculeaza. Daca proprietarul a schimbat
+// ceva intre timp, amprentele difera si aprobarea se opreste (adminul nu aproba o varianta pe care n-a vazut-o).
+// Tehnica se numeste "optimistic locking" (blocare optimista).
+function amprentaContinut(anunt, idImagini = []) {
+  const continut = CAMPURI_CONTINUT.map((camp) => normalizeaza(anunt[camp])).join('\u0001');
+  const imagini = [...idImagini].map(Number).sort((a, b) => a - b).join(',');
+  return crypto.createHash('sha256').update(`${continut}\u0002${imagini}`).digest('hex').slice(0, 16);
 }
 
 // Ce stare primeste de fapt un anunt salvat de PROPRIETAR, fata de starea ceruta de el.
@@ -56,5 +68,5 @@ function valideazaMotiv(text) {
 }
 
 module.exports = {
-  STARI_PUBLICATE, CAMPURI_CONTINUT, continutSchimbat, stareLaSalvare, stareLaActivare, ocupaLoc, verificaLimita, valideazaMotiv,
+  STARI_PUBLICATE, CAMPURI_CONTINUT, continutSchimbat, amprentaContinut, stareLaSalvare, stareLaActivare, ocupaLoc, verificaLimita, valideazaMotiv,
 };

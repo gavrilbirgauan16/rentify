@@ -27,6 +27,16 @@ test('orice schimbare de continut (sau de imagini) conteaza', () => {
   assert.equal(M.continutSchimbat(dinBaza, { ...dinFormular, stare: 'inactiv', promovat: true }), false); // nu sunt continut
 });
 
+test('amprenta continutului: aceeasi pentru acelasi continut, alta la orice schimbare (text, pret, poze)', () => {
+  const a = M.amprentaContinut(dinBaza, [3, 1]);
+  assert.match(a, /^[0-9a-f]{16}$/);
+  assert.equal(M.amprentaContinut(dinFormular, [1, 3]), a); // alta forma, aceeasi valoare; ordinea pozelor nu conteaza
+  assert.notEqual(M.amprentaContinut({ ...dinBaza, pret: '999.00' }, [1, 3]), a);
+  assert.notEqual(M.amprentaContinut({ ...dinBaza, descriere: 'Nou' }, [1, 3]), a);
+  assert.notEqual(M.amprentaContinut(dinBaza, [1, 3, 7]), a); // poza adaugata
+  assert.notEqual(M.amprentaContinut(dinBaza, [1]), a); // poza stearsa
+});
+
 test('proprietarul cere "Publica": fara aprobare sau cu continut schimbat -> In asteptare', () => {
   assert.deepEqual(M.stareLaSalvare({ ceruta: 'activ', aprobat: false, schimbat: false }), { stare: 'in_asteptare', pastreazaAprobarea: false });
   assert.deepEqual(M.stareLaSalvare({ ceruta: 'activ', aprobat: true, schimbat: true }), { stare: 'in_asteptare', pastreazaAprobarea: false });
