@@ -44,7 +44,7 @@ async function index(req, res) {
     // "eticheta", nu "text": situatie() are deja un camp text ("1 / 1") care l-ar suprascrie.
     limite: [
       { eticheta: 'Proprietăți active', ...proprietati },
-      { eticheta: 'Anunțuri active', ...anunturi },
+      { eticheta: 'Anunțuri publicate (active + în așteptare)', ...anunturi },
     ],
     istoric: istoric.map(AbonamentViewModel.dinEntitate),
     afiseaza: D.afiseaza,

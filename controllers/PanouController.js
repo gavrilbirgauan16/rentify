@@ -43,7 +43,6 @@ async function index(req, res) {
     { numar: expiraCurand.length, text: 'abonamente expiră în 7 zile', link: '/admin/abonamente?expira=7', culoare: 'warning' },
     { numar: vm.filter((u) => u.situatieProprietati?.depaseste).length, text: 'proprietari peste limita planului', link: '/admin/utilizatori?situatie=peste_limita', culoare: 'danger' },
     { numar: vm.filter((u) => u.areAbonamente && !u.abonament).length, text: 'utilizatori fără abonament în curs', link: '/admin/utilizatori?situatie=fara_abonament', culoare: 'secondary' },
-    { numar: n.anunturiCiorna, text: 'anunțuri în ciornă', link: '/admin/anunturi?stare=ciorna', culoare: 'info' },
     { numar: n.anunturiPeInactive, text: 'anunțuri pe proprietăți inactive', link: '/admin/anunturi?problema=proprietate_inactiva', culoare: 'danger' },
     { numar: vm.filter((u) => u.areParolaTemporara).length, text: 'parole temporare nefolosite', link: '/admin/utilizatori?situatie=parola_temporara', culoare: 'secondary' },
   ].filter((r) => r.numar > 0);
