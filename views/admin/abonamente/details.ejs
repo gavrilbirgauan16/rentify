@@ -37,7 +37,7 @@
           <dt class="col-5 col-sm-4">Reînnoire automată</dt><dd class="col-7 col-sm-8"><%= a.reinnoire_automata ? 'Da' : 'Nu' %></dd>
           <dt class="col-5 col-sm-4">Preț</dt><dd class="col-7 col-sm-8"><%= a.pretAfisat %> <span class="text-body-secondary">(fixat la cumpărare)</span></dd>
           <dt class="col-5 col-sm-4">Plătit</dt><dd class="col-7 col-sm-8"><%= a.totalPlatitAfisat %></dd>
-          <dt class="col-5 col-sm-4">Rest de plată</dt><dd class="col-7 col-sm-8 <%= a.restDePlata > 0 && a.stare !== 'anulat' ? 'text-danger fw-semibold' : '' %>"><%= a.restDePlataAfisat %></dd>
+          <dt class="col-5 col-sm-4">Rest de plată</dt><dd class="col-7 col-sm-8 <%= a.restDePlata > 0 && a.esteActiv ? 'text-danger fw-semibold' : '' %>"><%= a.restDePlataAfisat %></dd>
         </dl>
       </div>
     </div>
