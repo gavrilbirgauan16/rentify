@@ -24,9 +24,10 @@ const vizibil = (req, anunt) => anunt.stare === 'activ' || areCheie(req);
 const bodyValid = (body) => body !== null && typeof body === 'object' && !Array.isArray(body);
 
 // Valideaza JSON-ul primit exact ca formularul de pe site. Intoarce { model, erori }.
-async function valideaza(body, proprietateActuala = null) {
+// La PUT, anuntul isi poate pastra starea actuala (ex. "in_asteptare"), chiar daca ea nu se alege din formular.
+async function valideaza(body, proprietateActuala = null, stareActuala = null) {
   const model = AnuntViewModel.dinFormular(dinBody(body));
-  const erori = model.valideaza();
+  const erori = model.valideaza(stareActuala);
   const lista = await proprietati.getDisponibile();
   if (proprietateActuala && !lista.some((p) => p.id === proprietateActuala.id)) lista.push(proprietateActuala);
   verificaProprietatea(model, lista, erori);
@@ -55,7 +56,9 @@ async function post(req, res) {
   const { model, erori } = await valideaza(req.body);
   if (Object.keys(erori).length > 0) return res.status(400).json({ eroare: 'Date invalide.', erori });
 
-  const nou = await anunturi.addEntity(model.catreEntitate());
+  // Cine are cheia API e de incredere, ca adminul: un anunt pus "activ" prin API e considerat aprobat.
+  const date = model.catreEntitate();
+  const nou = await anunturi.addEntity({ ...date, aprobat_la: date.stare === 'activ' ? new Date() : null });
   const complet = await anunturi.getById(nou.id);
   res.status(201).location(`/api/anunturi/${nou.id}`).json(catreDto(complet));
 }
@@ -68,10 +71,13 @@ async function put(req, res) {
   if (!entitate) return negasit(res);
   if (!bodyValid(req.body)) return res.status(400).json({ eroare: 'Trimite un obiect JSON în Body.' });
 
-  const { model, erori } = await valideaza(req.body, entitate.proprietate);
+  const { model, erori } = await valideaza(req.body, entitate.proprietate, entitate.stare);
   if (Object.keys(erori).length > 0) return res.status(400).json({ eroare: 'Date invalide.', erori });
 
-  await anunturi.updateEntity(id, model.catreEntitate());
+  // Ca la POST: trecut in "activ" prin API = aprobat (cel deja aprobat isi pastreaza data aprobarii).
+  const date = model.catreEntitate();
+  const aprobat_la = date.stare === 'activ' ? (entitate.aprobat_la ?? new Date()) : entitate.aprobat_la;
+  await anunturi.updateEntity(id, { ...date, aprobat_la });
   const actualizat = await anunturi.getById(id);
   res.json(catreDto(actualizat, await anunturi.getImagini([id])));
 }

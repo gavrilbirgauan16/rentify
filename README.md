@@ -51,9 +51,36 @@ Proiect PPAW – Bîrgăuan Gavril, grupa 3711a, USV.
 
 - Înregistrare ca chiriaș sau proprietar (`/inregistrare`); contul de admin nu se poate crea din aplicație.
 - Confirmarea emailului e obligatorie înainte de conectare (link valabil 24 de ore).
-- Chiriașul primește automat planul **Gratuit** la confirmare.
+- Chiriașul și proprietarul primesc automat planul **Gratuit** al rolului lor la confirmare.
 - Parola uitată: link pe email, valabil o oră; după resetare se închid toate sesiunile.
 - „Contul meu” (`/cont`): date personale, schimbarea parolei, schimbarea emailului (cu reconfirmare).
+
+## Zona proprietarului (`/proprietar`)
+
+- **Proprietățile mele** și **Anunțurile mele** (cu imagini): fiecare proprietar vede și modifică doar datele lui
+  (căutare după id + proprietar, deci un id schimbat în adresă duce la 404).
+- Limitele din plan (proprietăți active, anunțuri publicate) **blochează** adăugarea și reactivarea; adminul e doar avertizat.
+- **Abonamentul meu**: planul curent, cât s-a folosit din limite, istoricul și schimbarea planului:
+  - **upgrade** – începe imediat; zilele plătite și nefolosite se scad din preț (credit proporțional, rotunjit în jos);
+  - **downgrade** – începe după ce se termină perioada plătită; se poate renunța la el, cu rambursare;
+  - plata este **simulată** (nu se cer date de card); prețul se recalculează mereu pe server.
+
+## Moderarea anunțurilor
+
+| Stare | Ce înseamnă |
+|---|---|
+| Ciornă | salvat doar pentru proprietar |
+| În așteptare | trimis spre publicare, așteaptă aprobarea adminului |
+| Activ | aprobat și vizibil pe site |
+| Inactiv | scos de pe site |
+| Respins | adminul l-a respins, cu motiv; proprietarul îl corectează și îl retrimite |
+
+- „Publică” trimite anunțul spre aprobare; adminul îl **aprobă** sau îl **respinge cu motiv**, iar proprietarul primește un email.
+- Orice modificare de **conținut** (text, preț, poze) a unui anunț aprobat îl trimite din nou la aprobare;
+  dezactivarea și reactivarea fără modificări îi păstrează aprobarea.
+- Adminul nu modifică un anunț în așteptare (doar îl aprobă sau îl respinge) și aprobă exact varianta pe care a văzut-o
+  (dacă proprietarul o schimbă între timp, aprobarea se oprește).
+- Regulile sunt verificate și în baza de date (CHECK): stările permise și motivul obligatoriu la respingere.
 
 ## API (laboratorul 7)
 

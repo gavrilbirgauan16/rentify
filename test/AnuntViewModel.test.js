@@ -111,3 +111,23 @@ test('pretul pentru o persoana: optional, pozitiv, mai mic decat pretul intreg, 
   assert.ok(cu('900', 'vanzare'));
   assert.equal(AnuntViewModel.dinFormular({ ...formularBun(), pret_o_persoana: '' }).catreEntitate().pret_o_persoana, null);
 });
+
+test('"In asteptare" si "Respins" nu se aleg din formular; la editare starea actuala poate ramane', () => {
+  for (const stare of ['in_asteptare', 'respins']) {
+    assert.ok(AnuntViewModel.dinFormular({ ...formularBun(), stare }).valideaza().stare, stare);
+  }
+  // adminul corecteaza textul unui anunt In asteptare, fara sa-i schimbe starea: e voie
+  assert.equal(AnuntViewModel.dinFormular({ ...formularBun(), stare: 'in_asteptare' }).valideaza('in_asteptare').stare, undefined);
+  // dar nu poate "inventa" o stare diferita de cea actuala
+  assert.ok(AnuntViewModel.dinFormular({ ...formularBun(), stare: 'respins' }).valideaza('in_asteptare').stare);
+});
+
+test('starile noi au eticheta si culoare; aprobarea si respingerea se vad din model', () => {
+  const a = new AnuntViewModel({ stare: 'respins', motiv_respingere: 'Lipsesc pozele' });
+  assert.equal(a.stareAfisata, 'Respins');
+  assert.equal(a.culoareStare, 'danger');
+  assert.equal(a.esteRespins, true);
+  assert.equal(new AnuntViewModel({ stare: 'in_asteptare' }).stareAfisata, 'În așteptare');
+  assert.equal(new AnuntViewModel({ aprobat_la: new Date() }).esteAprobat, true);
+  assert.equal(new AnuntViewModel().esteAprobat, false);
+});

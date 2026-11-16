@@ -9,6 +9,9 @@ const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
 const F = require('../servicii/filtre');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
 const { noteaza } = require('../servicii/jurnal');
+const { valideazaMotiv, amprentaContinut } = require('../servicii/moderare');
+const emailuri = require('../servicii/emailuri');
+const { trimite } = require('../servicii/email');
 
 const anunturi = new AnuntAccessor();
 const proprietati = new ProprietateAccessor();
@@ -68,14 +71,17 @@ const anuntNegasit = (res) => negasit(res, 'Anunțul nu există', 'Anunțul cău
 
 // Datele pentru formular: listele de selectie, inclusiv proprietatile (cheia straina).
 // In lista apar doar proprietatile active; la Edit apare si proprietatea actuala, chiar daca e inactiva.
-async function dateFormular(proprietateActuala = null) {
+// Starile din formular: Ciorna / Activ / Inactiv, plus starea actuala la Edit (ex. "In asteptare"), ca sa poata ramane.
+async function dateFormular(proprietateActuala = null, stareActuala = null) {
   const lista = await proprietati.getDisponibile();
   if (proprietateActuala && !lista.some((p) => p.id === proprietateActuala.id)) {
     lista.push(proprietateActuala);
   }
+  const stari = [...AnuntViewModel.STARI_FORMULAR];
+  if (stareActuala && !stari.includes(stareActuala)) stari.push(stareActuala);
   return {
     tipuri: AnuntViewModel.TIPURI,
-    stari: AnuntViewModel.STARI,
+    stari,
     monede: AnuntViewModel.MONEDE,
     eticheteTip: AnuntViewModel.ETICHETE_TIP,
     eticheteStare: AnuntViewModel.ETICHETE_STARE,
@@ -151,7 +157,19 @@ async function details(req, res) {
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
   const [imagini, istoric] = await Promise.all([anunturi.getImagini([id]), jurnal.getPentru('anunt', id)]);
-  res.render('admin/anunturi/details', { a: AnuntViewModel.dinEntitate(entitate, imagini), istoric });
+  res.render('admin/anunturi/details', {
+    a: AnuntViewModel.dinEntitate(entitate, imagini),
+    istoric,
+    versiune: amprentaContinut(entitate, imagini.map((f) => f.id)), // ce varianta vede adminul acum
+  });
+}
+
+// Un anunt "In asteptare" e al proprietarului: adminul nu-i schimba continutul, doar il aproba sau il respinge cu motiv.
+function blocatInAsteptare(req, res, entitate) {
+  if (entitate.stare !== 'in_asteptare') return false;
+  mesajFlash(req, 'Anunțul așteaptă aprobarea: nu-l poți modifica. Dacă trebuie corectat, respinge-l cu motivul, iar proprietarul îl corectează.', 'warning');
+  res.redirect(`/admin/anunturi/${entitate.id}`);
+  return true;
 }
 
 // GET /admin/anunturi/create - formularul gol
@@ -172,7 +190,9 @@ async function createPost(req, res) {
     stergeFisiere(imagini.map((i) => i.cale)); // anuntul nu se salveaza, deci nici imaginile
     return res.status(400).render('admin/anunturi/create', { a: model, erori, ...date });
   }
-  const nou = await anunturi.addEntity(model.catreEntitate(), imagini, res.locals.utilizator.id); // cine a incarcat pozele
+  // Adminul e moderatorul: un anunt pus de el "Activ" e si aprobat.
+  const deSalvat = model.catreEntitate();
+  const nou = await anunturi.addEntity({ ...deSalvat, aprobat_la: deSalvat.stare === 'activ' ? new Date() : null }, imagini, res.locals.utilizator.id);
   await noteaza(res, 'creare', 'anunt', nou.id, nou.titlu);
   mesajFlash(req, `Anunțul „${nou.titlu}” a fost adăugat.`);
   res.redirect('/admin/anunturi'); // Post/Redirect/Get
@@ -183,8 +203,9 @@ async function editGet(req, res) {
   const id = citesteId(req);
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
+  if (blocatInAsteptare(req, res, entitate)) return;
   const model = AnuntViewModel.dinEntitate(entitate, await anunturi.getImagini([id]));
-  res.render('admin/anunturi/edit', { a: model, erori: {}, ...(await dateFormular(entitate.proprietate)) });
+  res.render('admin/anunturi/edit', { a: model, erori: {}, ...(await dateFormular(entitate.proprietate, entitate.stare)) });
 }
 
 // POST /admin/anunturi/:id/edit - salvarea modificarilor (date + imagini noi + imagini sterse)
@@ -195,6 +216,10 @@ async function editPost(req, res) {
     stergeFisiere(imaginiIncarcate(req).map((i) => i.cale));
     return anuntNegasit(res);
   }
+  if (entitate.stare === 'in_asteptare') {
+    stergeFisiere(imaginiIncarcate(req).map((i) => i.cale));
+    if (blocatInAsteptare(req, res, entitate)) return;
+  }
 
   const imaginiActuale = await anunturi.getImagini([id]);
   const deSters = imaginiDeSters(req);
@@ -202,8 +227,8 @@ async function editPost(req, res) {
   model.id = id;
   model.imagini = AnuntViewModel.dinEntitate(entitate, imaginiActuale).imagini;
 
-  const date = await dateFormular(entitate.proprietate);
-  const erori = model.valideaza();
+  const date = await dateFormular(entitate.proprietate, entitate.stare);
+  const erori = model.valideaza(entitate.stare);
   verificaProprietatea(model, date.proprietati, erori);
   const ramase = imaginiActuale.filter((f) => !deSters.includes(f.id)).length;
   verificaImaginile(req, ramase, erori);
@@ -213,7 +238,10 @@ async function editPost(req, res) {
     stergeFisiere(imaginiNoi.map((i) => i.cale));
     return res.status(400).render('admin/anunturi/edit', { a: model, erori, ...date });
   }
-  const { caiSterse } = await anunturi.updateEntity(id, model.catreEntitate(), imaginiNoi, deSters, res.locals.utilizator.id);
+  // Adminul pune "Activ" = aproba (un anunt deja aprobat isi pastreaza data aprobarii).
+  const deSalvat = model.catreEntitate();
+  deSalvat.aprobat_la = deSalvat.stare === 'activ' ? (entitate.aprobat_la ?? new Date()) : entitate.aprobat_la;
+  const { caiSterse } = await anunturi.updateEntity(id, deSalvat, imaginiNoi, deSters, res.locals.utilizator.id);
   stergeFisiere(caiSterse); // imaginile sterse dispar si de pe disc
   await noteaza(res, 'modificare', 'anunt', id, model.titlu);
   mesajFlash(req, `Anunțul „${model.titlu}” a fost modificat.`);
@@ -225,11 +253,16 @@ async function activeaza(req, res) {
   const id = citesteId(req);
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
+  // Un anunt in asteptare se aproba doar de pe pagina lui (unde adminul il vede), nu dintr-un buton din lista.
+  if (entitate.stare === 'in_asteptare') {
+    mesajFlash(req, 'Anunțul așteaptă aprobarea: deschide-l, verifică-l și apasă „Aprobă”.', 'warning');
+    return res.redirect(`/admin/anunturi/${id}`);
+  }
   if (entitate.proprietate.stare === 'inactiv') {
     mesajFlash(req, `Anunțul nu poate fi activat: proprietatea „${entitate.proprietate.denumire}” este inactivă. Activează întâi proprietatea.`, 'warning');
     return res.redirect(inapoi(req));
   }
-  await anunturi.schimbaStare(id, 'activ');
+  await anunturi.schimbaStare(id, 'activ', { aprobat_la: entitate.aprobat_la ?? new Date() }); // adminul activeaza = aproba
   await noteaza(res, 'activare', 'anunt', id, entitate.titlu);
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost activat.`);
   res.redirect(inapoi(req));
@@ -246,8 +279,64 @@ async function dezactiveaza(req, res) {
   res.redirect(inapoi(req));
 }
 
+// ===== Moderarea =====
+
+// Trimite proprietarului emailul despre aprobare / respingere. Un email care nu pleaca nu opreste actiunea.
+async function anuntaProprietarul(entitate, email) {
+  const u = entitate.proprietate?.utilizator;
+  if (!u?.email) return;
+  await trimite({ catre: u.email, subiect: email.subiect, text: email.text, html: email.html });
+}
+
+// POST /admin/anunturi/:id/aproba - anuntul in asteptare devine activ (public)
+async function aproba(req, res) {
+  const id = citesteId(req);
+  const entitate = id && (await anunturi.getById(id));
+  if (!entitate) return anuntNegasit(res);
+  if (entitate.proprietate.stare === 'inactiv') {
+    mesajFlash(req, `Anunțul nu poate fi aprobat: proprietatea „${entitate.proprietate.denumire}” este inactivă.`, 'warning');
+    return res.redirect(inapoi(req));
+  }
+  // Blocare optimista: adminul aproba exact varianta pe care a vazut-o. Daca proprietarul a modificat-o intre timp,
+  // amprenta trimisa de formular nu mai e cea de acum -> nu aprobam, il trimitem sa o vada din nou.
+  const imagini = await anunturi.getImagini([id]);
+  if (String(req.body.versiune || '') !== amprentaContinut(entitate, imagini.map((f) => f.id))) {
+    mesajFlash(req, 'Proprietarul a modificat anunțul între timp. Verifică varianta nouă și apoi aprobă-l.', 'warning');
+    return res.redirect(`/admin/anunturi/${id}`);
+  }
+  // Conditia "in asteptare" e verificata chiar in baza de date (vezi accesorul): doi admini deodata nu-l aproba de doua ori.
+  if (!(await anunturi.aproba(id))) {
+    mesajFlash(req, 'Anunțul nu mai așteaptă aprobarea (poate a fost deja aprobat sau retras de proprietar).', 'warning');
+    return res.redirect(inapoi(req));
+  }
+  await noteaza(res, 'aprobare', 'anunt', id, entitate.titlu);
+  await anuntaProprietarul(entitate, emailuri.anuntAprobat(entitate.proprietate.utilizator, entitate.titlu));
+  mesajFlash(req, `Anunțul „${entitate.titlu}” a fost aprobat și apare pe site. Proprietarul a fost anunțat pe email.`);
+  res.redirect(inapoi(req));
+}
+
+// POST /admin/anunturi/:id/respinge - cu motiv obligatoriu (il vede proprietarul, ca sa stie ce sa corecteze)
+async function respinge(req, res) {
+  const id = citesteId(req);
+  const entitate = id && (await anunturi.getById(id));
+  if (!entitate) return anuntNegasit(res);
+  const { motiv, eroare } = valideazaMotiv(req.body.motiv);
+  if (eroare) {
+    mesajFlash(req, eroare, 'warning');
+    return res.redirect(`/admin/anunturi/${id}`);
+  }
+  if (!(await anunturi.respinge(id, motiv))) {
+    mesajFlash(req, 'Doar un anunț în așteptare sau activ poate fi respins.', 'warning');
+    return res.redirect(`/admin/anunturi/${id}`);
+  }
+  await noteaza(res, 'respingere', 'anunt', id, `${entitate.titlu} – motiv: ${motiv}`);
+  await anuntaProprietarul(entitate, emailuri.anuntRespins(entitate.proprietate.utilizator, entitate.titlu, motiv));
+  mesajFlash(req, `Anunțul „${entitate.titlu}” a fost respins. Proprietarul a primit motivul pe email.`);
+  res.redirect(`/admin/anunturi/${id}`);
+}
+
 module.exports = {
-  index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza,
+  index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, aproba, respinge,
   // Folosite si de API si de zona proprietarului (aceleasi reguli, scrise o singura data).
   verificaProprietatea, imaginiIncarcate, imaginiDeSters, verificaImaginile,
 };

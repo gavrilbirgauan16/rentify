@@ -122,18 +122,25 @@ class ProprietateAccessor {
       let anunturiActivate = 0;
 
       if (proprietate.stare === 'inactiv' && inainte.stare !== 'inactiv') {
+        // Motivul respingerii se sterge: ramane doar pe anunturile respinse (regula anunt_motiv_check).
         const rezultat = await tx.anunt.updateMany({
           where: { proprietate_id: id, NOT: { stare: 'inactiv' } },
-          data: { stare: 'inactiv' },
+          data: { stare: 'inactiv', motiv_respingere: null },
         });
         anunturiDezactivate = rezultat.count;
       }
       if (reactiveazaAnunturi && proprietate.stare !== 'inactiv' && inainte.stare === 'inactiv') {
-        const rezultat = await tx.anunt.updateMany({
+        // Doar adminul reactiveaza anunturile odata cu proprietatea; fiind moderatorul, le si aproba
+        // (cele aprobate deja isi pastreaza data aprobarii).
+        const neaprobate = await tx.anunt.updateMany({
+          where: { proprietate_id: id, stare: 'inactiv', aprobat_la: null },
+          data: { stare: 'activ', aprobat_la: new Date() },
+        });
+        const aprobate = await tx.anunt.updateMany({
           where: { proprietate_id: id, stare: 'inactiv' },
           data: { stare: 'activ' },
         });
-        anunturiActivate = rezultat.count;
+        anunturiActivate = neaprobate.count + aprobate.count;
       }
       return { proprietate, anunturiDezactivate, anunturiActivate };
     });

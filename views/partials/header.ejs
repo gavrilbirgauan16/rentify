@@ -23,7 +23,8 @@
             admin: [
               { cheie: 'panou', text: 'Panou', href: '/admin' },
               { cheie: 'proprietati', text: 'Proprietăți', href: '/admin/proprietati' },
-              { cheie: 'anunturi', text: 'Anunțuri', href: '/admin/anunturi' },
+              { cheie: 'anunturi', text: 'Anunțuri', href: '/admin/anunturi',
+                numar: typeof anunturiDeAprobat !== 'undefined' ? anunturiDeAprobat : 0, eticheta: 'de aprobat' },
               { cheie: 'utilizatori', text: 'Utilizatori', href: '/admin/utilizatori' },
               { cheie: 'abonamente', text: 'Abonamente', href: '/admin/abonamente' },
               { cheie: 'planuri', text: 'Planuri', href: '/admin/planuri' },
@@ -44,13 +45,19 @@
         %>
         <ul class="navbar-nav ms-auto">
           <% meniu.forEach(function(m) { %>
+          <%
+            // Numarul de lucruri de rezolvat (ex. anunturi de aprobat), cu text pentru cititoarele de ecran.
+            const insigna = m.numar > 0
+              ? '<span class="badge rounded-pill text-bg-warning ms-1">' + m.numar + '<span class="visually-hidden"> ' + m.eticheta + '</span></span>'
+              : '';
+          %>
           <li class="nav-item">
             <% if (!m.href) { %>
               <span class="nav-link disabled" aria-disabled="true"><%= m.text %></span>
             <% } else if (m.cheie === curenta) { %>
-              <a class="nav-link active" aria-current="page" href="<%= m.href %>"><%= m.text %></a>
+              <a class="nav-link active" aria-current="page" href="<%= m.href %>"><%= m.text %><%- insigna %></a>
             <% } else { %>
-              <a class="nav-link" href="<%= m.href %>"><%= m.text %></a>
+              <a class="nav-link" href="<%= m.href %>"><%= m.text %><%- insigna %></a>
             <% } %>
           </li>
           <% }) %>

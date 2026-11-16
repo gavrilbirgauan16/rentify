@@ -1,6 +1,10 @@
-<%# Butonul Activeaza / Dezactiveaza pentru un anunt. Primeste: a (anuntul), clase (optional), inapoi (optional),
-    baza (optional: adresa listei, implicit cea de admin; proprietarul trimite /proprietar/anunturi). %>
+<%# Butonul Activeaza / Dezactiveaza pentru un anunt (admin). Primeste: a (anuntul), clase (optional), inapoi (optional),
+    baza (optional: adresa listei, implicit cea de admin).
+    Un anunt "In asteptare" nu se activeaza dintr-un buton: se deschide, se verifica si se aproba (butonul devine "Verifică"). %>
 <% const adresaBaza = typeof baza !== 'undefined' ? baza : '/admin/anunturi'; %>
+<% if (a.esteInAsteptare) { %>
+<a class="btn <%= typeof clase !== 'undefined' ? clase : '' %> btn-warning" href="<%= adresaBaza %>/<%= a.id %>">Verifică</a>
+<% } else { %>
 <form method="post" action="<%= adresaBaza %>/<%= a.id %>/<%= a.esteActiv ? 'dezactiveaza' : 'activeaza' %>" class="d-inline">
 <%- include('../../partials/csrf') %>
   <input type="hidden" name="inapoi" value="<%= typeof inapoi !== 'undefined' ? inapoi : (typeof adresaCurenta !== 'undefined' ? adresaCurenta : '/admin/anunturi') %>">
@@ -8,3 +12,4 @@
     <%= a.esteActiv ? 'Dezactivează' : 'Activează' %>
   </button>
 </form>
+<% } %>

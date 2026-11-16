@@ -14,8 +14,9 @@
 <div class="alert <%= limita.poateAdauga ? 'alert-light border' : 'alert-warning' %>" role="status">
   <% if (limita.plan) { %>
     Plan <strong><%= limita.plan %></strong>:
-    <% if (limita.maxim === null) { %><strong><%= limita.folosit %></strong> anunțuri active (fără limită).
-    <% } else { %><strong><%= limita.text %></strong> anunțuri active.<% } %>
+    <% if (limita.maxim === null) { %><strong><%= limita.folosit %></strong> anunțuri publicate (fără limită).
+    <% } else { %><strong><%= limita.text %></strong> anunțuri publicate.<% } %>
+    <span class="text-body-secondary small">(Se numără anunțurile active și cele care așteaptă aprobarea.)</span>
   <% } else { %>
     Nu ai un abonament în curs.
   <% } %>
@@ -48,10 +49,22 @@
             <p class="text-body-secondary small mb-2">
               <%= a.tipAfisat %> · <strong><%= a.pretAfisat %></strong> · <%= a.proprietate_denumire %>, <%= a.proprietate_oras %>
               <% if (a.proprietateInactiva) { %><br><span class="text-danger">Proprietatea este inactivă.</span><% } %>
+              <% if (a.esteInAsteptare) { %><br><span class="text-info-emphasis">Așteaptă aprobarea administratorului.</span><% } %>
+              <% if (a.esteRespins) { %><br><span class="text-danger"><strong>Respins:</strong> <%= a.motiv_respingere %> Corectează și retrimite.</span><% } %>
             </p>
             <div class="d-flex flex-wrap gap-2">
               <a class="btn btn-sm btn-primary" href="/proprietar/anunturi/<%= a.id %>/edit">Editează</a>
-              <%- include('../../admin/anunturi/_buton_stare', { a: a, baza: '/proprietar/anunturi', inapoi: '/proprietar/anunturi', clase: 'btn-sm' }) %>
+              <%
+                // Butonul potrivit starii: Activ -> Dezactiveaza; In asteptare -> Retrage; Respins -> Retrimite; altfel -> Publica.
+                const buton = a.esteActiv ? { actiune: 'dezactiveaza', text: 'Dezactivează', clasa: 'btn-outline-danger' }
+                  : a.esteInAsteptare ? { actiune: 'dezactiveaza', text: 'Retrage', clasa: 'btn-outline-secondary' }
+                  : a.esteRespins ? { actiune: 'activeaza', text: 'Retrimite', clasa: 'btn-outline-success' }
+                  : { actiune: 'activeaza', text: 'Publică', clasa: 'btn-outline-success' };
+              %>
+              <form method="post" action="/proprietar/anunturi/<%= a.id %>/<%= buton.actiune %>" class="d-inline">
+                <%- include('../../partials/csrf') %>
+                <button type="submit" class="btn btn-sm <%= buton.clasa %>"><%= buton.text %></button>
+              </form>
             </div>
           </div>
         </div>

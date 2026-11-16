@@ -2,13 +2,16 @@
 // Combina campuri din 3 tabele: anunt + proprietate (denumire, oras) + utilizator (proprietarul).
 
 const TIPURI = ['inchiriere', 'vanzare'];
-const STARI = ['ciorna', 'activ', 'inactiv'];
+// Toate starile (vezi servicii/moderare.js). "In asteptare" si "Respins" NU se aleg din formular:
+// apar doar prin actiuni (proprietarul trimite spre aprobare, adminul respinge).
+const STARI = ['ciorna', 'in_asteptare', 'activ', 'inactiv', 'respins'];
+const STARI_FORMULAR = ['ciorna', 'activ', 'inactiv'];
 const MONEDE = ['RON', 'EUR'];
 
 // Cum apar valorile in pagini (in baza de date raman fara diacritice).
 const ETICHETE_TIP = { inchiriere: 'Închiriere', vanzare: 'Vânzare' };
-const ETICHETE_STARE = { ciorna: 'Ciornă', activ: 'Activ', inactiv: 'Inactiv' };
-const CULORI_STARE = { ciorna: 'warning', activ: 'success', inactiv: 'secondary' }; // culori Bootstrap
+const ETICHETE_STARE = { ciorna: 'Ciornă', in_asteptare: 'În așteptare', activ: 'Activ', inactiv: 'Inactiv', respins: 'Respins' };
+const CULORI_STARE = { ciorna: 'warning', in_asteptare: 'info', activ: 'success', inactiv: 'secondary', respins: 'danger' }; // culori Bootstrap
 
 // true daca textul e gol (campurile optionale pot ramane goale)
 const eGol = (valoare) => valoare === undefined || valoare === null || String(valoare).trim() === '';
@@ -57,6 +60,8 @@ class AnuntViewModel {
     this.disponibil_de_la = date.disponibil_de_la ?? ''; // text "AAAA-LL-ZZ", ca in campul de tip date
     this.locuri_libere = date.locuri_libere ?? '';
     this.stare = date.stare ?? 'ciorna';
+    this.aprobat_la = date.aprobat_la ?? null;             // cand l-a aprobat adminul (null = neaprobat)
+    this.motiv_respingere = date.motiv_respingere ?? '';  // doar la starea "respins"
     this.promovat = date.promovat ?? false;
     // campuri din alte tabele (doar pentru afisare)
     this.proprietate_denumire = date.proprietate_denumire ?? '';
@@ -106,6 +111,9 @@ class AnuntViewModel {
   get telefonAfisat() { return telefonAfisat(this.proprietar_telefon); }
   get primaImagine() { return this.imagini.length > 0 ? this.imagini[0].url : null; }
   get esteActiv() { return this.stare === 'activ'; }
+  get esteInAsteptare() { return this.stare === 'in_asteptare'; }
+  get esteRespins() { return this.stare === 'respins'; }
+  get esteAprobat() { return Boolean(this.aprobat_la); }
   get proprietateInactiva() { return this.proprietate_stare === 'inactiv'; }
   get disponibilAfisat() { return this.disponibil_de_la ? formateazaData(new Date(this.disponibil_de_la)) : 'imediat'; }
 
@@ -152,13 +160,15 @@ class AnuntViewModel {
   }
 
   // Verifica datele si intoarce erorile pe fiecare camp. Obiect gol = totul e in regula.
-  valideaza() {
+  // stareActuala (la editare): starea din baza; poate ramane neschimbata chiar daca nu se alege din formular
+  // (ex. adminul corecteaza textul unui anunt "In asteptare" fara sa-i schimbe starea).
+  valideaza(stareActuala = null) {
     const erori = {};
     if (!this.proprietate_id) erori.proprietate_id = 'Alege proprietatea.';
     if (!this.titlu) erori.titlu = 'Titlul este obligatoriu.';
     else if (this.titlu.length > 120) erori.titlu = 'Titlul poate avea cel mult 120 de caractere.';
     if (!TIPURI.includes(this.tip)) erori.tip = 'Alege un tip valid.';
-    if (!STARI.includes(this.stare)) erori.stare = 'Alege o stare validă.';
+    if (!STARI_FORMULAR.includes(this.stare) && this.stare !== stareActuala) erori.stare = 'Alege o stare validă.';
     if (!MONEDE.includes(this.moneda)) erori.moneda = 'Alege moneda.';
     if (!(Number(this.pret) > 0)) erori.pret = 'Prețul trebuie să fie un număr mai mare ca 0.';
     if (!eGol(this.pret_o_persoana)) {
@@ -199,6 +209,7 @@ class AnuntViewModel {
 
 AnuntViewModel.TIPURI = TIPURI;
 AnuntViewModel.STARI = STARI;
+AnuntViewModel.STARI_FORMULAR = STARI_FORMULAR;
 AnuntViewModel.MONEDE = MONEDE;
 AnuntViewModel.ETICHETE_TIP = ETICHETE_TIP;
 AnuntViewModel.ETICHETE_STARE = ETICHETE_STARE;
