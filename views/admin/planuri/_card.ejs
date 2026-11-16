@@ -1,8 +1,16 @@
 <%# Cardul unui plan de abonament (folosit la admin si la proprietar).
     Primeste: p (PlanViewModel). Optional: actiuniAdmin (true = butoanele Editeaza / Dezactiveaza si numarul de abonati),
-    alCurent (true = planul pe care il are acum utilizatorul). %>
+    alCurent (true = planul pe care il are acum utilizatorul), perioadaCurenta ('lunar' / 'anual', la planul curent),
+    adresaAlege (ex. /proprietar/abonament/schimba: butoanele "Alege" duc la pagina de confirmare). %>
 <% const curent = typeof alCurent !== 'undefined' && alCurent; %>
 <% const deAdmin = typeof actiuniAdmin !== 'undefined' && actiuniAdmin; %>
+<% const alege = typeof adresaAlege !== 'undefined' ? adresaAlege : null; %>
+<%
+  // Ce perioade se pot alege: la planul gratuit doar una; la planul curent doar cealalta perioada.
+  let perioade = p.esteGratuit ? ['anual'] : ['lunar', 'anual'];
+  if (curent) perioade = perioade.filter((x) => typeof perioadaCurenta === 'undefined' || x !== perioadaCurenta);
+  const textPerioada = { lunar: 'lunar', anual: 'anual' };
+%>
 <div class="card h-100 card-plan <%= p.recomandat ? 'card-plan-recomandat' : '' %> <%= p.activ ? '' : 'card-plan-inactiv' %> <%= curent ? 'border-primary border-2' : '' %>">
   <% if (p.recomandat) { %><div class="eticheta-recomandat">Recomandat</div><% } %>
   <div class="card-body d-flex flex-column p-4">
@@ -48,10 +56,17 @@
             <button type="submit" class="btn <%= p.activ ? 'btn-outline-danger' : 'btn-outline-success' %>"><%= p.activ ? 'Dezactivează' : 'Activează' %></button>
           </form>
         </div>
+      <% } else if (alege) { %>
+        <div class="d-grid gap-2">
+          <% if (curent) { %><button type="button" class="btn btn-outline-primary" disabled>Planul tău actual</button><% } %>
+          <% perioade.forEach(function(per) { %>
+            <a class="btn <%= curent ? 'btn-outline-secondary btn-sm' : 'btn-primary' %>" href="<%= alege %>?plan=<%= p.id %>&perioada=<%= per %>">
+              <%= curent ? 'Treci pe plata ' + textPerioada[per] + 'ă' : (p.esteGratuit ? 'Alege planul gratuit' : 'Alege ' + textPerioada[per]) %>
+            </a>
+          <% }) %>
+        </div>
       <% } else if (curent) { %>
         <button type="button" class="btn btn-outline-primary w-100" disabled>Planul tău actual</button>
-      <% } else { %>
-        <button type="button" class="btn btn-primary w-100" disabled title="Schimbarea planului vine în curând">Alege planul · în curând</button>
       <% } %>
     </div>
   </div>
