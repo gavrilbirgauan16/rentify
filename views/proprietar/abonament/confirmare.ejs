@@ -1,0 +1,72 @@
+<%# Confirmarea schimbarii planului: ce se schimba, creditul, suma si de cand. Nu schimba nimic pana la "Plateste".
+    Formularul trimite DOAR planul si perioada; serverul recalculeaza totul la plata. %>
+<%- include('../../partials/header', { titluPagina: 'Confirmă planul' }) %>
+<%
+  const titluri = { nou: 'Alegi un plan', upgrade: 'Treci la un plan mai mare', downgrade: 'Treci la un plan mai mic' };
+  const perioadaText = perioada === 'anual' ? 'anual' : 'lunar';
+%>
+
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proprietar/abonament">Abonamentul meu</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Confirmă</li>
+  </ol>
+</nav>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h4 mb-1"><%= titluri[calcul.tip] %></h1>
+        <p class="text-body-secondary mb-4">
+          <% if (curent) { %>De pe <strong><%= curent.plan_nume %></strong> (<%= curent.perioadaAfisata.toLowerCase() %>) pe <% } else { %>Planul <% } %>
+          <strong><%= plan.nume %></strong>, plată <%= perioadaText %>ă.
+        </p>
+
+        <dl class="row mb-3">
+          <dt class="col-7 fw-normal">Prețul planului <%= plan.nume %> (<%= perioadaText %>)</dt>
+          <dd class="col-5 text-end mb-1"><%= lei(calcul.pretIntreg) %></dd>
+          <% if (calcul.credit > 0) { %>
+          <dt class="col-7 fw-normal">Credit din planul actual <span class="text-body-secondary small">(zilele plătite și nefolosite)</span></dt>
+          <dd class="col-5 text-end text-success mb-1">− <%= lei(calcul.credit) %></dd>
+          <% } %>
+          <dt class="col-7 border-top pt-2">De plată acum</dt>
+          <dd class="col-5 text-end border-top pt-2 fs-5 fw-semibold mb-0"><%= calcul.dePlata > 0 ? lei(calcul.dePlata) : 'Nimic' %></dd>
+        </dl>
+
+        <ul class="small text-body-secondary mb-4">
+          <% if (calcul.tip === 'downgrade') { %>
+            <li>Planul actual rămâne până pe <strong><%= afiseaza(curent.data_sfarsit) %></strong> (l-ai plătit deja).</li>
+            <li>Planul <%= plan.nume %> începe pe <strong><%= afiseaza(calcul.data_inceput) %></strong> și ține până pe <%= afiseaza(calcul.data_sfarsit) %>.</li>
+            <li>Dacă te răzgândești înainte să înceapă, poți renunța la schimbare și primești banii înapoi.</li>
+            <li>Ce ai peste limitele planului nou rămâne, dar nu vei putea adăuga altele.</li>
+          <% } else { %>
+            <li>Planul <%= plan.nume %> începe <strong>azi</strong> și ține până pe <strong><%= afiseaza(calcul.data_sfarsit) %></strong>.</li>
+            <% if (curent) { %><li>Planul actual se oprește azi<%= calcul.credit > 0 ? '; zilele rămase s-au scăzut din preț' : '' %>.</li><% } %>
+          <% } %>
+          <li>Abonamentul se reînnoiește automat la final; îl poți schimba oricând.</li>
+        </ul>
+
+        <form method="post" action="/proprietar/abonament/schimba">
+          <%- include('../../partials/csrf') %>
+          <input type="hidden" name="plan" value="<%= plan.id %>">
+          <input type="hidden" name="perioada" value="<%= perioada %>">
+          <div class="d-grid gap-2 d-sm-flex">
+            <button type="submit" class="btn btn-primary px-4">
+              <%= calcul.dePlata > 0 ? 'Plătește ' + lei(calcul.dePlata) : 'Confirmă' %>
+            </button>
+            <a class="btn btn-outline-secondary" href="/proprietar/abonament">Renunță</a>
+          </div>
+          <% if (calcul.dePlata > 0) { %>
+          <p class="small text-body-secondary mt-3 mb-0">
+            Plată <strong>simulată</strong> (proiect de facultate): nu se cer și nu se salvează date de card.
+            Într-o aplicație reală, aici te-ar trimite la un procesator de plăți (de ex. Stripe sau Netopia).
+          </p>
+          <% } %>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>

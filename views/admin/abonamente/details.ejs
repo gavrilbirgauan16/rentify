@@ -36,8 +36,9 @@
           <dt class="col-5 col-sm-4">Perioadă</dt><dd class="col-7 col-sm-8"><%= a.perioadaAfisata %>, <%= a.intervalAfisat %></dd>
           <dt class="col-5 col-sm-4">Reînnoire automată</dt><dd class="col-7 col-sm-8"><%= a.reinnoire_automata ? 'Da' : 'Nu' %></dd>
           <dt class="col-5 col-sm-4">Preț</dt><dd class="col-7 col-sm-8"><%= a.pretAfisat %> <span class="text-body-secondary">(fixat la cumpărare)</span></dd>
+          <% if (a.creditAfisat) { %><dt class="col-5 col-sm-4">Credit adus</dt><dd class="col-7 col-sm-8 text-success">+ <%= a.creditAfisat %> <span class="text-body-secondary">(din abonamentul înlocuit la upgrade)</span></dd><% } %>
           <dt class="col-5 col-sm-4">Plătit</dt><dd class="col-7 col-sm-8"><%= a.totalPlatitAfisat %></dd>
-          <dt class="col-5 col-sm-4">Rest de plată</dt><dd class="col-7 col-sm-8 <%= a.restDePlata > 0 && a.stare !== 'anulat' ? 'text-danger fw-semibold' : '' %>"><%= a.restDePlataAfisat %></dd>
+          <dt class="col-5 col-sm-4">Rest de plată</dt><dd class="col-7 col-sm-8 <%= a.areRestDePlata ? 'text-danger fw-semibold' : '' %>"><%= a.areRestDePlata ? a.restDePlataAfisat : '–' %></dd>
         </dl>
       </div>
     </div>

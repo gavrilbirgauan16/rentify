@@ -5,7 +5,7 @@ const { catreDate } = require('../../servicii/date');
 // Ce aducem mereu impreuna cu un abonament: cine il are (fara parola!), ce plan si platile.
 const CU_DETALII = {
   utilizator: { select: { id: true, nume: true, prenume: true, email: true, rol: { select: { nume: true } } } },
-  plan_abonament: { select: { id: true, nume: true, limita_plan: true } },
+  plan_abonament: { select: { id: true, nume: true, pret_lunar: true, limita_plan: true } }, // pret_lunar: la schimbarea planului
   plata_abonament: { orderBy: { data_platii: 'desc' } },
 };
 
@@ -67,6 +67,75 @@ class AbonamentAccessor {
   // Anularea: abonamentul se opreste si nu se mai reinnoieste. Nu stergem nimic (istoricul ramane).
   async anuleaza(id) {
     return context.abonament.update({ where: { id }, data: { stare: 'anulat', reinnoire_automata: false } });
+  }
+
+  // ===== Schimbarea planului de catre utilizator =====
+
+  // Abonamentele programate (neanulate, care incep dupa azi): ex. un downgrade care incepe la final de perioada.
+  async getProgramate(utilizatorId, azi) {
+    return context.abonament.findMany({
+      where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { gt: catreDate(azi) } },
+      include: CU_DETALII,
+      orderBy: { data_inceput: 'asc' },
+    });
+  }
+
+  // Executa schimbarea planului, totul intr-o tranzactie (ori tot, ori nimic):
+  //  - verifica intai ca abonamentul curent e tot cel din calcul (sa nu se fi schimbat intre timp, ex. doua ferestre);
+  //  - anuleaza schimbarile programate mai vechi (nu pot exista doua);
+  //  - upgrade: abonamentul curent devine "inlocuit"; downgrade: cel curent nu se mai reinnoieste;
+  //  - creeaza abonamentul nou si, daca e ceva de plata, plata (simulata).
+  // Intoarce abonamentul nou sau null daca abonamentul curent s-a schimbat intre timp.
+  async schimbaPlanul({ utilizatorId, curentId, tip, azi, abonamentNou, plata }) {
+    return context.$transaction(async (tx) => {
+      const ziua = catreDate(azi);
+      const curente = await tx.abonament.findMany({
+        where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { lte: ziua }, data_sfarsit: { gte: ziua } },
+        select: { id: true },
+      });
+      if ((curente[0]?.id ?? null) !== curentId) return null;
+
+      await this.#anuleazaProgramateTx(tx, utilizatorId, ziua);
+      if (curentId && tip === 'upgrade') {
+        await tx.abonament.update({ where: { id: curentId }, data: { stare: 'inlocuit', reinnoire_automata: false } });
+      }
+      if (curentId && tip === 'downgrade') {
+        await tx.abonament.update({ where: { id: curentId }, data: { reinnoire_automata: false } });
+      }
+      const nou = await tx.abonament.create({ data: { ...abonamentNou, utilizator_id: utilizatorId } });
+      if (plata) await tx.plata_abonament.create({ data: { ...plata, abonament_id: nou.id, data_platii: new Date() } });
+      return nou;
+    });
+  }
+
+  // Anuleaza schimbarile programate (inca neincepute) ale unui utilizator; cel curent se reinnoieste din nou.
+  // Intoarce cate s-au anulat.
+  async anuleazaProgramate(utilizatorId, azi) {
+    return context.$transaction(async (tx) => {
+      const ziua = catreDate(azi);
+      const anulate = await this.#anuleazaProgramateTx(tx, utilizatorId, ziua);
+      if (anulate > 0) {
+        await tx.abonament.updateMany({
+          where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { lte: ziua }, data_sfarsit: { gte: ziua } },
+          data: { reinnoire_automata: true },
+        });
+      }
+      return anulate;
+    });
+  }
+
+  // In tranzactia data: anuleaza abonamentele programate si marcheaza platile lor ca rambursate
+  // (un abonament care nu incepe niciodata nu trebuie platit). Intoarce cate s-au anulat.
+  async #anuleazaProgramateTx(tx, utilizatorId, ziua) {
+    const programate = await tx.abonament.findMany({
+      where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { gt: ziua } },
+      select: { id: true },
+    });
+    const ids = programate.map((a) => a.id);
+    if (ids.length === 0) return 0;
+    await tx.abonament.updateMany({ where: { id: { in: ids } }, data: { stare: 'anulat', reinnoire_automata: false } });
+    await tx.plata_abonament.updateMany({ where: { abonament_id: { in: ids }, stare: 'reusita' }, data: { stare: 'rambursata' } });
+    return ids.length;
   }
 
   // Suma platilor reusite de la o data incoace (incasarile lunii).

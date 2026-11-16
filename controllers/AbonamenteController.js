@@ -47,7 +47,7 @@ function conditie(f) {
   if (Object.keys(u).length) where.utilizator = u;
   if (f.plan) where.plan_id = f.plan;
   if (f.perioada) where.perioada = f.perioada;
-  if (f.stare === 'anulat') where.stare = 'anulat';
+  if (f.stare === 'anulat' || f.stare === 'inlocuit') where.stare = f.stare;
   if (f.stare === 'expirat') Object.assign(where, { stare: 'activ', data_sfarsit: { lt: astazi } });
   if (f.stare === 'programat') Object.assign(where, { stare: 'activ', data_inceput: { gt: astazi } });
   if (f.stare === 'platit' || f.stare === 'neplatit') Object.assign(where, { stare: 'activ', data_inceput: { lte: astazi }, data_sfarsit: { gte: astazi } });
@@ -143,7 +143,7 @@ async function plataPost(req, res) {
   if (!entitate) return abonamentNegasit(res);
   const a = AbonamentViewModel.dinEntitate(entitate);
   if (!a.poatePrimiPlata) {
-    mesajFlash(req, a.stare === 'anulat' ? 'Abonamentul este anulat.' : 'Abonamentul este deja plătit integral.', 'warning');
+    mesajFlash(req, a.esteActiv ? 'Abonamentul este deja plătit integral.' : `Abonamentul nu mai este activ (${a.stareAfisata.toLowerCase()}).`, 'warning');
     return res.redirect(`/admin/abonamente/${id}`);
   }
   const { erori, plata } = valideazaPlata(req.body, a);

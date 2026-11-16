@@ -3,6 +3,20 @@
 
 <h1 class="h3 mb-3">Abonamentul meu</h1>
 
+<% if (programat) { %>
+<!-- Schimbarea programata (ex. downgrade la final de perioada) -->
+<div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" role="status">
+  <span>
+    De pe <strong><%= afiseaza(programat.data_inceput) %></strong> treci pe planul <strong><%= programat.plan_nume %></strong>
+    (<%= programat.perioadaAfisata.toLowerCase() %>, <%= programat.pretAfisat %>). Până atunci păstrezi planul actual.
+  </span>
+  <form method="post" action="/proprietar/abonament/anuleaza-programat" class="flex-shrink-0">
+    <%- include('../../partials/csrf') %>
+    <button type="submit" class="btn btn-sm btn-outline-secondary">Renunță la schimbare</button>
+  </form>
+</div>
+<% } %>
+
 <div class="row g-3 mb-4">
   <!-- Planul curent -->
   <div class="col-lg-5">
@@ -54,7 +68,12 @@
 <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 align-items-stretch mb-4">
   <% planuri.forEach(function(p) { %>
   <div class="col">
-    <%- include('../../admin/planuri/_card', { p: p, alCurent: curent && curent.plan_id === p.id }) %>
+    <%- include('../../admin/planuri/_card', {
+      p: p,
+      alCurent: Boolean(curent && curent.plan_id === p.id),
+      perioadaCurenta: curent ? curent.perioada : undefined,
+      adresaAlege: '/proprietar/abonament/schimba',
+    }) %>
   </div>
   <% }) %>
 </div>

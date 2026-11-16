@@ -6,10 +6,11 @@ const PERIOADE = { lunar: 'Lunar', anual: 'Anual' };
 const METODE = { card: 'Card', transfer: 'Transfer bancar', numerar: 'Numerar' };
 const ZILE_AVERTIZARE = 7; // "expira curand" = mai are cel mult atatea zile
 
-// Starea afisata a unui abonament. In baza de date tinem doar 'activ' / 'anulat';
+// Starea afisata a unui abonament. In baza de date tinem doar 'activ' / 'anulat' / 'inlocuit' (upgrade);
 // restul (expirat, neplatit...) se CALCULEAZA din date si plati, ca sa nu poata fi niciodata gresit.
 const STARI = {
   anulat: { text: 'Anulat', culoare: 'secondary' },
+  inlocuit: { text: 'Înlocuit (upgrade)', culoare: 'secondary' },
   expirat: { text: 'Expirat', culoare: 'dark' },
   programat: { text: 'Începe curând', culoare: 'info' },
   neplatit: { text: 'Neplătit', culoare: 'danger' },
@@ -26,7 +27,8 @@ class AbonamentViewModel {
     this.utilizator_id = date.utilizator_id ?? '';
     this.plan_id = date.plan_id ?? '';
     this.perioada = date.perioada ?? 'lunar';
-    this.pret = date.pret ?? 0;
+    this.pret = date.pret ?? 0; // platit cash
+    this.credit_aplicat = date.credit_aplicat ?? 0; // adus dintr-un upgrade; valoarea = pret + credit_aplicat
     this.data_inceput = date.data_inceput ?? D.azi();
     this.data_sfarsit = date.data_sfarsit ?? '';
     this.reinnoire_automata = date.reinnoire_automata ?? false;
@@ -51,6 +53,7 @@ class AbonamentViewModel {
       plan_id: e.plan_id,
       perioada: e.perioada,
       pret: Number(e.pret),
+      credit_aplicat: Number(e.credit_aplicat ?? 0),
       data_inceput: D.dinDate(e.data_inceput),
       data_sfarsit: D.dinDate(e.data_sfarsit),
       reinnoire_automata: e.reinnoire_automata,
@@ -116,10 +119,13 @@ class AbonamentViewModel {
   get pretAfisat() { return Number(this.pret) === 0 ? 'Gratuit' : lei(this.pret); }
   get totalPlatitAfisat() { return lei(this.totalPlatit); }
   get restDePlataAfisat() { return lei(this.restDePlata); }
+  get creditAfisat() { return Number(this.credit_aplicat) > 0 ? lei(this.credit_aplicat) : null; }
+  // Restul de plata conteaza doar la un abonament activ (unul anulat / inlocuit nu mai datoreaza nimic).
+  get areRestDePlata() { return this.esteActiv && this.restDePlata > 0; }
 
   // ---- Starea ----
   stareCod(astazi = D.azi()) {
-    if (this.stare === 'anulat') return 'anulat';
+    if (this.stare !== 'activ') return this.stare; // 'anulat' sau 'inlocuit': oprit, orice ar spune datele
     if (this.data_sfarsit && this.data_sfarsit < astazi) return 'expirat';
     if (this.data_inceput > astazi) return 'programat';
     return this.estePlatit ? 'platit' : 'neplatit';
@@ -129,8 +135,10 @@ class AbonamentViewModel {
   get zileRamase() { return D.zileIntre(D.azi(), this.data_sfarsit); }
   get esteInDesfasurare() { return ['platit', 'neplatit'].includes(this.stareCod()); }
   get expiraCurand() { return this.esteInDesfasurare && this.zileRamase <= ZILE_AVERTIZARE; }
-  get poateFiAnulat() { return this.stare !== 'anulat' && this.stareCod() !== 'expirat'; }
-  get poatePrimiPlata() { return this.stare !== 'anulat' && !this.estePlatit; }
+  // Intrebam POZITIV "e activ in baza?", nu "nu e anulat?": asa o stare noua (ex. 'inlocuit') e tratata corect automat.
+  get esteActiv() { return this.stare === 'activ'; }
+  get poateFiAnulat() { return this.esteActiv && this.stareCod() !== 'expirat'; }
+  get poatePrimiPlata() { return this.esteActiv && !this.estePlatit; }
 
   // ---- Afisare ----
   get perioadaAfisata() { return PERIOADE[this.perioada] || this.perioada; }
