@@ -27,7 +27,8 @@ class AbonamentViewModel {
     this.utilizator_id = date.utilizator_id ?? '';
     this.plan_id = date.plan_id ?? '';
     this.perioada = date.perioada ?? 'lunar';
-    this.pret = date.pret ?? 0;
+    this.pret = date.pret ?? 0; // platit cash
+    this.credit_aplicat = date.credit_aplicat ?? 0; // adus dintr-un upgrade; valoarea = pret + credit_aplicat
     this.data_inceput = date.data_inceput ?? D.azi();
     this.data_sfarsit = date.data_sfarsit ?? '';
     this.reinnoire_automata = date.reinnoire_automata ?? false;
@@ -52,6 +53,7 @@ class AbonamentViewModel {
       plan_id: e.plan_id,
       perioada: e.perioada,
       pret: Number(e.pret),
+      credit_aplicat: Number(e.credit_aplicat ?? 0),
       data_inceput: D.dinDate(e.data_inceput),
       data_sfarsit: D.dinDate(e.data_sfarsit),
       reinnoire_automata: e.reinnoire_automata,
@@ -117,6 +119,9 @@ class AbonamentViewModel {
   get pretAfisat() { return Number(this.pret) === 0 ? 'Gratuit' : lei(this.pret); }
   get totalPlatitAfisat() { return lei(this.totalPlatit); }
   get restDePlataAfisat() { return lei(this.restDePlata); }
+  get creditAfisat() { return Number(this.credit_aplicat) > 0 ? lei(this.credit_aplicat) : null; }
+  // Restul de plata conteaza doar la un abonament activ (unul anulat / inlocuit nu mai datoreaza nimic).
+  get areRestDePlata() { return this.esteActiv && this.restDePlata > 0; }
 
   // ---- Starea ----
   stareCod(astazi = D.azi()) {

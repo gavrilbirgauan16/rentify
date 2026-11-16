@@ -104,8 +104,8 @@
             <td><%= a.plan_nume %></td>
             <td><%= a.perioadaAfisata %><%= a.reinnoire_automata ? ' ↻' : '' %></td>
             <td class="small text-nowrap"><%= a.intervalAfisat %></td>
-            <td class="text-end text-nowrap"><%= a.pretAfisat %></td>
-            <td class="text-end text-nowrap <%= a.restDePlata > 0 && a.esteActiv ? 'text-danger fw-semibold' : 'text-body-secondary' %>"><%= a.restDePlata > 0 ? a.restDePlataAfisat : '–' %></td>
+            <td class="text-end text-nowrap"><%= a.pretAfisat %><% if (a.creditAfisat) { %><br><span class="small text-success">+ <%= a.creditAfisat %> credit</span><% } %></td>
+            <td class="text-end text-nowrap <%= a.areRestDePlata ? 'text-danger fw-semibold' : 'text-body-secondary' %>"><%= a.areRestDePlata ? a.restDePlataAfisat : '–' %></td>
             <td>
               <span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span>
               <% if (a.expiraCurand) { %><span class="badge bg-warning-subtle text-warning-emphasis">expiră în <%= a.zileRamase %> <%= a.zileRamase === 1 ? 'zi' : 'zile' %></span><% } %>
@@ -129,7 +129,7 @@
         <p class="small text-body-secondary mb-0">
           <%= a.plan_nume %> · <%= a.perioadaAfisata.toLowerCase() %> · <%= a.pretAfisat %><br>
           <%= a.intervalAfisat %>
-          <% if (a.restDePlata > 0 && a.esteActiv) { %><br><span class="text-danger fw-semibold">Rest de plată: <%= a.restDePlataAfisat %></span><% } %>
+          <% if (a.areRestDePlata) { %><br><span class="text-danger fw-semibold">Rest de plată: <%= a.restDePlataAfisat %></span><% } %>
           <% if (a.expiraCurand) { %><br><span class="text-warning-emphasis">Expiră în <%= a.zileRamase %> <%= a.zileRamase === 1 ? 'zi' : 'zile' %></span><% } %>
         </p>
       </div>

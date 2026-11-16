@@ -65,6 +65,14 @@ test('un abonament inlocuit (upgrade) e oprit: nu se mai anuleaza, nu mai primes
   assert.equal(abonament().poatePrimiPlata, true); // activ si neplatit
 });
 
+test('restul de plata se arata doar la abonamentele active; creditul adus se afiseaza separat', () => {
+  assert.equal(abonament().areRestDePlata, true); // activ, neplatit
+  assert.equal(abonament({ stare: 'anulat' }).areRestDePlata, false); // ex. plata rambursata: nu mai datoreaza
+  assert.equal(abonament({ stare: 'inlocuit' }).areRestDePlata, false);
+  assert.equal(abonament({ credit_aplicat: 250 }).creditAfisat, '250,00 lei');
+  assert.equal(abonament().creditAfisat, null);
+});
+
 test('abonamentul gratuit al unui cont nou: un an, pret 0, activ, platit', () => {
   const a = abonamentGratuit(4, '2026-11-16');
   assert.equal(a.plan_id, 4);

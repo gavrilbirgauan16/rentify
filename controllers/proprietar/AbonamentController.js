@@ -70,6 +70,7 @@ async function pregatesteSchimbarea(req, sursa) {
       perioada: curent.perioada,
       pret: curent.pret,
       platit: curent.totalPlatit,
+      credit_aplicat: curent.credit_aplicat,
       data_inceput: curent.data_inceput,
       data_sfarsit: curent.data_sfarsit,
     },
@@ -103,7 +104,8 @@ async function schimbaPost(req, res) {
   const abonamentNou = {
     plan_id: plan.id,
     perioada,
-    pret: calcul.dePlata, // pretul convenit, dupa credit
+    pret: calcul.dePlata, // ce se plateste cash, dupa credit
+    credit_aplicat: calcul.credit, // creditul adus; valoarea abonamentului = pret + credit_aplicat
     data_inceput: D.catreDate(calcul.data_inceput),
     data_sfarsit: D.catreDate(calcul.data_sfarsit),
     reinnoire_automata: true,
