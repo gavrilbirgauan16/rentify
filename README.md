@@ -3,7 +3,7 @@
 ![Teste](https://github.com/gavrilbirgauan16/rentify/actions/workflows/ci.yml/badge.svg)
 
 Platformă web pentru închirieri, cu roluri (admin, proprietar, chiriaș) și abonamente.
-Proiect PPAW – Bîrgăuan Gavril, grupa 3711a, USV.
+Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 
 ## Tehnologii
 
@@ -61,8 +61,8 @@ Proiect PPAW – Bîrgăuan Gavril, grupa 3711a, USV.
   (căutare după id + proprietar, deci un id schimbat în adresă duce la 404).
 - Limitele din plan (proprietăți active, anunțuri publicate) **blochează** adăugarea și reactivarea; adminul e doar avertizat.
 - **Abonamentul meu**: planul curent, cât s-a folosit din limite, istoricul și schimbarea planului:
-  - **upgrade** – începe imediat; zilele plătite și nefolosite se scad din preț (credit proporțional, rotunjit în jos);
-  - **downgrade** – începe după ce se termină perioada plătită; se poate renunța la el, cu rambursare;
+  - **upgrade** - începe imediat; zilele plătite și nefolosite se scad din preț (credit proporțional, rotunjit în jos);
+  - **downgrade** - începe după ce se termină perioada plătită; se poate renunța la el, cu rambursare;
   - plata este **simulată** (nu se cer date de card); prețul se recalculează mereu pe server.
 
 ## Moderarea anunțurilor
@@ -97,8 +97,8 @@ Colecția Postman: `docs/Rentify-API.postman_collection.json` (în Postman, la v
 
 | Folder | Ce conține |
 |---|---|
-| `models/` | ViewModel-urile (validare, transformări pentru pagini); `models/api/` – DTO-urile pentru API |
-| `controllers/` | logica fiecărei pagini; `controllers/api/` – controllerele API |
+| `models/` | ViewModel-urile (validare, transformări pentru pagini); `models/api/` - DTO-urile pentru API |
+| `controllers/` | logica fiecărei pagini; `controllers/api/` - controllerele API |
 | `routes/` | adresele aplicației (`/admin/...` protejat, `/api/...` JSON) |
 | `views/` | paginile EJS (`views/admin/...` pentru administrator) |
 | `src/NivelAccesDate/` | accesorii: singurul loc care vorbește cu baza de date |
