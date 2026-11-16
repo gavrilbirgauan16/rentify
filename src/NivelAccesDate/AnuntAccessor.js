@@ -1,5 +1,6 @@
 // Metode de acces la date pentru modelul "anunt" (si imaginile lui din tabelul "fisier").
 const context = require('../Repository_CodeFirst/context');
+const { STARI_PUBLICATE } = require('../../servicii/moderare');
 
 // Imaginile sunt in tabelul general "fisier", recunoscute dupa entitate = 'anunt' si tip = 'imagine'.
 const IMAGINE_ANUNT = { entitate: 'anunt', tip: 'imagine' };
@@ -14,7 +15,7 @@ const CU_PROPRIETATE = {
       stare: true,
       max_locatari: true,
       proprietar_id: true,
-      utilizator: { select: { nume: true, prenume: true, telefon: true } },
+      utilizator: { select: { nume: true, prenume: true, telefon: true, email: true } }, // email: anuntul aprobat / respins
     },
   },
 };
@@ -95,9 +96,32 @@ class AnuntAccessor {
     return context.anunt.findFirst({ where: { id, proprietate: { proprietar_id: proprietarId } }, include: CU_PROPRIETATE });
   }
 
-  // Cate anunturi active are un proprietar (pentru limita max_anunturi_active din plan).
-  async numaraActiveAleProprietarului(proprietarId) {
-    return context.anunt.count({ where: { stare: 'activ', proprietate: { proprietar_id: proprietarId } } });
+  // Cate anunturi publicate are un proprietar (pentru limita max_anunturi_active din plan):
+  // cele active si cele trimise spre aprobare (altfel ar putea trimite oricate deodata).
+  async numaraPublicateAleProprietarului(proprietarId) {
+    return context.anunt.count({ where: { stare: { in: STARI_PUBLICATE }, proprietate: { proprietar_id: proprietarId } } });
+  }
+
+  // ===== Moderarea (adminul) =====
+
+  // Aproba un anunt care asteapta aprobarea. Conditia "in_asteptare" e in WHERE, nu doar verificata inainte:
+  // daca doi admini apasa deodata, sau proprietarul l-a retras intre timp, nu se aproba de doua ori / gresit.
+  // Intoarce true daca s-a aprobat.
+  async aproba(id) {
+    const r = await context.anunt.updateMany({
+      where: { id, stare: 'in_asteptare' },
+      data: { stare: 'activ', aprobat_la: new Date(), motiv_respingere: null },
+    });
+    return r.count === 1;
+  }
+
+  // Respinge un anunt in asteptare (sau scoate de pe site unul activ), cu motiv. Intoarce true daca s-a respins.
+  async respinge(id, motiv) {
+    const r = await context.anunt.updateMany({
+      where: { id, stare: { in: STARI_PUBLICATE } },
+      data: { stare: 'respins', motiv_respingere: motiv, aprobat_la: null },
+    });
+    return r.count === 1;
   }
 
   // Un anunt dupa id, cu proprietatea lui (Edit si butoanele de stare).
@@ -128,7 +152,8 @@ class AnuntAccessor {
   // Intoarce caile imaginilor sterse, ca sa fie sterse si de pe disc.
   async updateEntity(id, date, imaginiNoi = [], idImaginiDeSters = [], incarcatDe) {
     return context.$transaction(async (tx) => {
-      const anunt = await tx.anunt.update({ where: { id }, data: date });
+      // Motivul respingerii ramane doar cat anuntul e respins (regula anunt_motiv_check din baza de date).
+      const anunt = await tx.anunt.update({ where: { id }, data: { ...date, ...(date.stare && date.stare !== 'respins' ? { motiv_respingere: null } : {}) } });
       const deSters = await tx.fisier.findMany({
         where: { ...IMAGINE_ANUNT, entitate_id: id, id: { in: idImaginiDeSters } }, // doar imaginile ACESTUI anunt
       });
@@ -139,8 +164,17 @@ class AnuntAccessor {
   }
 
   // Schimba doar starea (butoanele Activeaza / Dezactiveaza).
-  async schimbaStare(id, stare) {
-    return context.anunt.update({ where: { id }, data: { stare } });
+  // aprobat_la (optional): ex. adminul activeaza = aproba; proprietarul nu atinge aprobarea.
+  async schimbaStare(id, stare, { aprobat_la } = {}) {
+    return context.anunt.update({
+      where: { id },
+      data: { stare, motiv_respingere: null, ...(aprobat_la !== undefined ? { aprobat_la } : {}) },
+    });
+  }
+
+  // Cate anunturi asteapta aprobarea (Panou -> "De rezolvat").
+  async numaraInAsteptare() {
+    return context.anunt.count({ where: { stare: 'in_asteptare' } });
   }
 
   // Salveaza in tabelul fisier imaginile primite de la formular.

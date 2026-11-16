@@ -26,8 +26,8 @@ async function situatie(utilizatorId, cheie, numara) {
 // Proprietatile active (neinactive) ale unui proprietar fata de max_proprietati.
 const situatieProprietati = (proprietarId) => situatie(proprietarId, 'max_proprietati', (id) => proprietati.countByProprietar(id));
 
-// Anunturile active ale unui proprietar fata de max_anunturi_active.
-const situatieAnunturi = (proprietarId) => situatie(proprietarId, 'max_anunturi_active', (id) => anunturi.numaraActiveAleProprietarului(id));
+// Anunturile publicate (active + in asteptare) ale unui proprietar fata de max_anunturi_active.
+const situatieAnunturi = (proprietarId) => situatie(proprietarId, 'max_anunturi_active', (id) => anunturi.numaraPublicateAleProprietarului(id));
 
 // Intoarce un text de avertizare daca proprietarul a depasit numarul de proprietati din plan, altfel null.
 async function avertizareProprietati(proprietarId) {
