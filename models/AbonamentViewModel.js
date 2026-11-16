@@ -6,10 +6,11 @@ const PERIOADE = { lunar: 'Lunar', anual: 'Anual' };
 const METODE = { card: 'Card', transfer: 'Transfer bancar', numerar: 'Numerar' };
 const ZILE_AVERTIZARE = 7; // "expira curand" = mai are cel mult atatea zile
 
-// Starea afisata a unui abonament. In baza de date tinem doar 'activ' / 'anulat';
+// Starea afisata a unui abonament. In baza de date tinem doar 'activ' / 'anulat' / 'inlocuit' (upgrade);
 // restul (expirat, neplatit...) se CALCULEAZA din date si plati, ca sa nu poata fi niciodata gresit.
 const STARI = {
   anulat: { text: 'Anulat', culoare: 'secondary' },
+  inlocuit: { text: 'Înlocuit (upgrade)', culoare: 'secondary' },
   expirat: { text: 'Expirat', culoare: 'dark' },
   programat: { text: 'Începe curând', culoare: 'info' },
   neplatit: { text: 'Neplătit', culoare: 'danger' },
@@ -119,7 +120,7 @@ class AbonamentViewModel {
 
   // ---- Starea ----
   stareCod(astazi = D.azi()) {
-    if (this.stare === 'anulat') return 'anulat';
+    if (this.stare !== 'activ') return this.stare; // 'anulat' sau 'inlocuit': oprit, orice ar spune datele
     if (this.data_sfarsit && this.data_sfarsit < astazi) return 'expirat';
     if (this.data_inceput > astazi) return 'programat';
     return this.estePlatit ? 'platit' : 'neplatit';
@@ -129,8 +130,10 @@ class AbonamentViewModel {
   get zileRamase() { return D.zileIntre(D.azi(), this.data_sfarsit); }
   get esteInDesfasurare() { return ['platit', 'neplatit'].includes(this.stareCod()); }
   get expiraCurand() { return this.esteInDesfasurare && this.zileRamase <= ZILE_AVERTIZARE; }
-  get poateFiAnulat() { return this.stare !== 'anulat' && this.stareCod() !== 'expirat'; }
-  get poatePrimiPlata() { return this.stare !== 'anulat' && !this.estePlatit; }
+  // Intrebam POZITIV "e activ in baza?", nu "nu e anulat?": asa o stare noua (ex. 'inlocuit') e tratata corect automat.
+  get esteActiv() { return this.stare === 'activ'; }
+  get poateFiAnulat() { return this.esteActiv && this.stareCod() !== 'expirat'; }
+  get poatePrimiPlata() { return this.esteActiv && !this.estePlatit; }
 
   // ---- Afisare ----
   get perioadaAfisata() { return PERIOADE[this.perioada] || this.perioada; }

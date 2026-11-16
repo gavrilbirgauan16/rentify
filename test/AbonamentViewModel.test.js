@@ -54,6 +54,17 @@ test('formularul: pretul si sfarsitul vin din plan, nu din ce scrie adminul', ()
   assert.equal(m.data_sfarsit, D.sfarsitPerioada(D.azi(), 'anual'));
 });
 
+test('un abonament inlocuit (upgrade) e oprit: nu se mai anuleaza, nu mai primeste plati', () => {
+  const inlocuit = abonament({ stare: 'inlocuit' }); // neplatit si inca in perioada, dupa date
+  assert.equal(inlocuit.stareCod('2026-11-15'), 'inlocuit');
+  assert.equal(inlocuit.stareAfisata, 'Înlocuit (upgrade)');
+  assert.equal(inlocuit.esteActiv, false);
+  assert.equal(inlocuit.poateFiAnulat, false);
+  assert.equal(inlocuit.poatePrimiPlata, false);
+  assert.equal(abonament({ stare: 'anulat' }).poatePrimiPlata, false);
+  assert.equal(abonament().poatePrimiPlata, true); // activ si neplatit
+});
+
 test('abonamentul gratuit al unui cont nou: un an, pret 0, activ, platit', () => {
   const a = abonamentGratuit(4, '2026-11-16');
   assert.equal(a.plan_id, 4);
