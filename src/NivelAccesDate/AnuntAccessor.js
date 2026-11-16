@@ -20,6 +20,20 @@ const CU_PROPRIETATE = {
   },
 };
 
+// Conditia "anunt public": activ si pe o proprietate care nu e inactiva. Pusa MEREU la cautarea publica,
+// chiar daca where-ul primit o contine deja (aparare in profunzime: nu depindem de cine construieste where-ul).
+const PUBLIC = { stare: 'activ', proprietate: { NOT: { stare: 'inactiv' } } };
+
+// Ce vede chiriasul despre proprietate: detaliile locuintei si numele proprietarului. FARA telefon si email.
+const CU_PROPRIETATE_PUBLIC = {
+  proprietate: {
+    select: {
+      id: true, denumire: true, oras: true, zona: true, tip: true, nr_camere: true, suprafata_mp: true,
+      are_balcon: true, max_locatari: true, utilizator: { select: { prenume: true, nume: true } },
+    },
+  },
+};
+
 class AnuntAccessor {
   // Anunturile active, cu proprietatea fiecaruia (ce apare pe prima pagina).
   async getActive() {
@@ -57,12 +71,39 @@ class AnuntAccessor {
     });
   }
 
-  // Creste numarul de vizualizari cand cineva deschide anuntul.
+  // Creste numarul de vizualizari cand cineva deschide anuntul (doar la anunturile publice).
+  // updateMany + conditia in WHERE: un id gresit sau un anunt care nu e public nu da eroare, doar nu numara.
   async inregistreazaVizualizare(id) {
-    return context.anunt.update({
-      where: { id },
+    return context.anunt.updateMany({
+      where: { id, ...PUBLIC },
       data: { vizualizari: { increment: 1 } },
     });
+  }
+
+  // ===== Cautarea publica (chirias / vizitator): DOAR anunturile active, pe proprietati care nu sunt inactive =====
+
+  // O pagina din rezultatele cautarii. where vine din servicii/cautareAnunturi.js (contine deja conditia PUBLIC).
+  // AND, nu { ...where, ...PUBLIC }: spread-ul ar suprascrie where.proprietate (filtrele de oras, camere...).
+  async cautaPublice(where, orderBy, { skip, take }) {
+    return context.anunt.findMany({ where: { AND: [where, PUBLIC] }, include: CU_PROPRIETATE_PUBLIC, orderBy, skip, take });
+  }
+
+  async numaraPublice(where) {
+    return context.anunt.count({ where: { AND: [where, PUBLIC] } });
+  }
+
+  // Un anunt public dupa id; null daca nu exista sau nu e public (ciorna, in asteptare, respins...).
+  async getPublicById(id) {
+    return context.anunt.findFirst({ where: { id, ...PUBLIC }, include: CU_PROPRIETATE_PUBLIC });
+  }
+
+  // Telefonul proprietarului unui anunt public (doar dupa contactare; nu apare niciodata in cautare).
+  async getTelefonProprietar(id) {
+    const a = await context.anunt.findFirst({
+      where: { id, ...PUBLIC },
+      select: { proprietate: { select: { utilizator: { select: { telefon: true, prenume: true } } } } },
+    });
+    return a ? a.proprietate.utilizator : null;
   }
 
   // Toate anunturile, cu proprietatea si proprietarul ei (pagina Index din admin).
