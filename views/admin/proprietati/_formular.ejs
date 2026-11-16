@@ -72,6 +72,8 @@
       </div>
     </div>
 
+    <%# Alegerea proprietarului apare doar la admin; proprietarul isi adauga proprietatile doar lui. %>
+    <% if (typeof proprietari !== 'undefined') { %>
     <div class="col-md-6">
       <label for="proprietar_id" class="form-label">Proprietar</label>
       <select class="form-select<%= clasaCamp('proprietar_id') %>" id="proprietar_id" name="proprietar_id">
@@ -80,6 +82,7 @@
       </select>
       <% if (areEroare('proprietar_id')) { %><div class="invalid-feedback"><%= erori.proprietar_id %></div><% } %>
     </div>
+    <% } %>
 
     <div class="col-md-6 d-flex align-items-md-end">
       <div class="form-check form-switch mb-md-2">

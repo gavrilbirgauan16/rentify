@@ -1,7 +1,12 @@
 <%
+  // Formularul de anunt, folosit de admin si de proprietar. Optiuni (implicit cele de admin):
+  //   inapoi        - adresa butonului Renunta (implicit /admin/anunturi)
+  //   faraPromovare - true la proprietar: promovarea e o functie platita, nu se bifeaza de aici
   // Ajutoare pentru afisarea erorilor pe fiecare camp.
   const areEroare = (camp) => Boolean(erori[camp]);
   const clasaCamp = (camp) => (areEroare(camp) ? ' is-invalid' : '');
+  const adresaRenunta = typeof inapoi !== 'undefined' ? inapoi : '/admin/anunturi';
+  const cuPromovare = typeof faraPromovare === 'undefined' || !faraPromovare;
 %>
 
 <% if (Object.keys(erori).length > 0) { %>
@@ -24,13 +29,11 @@
         <option value="">Alege proprietatea…</option>
         <% proprietati.forEach(function(p) { %>
         <option value="<%= p.id %>" <%= String(a.proprietate_id) === String(p.id) ? 'selected' : '' %>>
-          <%= p.denumire %> – <%= p.oras %> (<%= p.utilizator.prenume %> <%= p.utilizator.nume %>)<%= p.stare === 'inactiv' ? ' – inactivă' : '' %>
+          <%= p.denumire %> – <%= p.oras %><% if (p.utilizator) { %> (<%= p.utilizator.prenume %> <%= p.utilizator.nume %>)<% } %><%= p.stare === 'inactiv' ? ' – inactivă' : '' %>
         </option>
         <% }) %>
       </select>
-              <% if (areEroare('pret')) { %><div class="invalid-feedback"><%= erori.pret %></div><% } %>
-      </div>
-      <div class="form-text">La închiriere: chiria pe lună pentru toată locuința. Se împarte egal între chiriași.</div>
+      <% if (areEroare('proprietate_id')) { %><div class="invalid-feedback"><%= erori.proprietate_id %></div><% } %>
     </div>
 
     <div class="col-md-6">
@@ -72,6 +75,7 @@
         </select>
         <% if (areEroare('pret')) { %><div class="invalid-feedback"><%= erori.pret %></div><% } %>
       </div>
+      <div class="form-text">La închiriere: chiria pe lună pentru toată locuința. Se împarte egal între chiriași.</div>
     </div>
 
     <div class="col-md-6">
@@ -125,17 +129,19 @@
       </div>
     </div>
 
+    <% if (cuPromovare) { %>
     <div class="col-12">
       <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" role="switch" id="promovat" name="promovat" <%= a.promovat ? 'checked' : '' %>>
         <label class="form-check-label" for="promovat">Anunț promovat</label>
       </div>
     </div>
+    <% } %>
 
   </div>
 
   <div class="d-grid gap-2 d-sm-flex mt-4">
     <button class="btn btn-primary px-4" type="submit">Salvează</button>
-    <a class="btn btn-outline-secondary" href="/admin/anunturi">Renunță</a>
+    <a class="btn btn-outline-secondary" href="<%= adresaRenunta %>">Renunță</a>
   </div>
 </form>

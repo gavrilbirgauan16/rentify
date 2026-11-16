@@ -28,6 +28,20 @@ test('limita goala = nelimitat (fara rand in limita_plan); limita trebuie sa fie
   assert.deepEqual(PlanViewModel.dinFormular({ ...formularBun(), limita_max_proprietati: '3' }, 'proprietar').catreLimite(), [{ cheie: 'max_proprietati', valoare: 3 }]);
 });
 
+// Bug reparat: la salvarea unui plan, limitele se sterg si se refac DOAR din CARACTERISTICI.
+// Daca o limita folosita de aplicatie lipsea de acolo, salvarea planului din admin o stergea fara sa se vada.
+test('limita de anunturi active a proprietarului se pastreaza la salvarea planului', () => {
+  const p = PlanViewModel.dinFormular({ ...formularBun(), limita_max_proprietati: '1', limita_max_anunturi_active: '1' }, 'proprietar');
+  assert.deepEqual(p.valideaza(), {});
+  assert.deepEqual(p.catreLimite(), [{ cheie: 'max_proprietati', valoare: 1 }, { cheie: 'max_anunturi_active', valoare: 1 }]);
+  assert.ok(PlanViewModel.dinFormular({ ...formularBun(), limita_max_anunturi_active: '0' }, 'proprietar').valideaza().limita_max_anunturi_active);
+});
+
+test('fiecare limita verificata de aplicatie apare in CARACTERISTICI (altfel s-ar pierde la salvare)', () => {
+  const chei = PlanViewModel.CARACTERISTICI.proprietar.map((c) => c.cheie);
+  for (const cheie of ['max_proprietati', 'max_anunturi_active']) assert.ok(chei.includes(cheie), cheie);
+});
+
 test('beneficiile chiriasului: bifat = 1, nebifat = 0', () => {
   const p = PlanViewModel.dinFormular({ ...formularBun(), limita_sesizari: 'on' }, 'chirias');
   const limite = Object.fromEntries(p.catreLimite().map((l) => [l.cheie, l.valoare]));
@@ -48,7 +62,8 @@ test('cardul: pret, economie si ce include', () => {
   assert.equal(p.pretLunarAfisat, '450 lei');
   assert.equal(p.economieAnuala, '900 lei');
   assert.equal(p.abonati, 4);
-  assert.ok(p.caracteristici.some((c) => c.text === 'Până la 3 proprietăți, cu anunțurile lor' && c.inclus));
+  assert.ok(p.caracteristici.some((c) => c.text === 'Până la 3 proprietăți active' && c.inclus));
+  assert.ok(p.caracteristici.some((c) => c.text === 'Anunțuri active nelimitate' && c.inclus)); // limita lipsa = nelimitat
   const gratuit = new PlanViewModel({ rol: 'chirias', pret_lunar: '0', pret_anual: '0', limite: { max_contactari_luna: '5', sesizari: '0' } });
   assert.equal(gratuit.esteGratuit, true);
   assert.ok(gratuit.caracteristici.some((c) => c.text === 'Sesizări pentru apartament sau bloc' && !c.inclus));

@@ -246,4 +246,8 @@ async function dezactiveaza(req, res) {
   res.redirect(inapoi(req));
 }
 
-module.exports = { index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, verificaProprietatea };
+module.exports = {
+  index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza,
+  // Folosite si de API si de zona proprietarului (aceleasi reguli, scrise o singura data).
+  verificaProprietatea, imaginiIncarcate, imaginiDeSters, verificaImaginile,
+};

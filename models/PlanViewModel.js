@@ -11,8 +11,12 @@ const ETICHETE_ROL = { proprietar: 'Proprietari', chirias: 'Chiriași' };
 const CARACTERISTICI = {
   proprietar: [
     {
-      cheie: 'max_proprietati', tip: 'limita', min: 1, campFormular: 'Număr maxim de proprietăți',
-      text: (v) => (v === null ? 'Proprietăți nelimitate, cu anunțurile lor' : v === 1 ? '1 proprietate, cu anunțurile ei' : `Până la ${v} proprietăți, cu anunțurile lor`),
+      cheie: 'max_proprietati', tip: 'limita', min: 1, campFormular: 'Număr maxim de proprietăți active',
+      text: (v) => (v === null ? 'Proprietăți nelimitate' : v === 1 ? '1 proprietate activă' : `Până la ${v} proprietăți active`),
+    },
+    {
+      cheie: 'max_anunturi_active', tip: 'limita', min: 1, campFormular: 'Număr maxim de anunțuri active',
+      text: (v) => (v === null ? 'Anunțuri active nelimitate' : v === 1 ? '1 anunț activ odată' : `Până la ${v} anunțuri active odată`),
     },
   ],
   chirias: [

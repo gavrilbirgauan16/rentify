@@ -6,7 +6,8 @@ const { hashParola } = require('../servicii/parole');
 const tokenuri = require('../servicii/tokenuri');
 const emailuri = require('../servicii/emailuri');
 const { trimite } = require('../servicii/email');
-const { azi, sfarsitPerioada, catreDate } = require('../servicii/date');
+const { abonamentGratuit } = require('../models/AbonamentViewModel');
+const { azi } = require('../servicii/date');
 const { mesajFlash } = require('../utils/http');
 
 const utilizatori = new UtilizatorAccessor();
@@ -79,19 +80,12 @@ async function confirmare(req, res) {
     });
   }
 
-  // Chiriasul primeste automat planul gratuit (proprietarul isi alege planul din contul lui).
-  let abonament = null;
-  if (t.utilizator.rol.nume === 'chirias') {
-    const plan = await planuri.getGratuitChirias();
-    if (plan) {
-      const inceput = azi();
-      abonament = {
-        plan_id: plan.id, perioada: 'anual', pret: 0, reinnoire_automata: true, stare: 'activ',
-        data_inceput: catreDate(inceput), data_sfarsit: catreDate(sfarsitPerioada(inceput, 'anual')),
-      };
-    } else console.error('Nu exista un plan gratuit activ pentru chiriasi: contul a fost confirmat fara abonament.');
-  }
-  await utilizatori.confirmaEmail(t.utilizator.id, abonament);
+  // Orice cont nou (chirias sau proprietar) primeste automat planul gratuit al rolului lui.
+  // Proprietarul poate trece apoi la un plan cu plata, din contul lui.
+  const rol = t.utilizator.rol.nume;
+  const plan = await planuri.getGratuit(rol);
+  if (!plan) console.error(`Nu exista un plan gratuit activ pentru rolul "${rol}": contul a fost confirmat fara abonament.`);
+  await utilizatori.confirmaEmail(t.utilizator.id, plan ? abonamentGratuit(plan.id, azi()) : null);
 
   delete req.session.emailTrimis;
   mesajFlash(req, 'Adresa de email a fost confirmată. Acum te poți conecta.');

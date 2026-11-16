@@ -1,0 +1,86 @@
+<%# "Abonamentul meu": planul curent, cat a folosit din limite, planurile disponibile si istoricul. Doar afisare. %>
+<%- include('../../partials/header', { titluPagina: 'Abonamentul meu' }) %>
+
+<h1 class="h3 mb-3">Abonamentul meu</h1>
+
+<div class="row g-3 mb-4">
+  <!-- Planul curent -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <% if (curent) { %>
+          <p class="text-body-secondary small mb-1">Planul tău</p>
+          <h2 class="h4 mb-1"><%= curent.plan_nume %></h2>
+          <p class="mb-2"><span class="badge text-bg-<%= curent.culoareStare %>"><%= curent.stareAfisata %></span></p>
+          <dl class="row small mb-0">
+            <dt class="col-5 fw-normal text-body-secondary">Perioada</dt><dd class="col-7 mb-1"><%= curent.intervalAfisat %></dd>
+            <dt class="col-5 fw-normal text-body-secondary">Mai sunt</dt><dd class="col-7 mb-1"><%= curent.zileRamase %> <%= curent.zileRamase === 1 ? 'zi' : 'zile' %></dd>
+            <dt class="col-5 fw-normal text-body-secondary">Plată</dt><dd class="col-7 mb-1"><%= curent.perioadaAfisata %> · <%= curent.pretAfisat %></dd>
+            <dt class="col-5 fw-normal text-body-secondary">Reînnoire</dt><dd class="col-7 mb-0"><%= curent.reinnoire_automata ? 'automată' : 'manuală' %></dd>
+          </dl>
+        <% } else { %>
+          <h2 class="h5">Nu ai un abonament în curs</h2>
+          <p class="text-body-secondary mb-0">Fără abonament nu poți avea proprietăți sau anunțuri active.</p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cat a folosit din limite -->
+  <div class="col-lg-7">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <p class="text-body-secondary small mb-3">Ce ai folosit din plan</p>
+        <% limite.forEach(function(l) { %>
+          <% const procent = l.maxim === null ? 0 : (l.maxim === 0 ? 100 : Math.min(100, Math.round(l.folosit / l.maxim * 100))); %>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span><%= l.eticheta %></span>
+              <strong><%= l.maxim === null ? l.folosit + ' (fără limită)' : l.folosit + ' din ' + l.maxim %></strong>
+            </div>
+            <div class="progress" role="progressbar" aria-label="<%= l.eticheta %>" aria-valuenow="<%= procent %>" aria-valuemin="0" aria-valuemax="100" style="height: 8px;">
+              <div class="progress-bar <%= l.depaseste ? 'bg-danger' : (l.poateAdauga ? '' : 'bg-warning') %>" style="width: <%= procent %>%"></div>
+            </div>
+            <% if (l.depaseste) { %><div class="small text-danger mt-1">Peste limita planului: ce ai rămâne, dar nu poți adăuga altele.</div><% } %>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Planurile disponibile -->
+<h2 class="h5 mb-3">Planuri pentru proprietari</h2>
+<div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4 align-items-stretch mb-4">
+  <% planuri.forEach(function(p) { %>
+  <div class="col">
+    <%- include('../../admin/planuri/_card', { p: p, alCurent: curent && curent.plan_id === p.id }) %>
+  </div>
+  <% }) %>
+</div>
+
+<!-- Istoricul abonamentelor -->
+<% if (istoric.length > 0) { %>
+<h2 class="h5 mb-3">Istoric</h2>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr><th scope="col">Plan</th><th scope="col">Perioada</th><th scope="col">Preț</th><th scope="col">Stare</th></tr>
+      </thead>
+      <tbody>
+        <% istoric.forEach(function(a) { %>
+        <tr>
+          <td><%= a.plan_nume %></td>
+          <td class="text-nowrap"><%= a.intervalAfisat %></td>
+          <td><%= a.pretAfisat %></td>
+          <td><span class="badge text-bg-<%= a.culoareStare %>"><%= a.stareAfisata %></span></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>
+
+<%- include('../../partials/footer') %>

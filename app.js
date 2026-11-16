@@ -12,6 +12,7 @@ const autentificareRouter = require('./routes/autentificare');
 const conturiRouter = require('./routes/conturi');
 const contRouter = require('./routes/cont');
 const adminRouter = require('./routes/admin');
+const proprietarRouter = require('./routes/proprietar');
 const apiRouter = require('./routes/api');
 const { verificaConexiunea } = require('./servicii/email');
 
@@ -86,6 +87,7 @@ app.use(autentificareRouter);    // /autentificare, /iesire
 app.use(conturiRouter);          // /inregistrare, /confirmare, /parola-uitata, /resetare (publice)
 app.use('/cont', contRouter);     // /cont - profil, parola, email (orice utilizator conectat)
 app.use('/admin', adminRouter);  // tot ce e de admin (protejat)
+app.use('/proprietar', proprietarRouter); // zona proprietarului (protejata: doar rolul proprietar)
 
 // 404 - nicio ruta nu s-a potrivit
 app.use((req, res) => {
