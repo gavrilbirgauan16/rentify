@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const AbonamentViewModel = require('../models/AbonamentViewModel');
-const { valideazaPlata } = require('../models/AbonamentViewModel');
+const { valideazaPlata, abonamentGratuit } = require('../models/AbonamentViewModel');
 const D = require('../servicii/date');
 
 test('sfarsitul perioadei: o luna / un an minus o zi, cu luni scurte', () => {
@@ -52,6 +52,19 @@ test('formularul: pretul si sfarsitul vin din plan, nu din ce scrie adminul', ()
   m.completeazaDinPlan({ pret_lunar: 450, pret_anual: 4500 });
   assert.equal(m.pret, 4500);
   assert.equal(m.data_sfarsit, D.sfarsitPerioada(D.azi(), 'anual'));
+});
+
+test('abonamentul gratuit al unui cont nou: un an, pret 0, activ, platit', () => {
+  const a = abonamentGratuit(4, '2026-11-16');
+  assert.equal(a.plan_id, 4);
+  assert.equal(a.perioada, 'anual');
+  assert.equal(a.pret, 0);
+  assert.equal(a.stare, 'activ');
+  assert.equal(D.dinDate(a.data_inceput), '2026-11-16');
+  assert.equal(D.dinDate(a.data_sfarsit), '2027-11-15');
+  // Odata salvat, apare "platit" (nu "neplatit") la admin.
+  const vm = new AbonamentViewModel({ pret: a.pret, data_inceput: '2026-11-16', data_sfarsit: '2027-11-15' });
+  assert.equal(vm.stareCod('2026-11-20'), 'platit');
 });
 
 test('inceputul zilei in Romania, iarna (UTC+2) si vara (UTC+3)', () => {

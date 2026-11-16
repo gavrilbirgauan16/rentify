@@ -156,5 +156,15 @@ AbonamentViewModel.PERIOADE = PERIOADE;
 AbonamentViewModel.METODE = METODE;
 AbonamentViewModel.STARI = STARI;
 AbonamentViewModel.lei = lei;
+// Primul abonament al unui cont nou: planul gratuit, pe un an, cu reinnoire automata.
+// Pretul e 0, deci abonamentul e "platit" fara nicio plata.
+function abonamentGratuit(planId, inceput) {
+  return {
+    plan_id: planId, perioada: 'anual', pret: 0, reinnoire_automata: true, stare: 'activ',
+    data_inceput: D.catreDate(inceput), data_sfarsit: D.catreDate(D.sfarsitPerioada(inceput, 'anual')),
+  };
+}
+
 module.exports = AbonamentViewModel;
 module.exports.valideazaPlata = valideazaPlata;
+module.exports.abonamentGratuit = abonamentGratuit;
