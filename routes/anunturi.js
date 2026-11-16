@@ -19,5 +19,7 @@ router.get('/:id/edit', controller.editGet);
 router.post('/:id/edit', incarcaImagini, controller.editPost);
 router.post('/:id/activeaza', controller.activeaza);
 router.post('/:id/dezactiveaza', controller.dezactiveaza);
+router.post('/:id/aproba', controller.aproba);     // moderarea: anuntul in asteptare devine activ
+router.post('/:id/respinge', controller.respinge); // moderarea: cu motiv obligatoriu
 
 module.exports = router;
