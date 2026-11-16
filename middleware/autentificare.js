@@ -50,4 +50,22 @@ function cereParolaNoua(req, res, next) {
   res.redirect('/cont/parola');
 }
 
-module.exports = { incarcaUtilizator, cereAutentificare, cereRol, cereParolaNoua };
+// ===== Variantele pentru API: raspund cu JSON (401 / 403), nu cu redirect, ca interfata React sa stie ce sa faca =====
+
+// Cerere API care are nevoie de un cont conectat (si de o parola aleasa de el, nu una temporara de la admin).
+function cereAutentificareApi(req, res, next) {
+  const u = res.locals.utilizator;
+  if (!u) return res.status(401).json({ eroare: 'Trebuie să fii conectat.' });
+  if (u.schimbaParola) return res.status(403).json({ eroare: 'Ai primit o parolă temporară. Alege-ți întâi o parolă nouă.', schimba_parola: true });
+  next();
+}
+
+// Cerere API pentru anumite roluri, ex. cereRolApi('chirias'). Se pune DUPA cereAutentificareApi.
+function cereRolApi(...roluri) {
+  return (req, res, next) => {
+    if (roluri.includes(res.locals.utilizator.rol)) return next();
+    res.status(403).json({ eroare: 'Contul tău nu are acces la această acțiune.' });
+  };
+}
+
+module.exports = { incarcaUtilizator, cereAutentificare, cereRol, cereParolaNoua, cereAutentificareApi, cereRolApi };

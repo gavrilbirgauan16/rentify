@@ -7,6 +7,8 @@ const { cereCheie } = require('../middleware/cheieApi');
 const { asiguraToken, verificaTokenApi } = require('../middleware/csrf');
 const anunturi = require('../controllers/api/AnunturiApiController');
 const auth = require('../controllers/api/AutentificareApiController');
+const chirias = require('../controllers/api/ChiriasApiController');
+const { cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
 
@@ -36,6 +38,14 @@ router.get('/anunturi', anunturi.getAll);
 router.get('/anunturi/:id', anunturi.getById);
 router.post('/anunturi', cereCheie, anunturi.post);
 router.put('/anunturi/:id', cereCheie, anunturi.put);
+
+// Chiriasul conectat: contactarea proprietarului (cu limita din plan) si favoritele.
+const doarChirias = [cereAutentificareApi, cereRolApi('chirias')];
+router.get('/contactari', doarChirias, chirias.situatie);
+router.post('/anunturi/:id/contact', doarChirias, chirias.contact);
+router.get('/favorite', doarChirias, chirias.listaFavorite);
+router.post('/favorite/:id', doarChirias, chirias.adaugaFavorit);
+router.delete('/favorite/:id', doarChirias, chirias.stergeFavorit);
 
 // Orice alta adresa din /api: raspuns JSON, nu pagina HTML.
 router.use((req, res) => res.status(404).json({ eroare: 'Adresa API nu există.' }));
