@@ -5,9 +5,10 @@ const { verificaTokenApi, tokenValid } = require('../middleware/csrf');
 
 const TOKEN = 'a'.repeat(64);
 
-// O cerere falsa, cu doar ce citeste middleware-ul.
-function cerere({ metoda = 'POST', antete = {}, body = {}, tokenSesiune = TOKEN } = {}) {
-  const mici = Object.fromEntries(Object.entries(antete).map(([k, v]) => [k.toLowerCase(), v]));
+// O cerere falsa, cu doar ce citeste middleware-ul. Implicit vine dintr-un browser cu cookie de sesiune.
+function cerere({ metoda = 'POST', antete = {}, body = {}, tokenSesiune = TOKEN, cuCookie = true } = {}) {
+  const toate = { ...(cuCookie ? { cookie: 'alt=1; rentify.sid=s%3Aabc' } : {}), ...antete };
+  const mici = Object.fromEntries(Object.entries(toate).map(([k, v]) => [k.toLowerCase(), v]));
   return { method: metoda, body, session: { csrfToken: tokenSesiune }, get: (nume) => mici[nume.toLowerCase()] };
 }
 
@@ -25,6 +26,12 @@ test('citirile (GET) trec fara token', () => {
 
 test('programele cu cheie API trec (nu folosesc cookie-uri); cheia o verifica alt middleware', () => {
   assert.equal(ruleaza(cerere({ antete: { 'x-api-key': 'orice' } })), 'trece');
+});
+
+test('fara cookie de sesiune (ex. Postman fara cheie) -> trece; autentificarea raspunde mai departe cu 401', () => {
+  assert.equal(ruleaza(cerere({ cuCookie: false })), 'trece');
+  // un cookie cu nume asemanator nu e cel de sesiune
+  assert.equal(ruleaza(cerere({ cuCookie: false, antete: { cookie: 'xrentify.sid=1' } })), 'trece');
 });
 
 test('din browser: fara token -> 403; token gresit -> 403; token corect -> trece', () => {
