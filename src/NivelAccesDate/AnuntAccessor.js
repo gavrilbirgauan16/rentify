@@ -234,3 +234,5 @@ class AnuntAccessor {
 }
 
 module.exports = AnuntAccessor;
+// Selectia publica a proprietatii, folosita si de favorite (FavoritAccessor): chiriasul vede aceleasi date peste tot.
+module.exports.CU_PROPRIETATE_PUBLIC = CU_PROPRIETATE_PUBLIC;
