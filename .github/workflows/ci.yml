@@ -10,6 +10,25 @@ on:
 jobs:
   verificare:
     runs-on: ubuntu-latest
+
+    # O baza PostgreSQL temporara, doar pentru testele de integrare. GitHub o porneste goala si o sterge dupa rulare;
+    # nu are nicio legatura cu baza de pe calculator. Parola de aici nu e un secret (baza exista doar cateva minute).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rentify_test
+        ports:
+          - 5432:5432
+        # asteptam sa porneasca de-a binelea inainte de teste
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - name: Descarca codul
         uses: actions/checkout@v4
@@ -31,5 +50,14 @@ jobs:
       - name: Verifica codul (ESLint)
         run: npm run lint
 
-      - name: Ruleaza testele
+      - name: Ruleaza testele unitare
         run: npm test
+
+      # Testele de integrare: API-ul cu baza reala (cea temporara de mai sus). Scriptul reface baza din migrari,
+      # apoi ruleaza test/integrare/. Setarile de mai jos sunt doar pentru teste, nu secrete reale.
+      - name: Ruleaza testele de integrare (API + PostgreSQL)
+        run: npm run test:integrare
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rentify_test
+          SESSION_SECRET: cheie-de-sesiune-doar-pentru-teste-in-ci-0123456789
+          API_KEY: cheie-api-doar-pentru-teste-in-ci-0123456789abcdef
