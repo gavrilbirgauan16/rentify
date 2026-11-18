@@ -3,6 +3,8 @@ node_modules/
 
 # Setarile secrete (parola bazei de date, SESSION_SECRET) - NU se pun niciodata in Git
 .env
+# Setarile pentru testele de integrare (contin parola bazei de date) - doar exemplul .env.test.example merge in Git
+.env.test
 
 # Imaginile incarcate de utilizatori (sunt date, nu cod)
 uploads/

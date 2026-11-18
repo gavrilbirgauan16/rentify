@@ -104,17 +104,24 @@ app.use((err, req, res, next) => {
   res.status(500).render('eroare', { titlu: 'A apărut o eroare', mesaj_eroare: 'Încearcă din nou mai târziu.' });
 });
 
-const server = app.listen(config.port, () => {
-  console.log(`Rentify ruleaza la http://localhost:${config.port}`);
-  verificaConexiunea(); // afiseaza daca emailurile pot pleca (SMTP din .env)
-});
-
-// La oprire (Ctrl+C sau oprire de catre server) se inchide si conexiunea la baza de date.
-async function opreste() {
-  server.close(async () => {
-    await context.$disconnect();
-    process.exit(0);
+// Serverul porneste doar cand fisierul e rulat direct (npm run dev / npm start).
+// Testele de integrare fac require('./app'): primesc aplicatia si o pornesc ele, pe un port liber ales de sistem,
+// fara sa ocupe portul 3000 si fara mesajele de pornire.
+if (require.main === module) {
+  const server = app.listen(config.port, () => {
+    console.log(`Rentify ruleaza la http://localhost:${config.port}`);
+    verificaConexiunea(); // afiseaza daca emailurile pot pleca (SMTP din .env)
   });
+
+  // La oprire (Ctrl+C sau oprire de catre server) se inchide si conexiunea la baza de date.
+  const opreste = () => {
+    server.close(async () => {
+      await context.$disconnect();
+      process.exit(0);
+    });
+  };
+  process.on('SIGINT', opreste);
+  process.on('SIGTERM', opreste);
 }
-process.on('SIGINT', opreste);
-process.on('SIGTERM', opreste);
+
+module.exports = app;
