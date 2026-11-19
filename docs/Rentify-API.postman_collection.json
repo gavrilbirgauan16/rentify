@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Rentify API",
-    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-4: API-ul folosit de interfata (cautare publica, autentificare, chirias).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
+    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-5: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -449,6 +449,256 @@
           }
         }
       ]
+    },
+    {
+      "name": "5. Conturi (fara cont conectat)",
+      "description": "Inregistrare, confirmarea emailului, parola uitata. Raspunsurile NU spun daca o adresa are cont.\nLinkurile din emailuri apar in consola (CMD unde ruleaza npm run dev) cand nu e configurat SMTP: copiaza partea de dupa /confirmare/ sau /resetare/ in variabila tokenDinEmail. Ruleaza intai \"3. Autentificare / 1. Token CSRF\".",
+      "item": [
+        {
+          "name": "Inregistrare (cont nou de chirias)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted (rezultatul vine pe email)', () => pm.response.to.have.status(202));",
+                  "pm.test('mesaj general', () => pm.expect(pm.response.json().mesaj).to.include('Dacă'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/inregistrare",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"rol\": \"chirias\",\n  \"prenume\": \"Ana\",\n  \"nume\": \"Postman\",\n  \"email\": \"{{emailNou}}\",\n  \"telefon\": \"0722 333 444\",\n  \"oras\": \"Suceava\",\n  \"parola\": \"ParolaBuna123\",\n  \"confirmare\": \"ParolaBuna123\",\n  \"termeni\": true\n}"
+            },
+            "description": "Pune in variabila emailNou o adresa noua. Acelasi raspuns si pentru o adresa deja folosita."
+          }
+        },
+        {
+          "name": "Inregistrare - date gresite (asteptat 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 cu erorile pe campuri', () => { pm.response.to.have.status(400); pm.expect(pm.response.json().erori).to.include.keys('rol', 'email', 'parola', 'termeni'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/inregistrare",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"rol\": \"admin\",\n  \"prenume\": \"A\",\n  \"nume\": \"\",\n  \"email\": \"nu-e-email\",\n  \"parola\": \"123\",\n  \"confirmare\": \"321\",\n  \"termeni\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Confirma emailul (token din email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK (a doua oara: 400, linkul merge o singura data)', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/confirmare",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"token\": \"{{tokenDinEmail}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Retrimite linkul de confirmare",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/confirmare/retrimite",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"{{emailNou}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Am uitat parola",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/parola-uitata",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"{{emailNou}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verifica linkul de resetare (token din email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK (linkul e valabil) sau 400 (expirat / folosit)', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/resetare/{{tokenDinEmail}}"
+          }
+        },
+        {
+          "name": "Alege parola noua (token din email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/resetare",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"token\": \"{{tokenDinEmail}}\",\n  \"parola_noua\": \"ParolaNoua123\",\n  \"confirmare\": \"ParolaNoua123\"\n}"
+            },
+            "description": "Dupa schimbare, toate sesiunile contului se inchid."
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -478,6 +728,14 @@
     },
     {
       "key": "parolaChirias",
+      "value": ""
+    },
+    {
+      "key": "emailNou",
+      "value": "ana.postman@test.rentify"
+    },
+    {
+      "key": "tokenDinEmail",
       "value": ""
     }
   ]
