@@ -10,8 +10,7 @@ const F = require('../servicii/filtre');
 const { azi } = require('../servicii/date');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
 const { noteaza } = require('../servicii/jurnal');
-const { trimiteLinkResetare } = require('./ParolaUitataController');
-const { trimiteConfirmarea } = require('./InregistrareController');
+const { trimiteLinkResetare, trimiteConfirmarea } = require('../servicii/conturi');
 
 const utilizatori = new UtilizatorAccessor();
 const abonamente = new AbonamentAccessor();

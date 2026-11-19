@@ -96,6 +96,10 @@ iar interfața din browser folosește contul conectat (cookie de sesiune) și to
 | GET | `/api/auth/csrf` | oricine: tokenul CSRF |
 | POST | `/api/auth/login`, `/api/auth/logout` | conectare / ieșire |
 | GET | `/api/auth/eu` | utilizatorul conectat |
+| POST | `/api/auth/inregistrare` | cont nou de chiriaș sau proprietar; răspunsul e același și pentru o adresă deja folosită |
+| POST | `/api/auth/confirmare`, `/api/auth/confirmare/retrimite` | confirmarea emailului cu tokenul din link / link nou |
+| POST | `/api/auth/parola-uitata` | linkul de resetare pe email |
+| GET, POST | `/api/auth/resetare/:token`, `/api/auth/resetare` | verificarea linkului / parola nouă (închide toate sesiunile contului) |
 | GET | `/api/contactari` | chiriaș: câte contactări mai are luna asta |
 | POST | `/api/anunturi/:id/contact` | chiriaș: telefonul proprietarului (consumă o contactare din plan) |
 | GET, POST, DELETE | `/api/favorite`, `/api/favorite/:id` | chiriaș: favoritele |
