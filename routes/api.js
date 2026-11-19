@@ -10,6 +10,7 @@ const auth = require('../controllers/api/AutentificareApiController');
 const chirias = require('../controllers/api/ChiriasApiController');
 const conturi = require('../controllers/api/ConturiApiController');
 const cont = require('../controllers/api/ContApiController');
+const proprietati = require('../controllers/api/ProprietatiApiController');
 const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
@@ -75,6 +76,15 @@ router.post('/anunturi/:id/contact', doarChirias, chirias.contact);
 router.get('/favorite', doarChirias, chirias.listaFavorite);
 router.post('/favorite/:id', doarChirias, chirias.adaugaFavorit);
 router.delete('/favorite/:id', doarChirias, chirias.stergeFavorit);
+
+// Proprietarul conectat: proprietatile lui (limita din plan, doar ale lui).
+const doarProprietar = [cereAutentificareApi, cereRolApi('proprietar')];
+router.get('/proprietar/proprietati', doarProprietar, proprietati.lista);
+router.get('/proprietar/proprietati/:id', doarProprietar, proprietati.una);
+router.post('/proprietar/proprietati', doarProprietar, proprietati.adauga);
+router.put('/proprietar/proprietati/:id', doarProprietar, proprietati.modifica);
+router.post('/proprietar/proprietati/:id/dezactiveaza', doarProprietar, proprietati.dezactiveaza);
+router.post('/proprietar/proprietati/:id/activeaza', doarProprietar, proprietati.activeaza);
 
 // Orice alta adresa din /api: raspuns JSON, nu pagina HTML.
 router.use((req, res) => res.status(404).json({ eroare: 'Adresa API nu există.' }));
