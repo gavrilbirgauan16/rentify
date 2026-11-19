@@ -1,7 +1,7 @@
 // Teste pentru middleware-urile API de autentificare si rol (raspund cu JSON 401 / 403, nu cu redirect).
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
+const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 // Ruleaza un middleware cu un utilizator (sau null) si spune ce s-a intamplat.
 function ruleaza(middleware, utilizator) {
@@ -26,4 +26,10 @@ test('rolul gresit -> 403; rolul cerut -> trece', () => {
   assert.equal(ruleaza(cereRolApi('chirias'), { ...chirias, rol: 'proprietar' }), 403);
   assert.equal(ruleaza(cereRolApi('chirias'), chirias), 'trece');
   assert.equal(ruleaza(cereRolApi('admin', 'proprietar'), { ...chirias, rol: 'admin' }), 'trece');
+});
+
+test('schimbarea parolei (cereConectatApi): merge si cu parola temporara, altfel contul ar ramane blocat', () => {
+  assert.equal(ruleaza(cereConectatApi, null), 401);
+  assert.equal(ruleaza(cereConectatApi, { ...chirias, schimbaParola: true }), 'trece');
+  assert.equal(ruleaza(cereAutentificareApi, { ...chirias, schimbaParola: true }), 403); // restul API-ului ramane blocat
 });

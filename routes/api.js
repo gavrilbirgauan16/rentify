@@ -9,7 +9,8 @@ const anunturi = require('../controllers/api/AnunturiApiController');
 const auth = require('../controllers/api/AutentificareApiController');
 const chirias = require('../controllers/api/ChiriasApiController');
 const conturi = require('../controllers/api/ConturiApiController');
-const { cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
+const cont = require('../controllers/api/ContApiController');
+const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
 
@@ -53,6 +54,15 @@ router.get('/anunturi', anunturi.getAll);
 router.get('/anunturi/:id', anunturi.getById);
 router.post('/anunturi', cereCheie, anunturi.post);
 router.put('/anunturi/:id', cereCheie, anunturi.put);
+
+// Contul meu (orice rol conectat). Schimbarea parolei merge si cu parola temporara de la admin (altfel ar ramane blocat).
+// Parola si emailul: cel mult 10 incercari in 15 minute (nu se poate ghici parola curenta de aici).
+const limitaParola = limita(15, 10);
+router.get('/cont', cereAutentificareApi, cont.profil);
+router.put('/cont', cereAutentificareApi, cont.modificaProfil);
+router.post('/cont/parola', cereConectatApi, limitaParola, cont.schimbaParola);
+router.post('/cont/email', cereAutentificareApi, limitaParola, cont.cereSchimbareaEmailului);
+router.post('/cont/email/confirmare', limitaResetare, cont.confirmaEmailul);
 
 // Chiriasul conectat: contactarea proprietarului (cu limita din plan) si favoritele.
 const doarChirias = [cereAutentificareApi, cereRolApi('chirias')];
