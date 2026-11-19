@@ -32,7 +32,8 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 |---|---|
 | `npm run dev` | pornește aplicația la http://localhost:3000 și o repornește la fiecare salvare |
 | `npm start` | pornește aplicația (fără repornire automată) |
-| `npm test` | rulează testele automate |
+| `npm test` | rulează testele automate (fără bază de date) |
+| `npm run test:integrare` | testele API-ului pe baza separată `rentify_test` (setările în `.env.test`, după `.env.test.example`) |
 | `npm run lint` | verifică codul cu ESLint |
 | `npm run verifica` | lint + teste (de rulat înainte de commit) |
 | `npm run backup` | copie a bazei de date în `backups/` (de făcut înainte de orice migrare) |
@@ -82,16 +83,26 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
   (dacă proprietarul o schimbă între timp, aprobarea se oprește).
 - Regulile sunt verificate și în baza de date (CHECK): stările permise și motivul obligatoriu la respingere.
 
-## API (laboratorul 7)
+## API
 
-| Metodă | Adresă | Cheie API |
+Două feluri de clienți: programele (Postman) trimit cheia API în antetul `x-api-key`,
+iar interfața din browser folosește contul conectat (cookie de sesiune) și tokenul CSRF în antetul `x-csrf-token`.
+
+| Metodă | Adresă | Cine |
 |---|---|---|
-| GET | `/api/anunturi` | nu (doar anunțurile active) |
-| GET | `/api/anunturi/:id` | nu |
-| POST | `/api/anunturi` | da (`x-api-key`) |
-| PUT | `/api/anunturi/:id` | da (`x-api-key`) |
+| GET | `/api/anunturi` | oricine: căutare în anunțurile active (filtre, sortare, paginare în antetele `X-Total-Count`, `X-Pagina`, `X-Total-Pagini`); cu cheie: toate anunțurile |
+| GET | `/api/anunturi/:id` | oricine: un anunț activ (numără vizualizarea); cu cheie: orice anunț |
+| POST, PUT | `/api/anunturi`, `/api/anunturi/:id` | cu cheie API (laboratorul 7) |
+| GET | `/api/auth/csrf` | oricine: tokenul CSRF |
+| POST | `/api/auth/login`, `/api/auth/logout` | conectare / ieșire |
+| GET | `/api/auth/eu` | utilizatorul conectat |
+| GET | `/api/contactari` | chiriaș: câte contactări mai are luna asta |
+| POST | `/api/anunturi/:id/contact` | chiriaș: telefonul proprietarului (consumă o contactare din plan) |
+| GET, POST, DELETE | `/api/favorite`, `/api/favorite/:id` | chiriaș: favoritele |
 
-Colecția Postman: `docs/Rentify-API.postman_collection.json` (în Postman, la variabila `apiKey`, pune valoarea din `.env` doar la *Current value*).
+Filtrele căutării: `q`, `oras`, `tip`, `pret_min`, `pret_max`, `camere_min`, `persoane`, `sort` (`noi`, `pret_asc`, `pret_desc`), `pagina`, `pe_pagina`.
+
+Colecția Postman: `docs/Rentify-API.postman_collection.json`. În tab-ul Variables, `apiKey`, `emailChirias` și `parolaChirias` se completează doar la Current value.
 
 ## Structura
 
@@ -108,7 +119,7 @@ Colecția Postman: `docs/Rentify-API.postman_collection.json` (în Postman, la v
 | `config/` | setările citite din `.env` |
 | `prisma/` | schema și migrările (Code First) |
 | `scripts/` | unelte: setarea parolei, backup |
-| `test/` | teste automate (`node --test`) |
+| `test/` | teste automate (`node --test`); `test/integrare/` - testele API-ului cu baza de date |
 | `docs/` | colecția Postman |
 
 ## Securitate
@@ -118,7 +129,7 @@ Colecția Postman: `docs/Rentify-API.postman_collection.json` (în Postman, la v
 - Token **CSRF** în toate formularele; headere de securitate cu **helmet**.
 - Imaginile sunt verificate după conținut (nu doar după extensie), cu nume aleatoare.
 - Toată partea de admin e sub `/admin`, protejată de o singură regulă (conectat + rol `admin`).
-- API-ul: Post/Put doar cu cheie (`x-api-key`, comparată în timp constant); DTO-urile nu expun date personale; limită de cereri.
+- API-ul: Post/Put doar cu cheie (`x-api-key`, comparată în timp constant); din browser, token CSRF în antet; DTO-urile nu expun date personale (telefonul doar prin contactare); limită de cereri.
 - Linkurile din emailuri: 32 de octeți aleatori, în bază se păstrează doar amprenta SHA-256, se folosesc o singură dată și expiră.
 - Mesaje generice la înregistrare și la parola uitată (nu se află dacă un email are cont).
 - Secretele stau doar în `.env` (exclus din Git); `.env.example` are doar valori de umplutură.

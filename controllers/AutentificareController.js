@@ -1,9 +1,5 @@
 // Controller-ul pentru autentificare: formularul de login, conectarea si iesirea din cont.
-const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
-const { verificaParola } = require('../servicii/parole');
-const { mesajFlash } = require('../utils/http');
-
-const utilizatori = new UtilizatorAccessor();
+const { verificaConectarea, deschideSesiunea } = require('../servicii/autentificare');
 
 // Pagina de start a fiecarui rol dupa conectare.
 // Proprietarul ajunge direct la anunturile lui (pentru asta vine pe site); profilul ramane in meniu.
@@ -20,31 +16,15 @@ function autentificareGet(req, res) {
   res.render('autentificare', { email: '', eroare: null, sectiune: 'autentificare' });
 }
 
-// POST /autentificare - verificarea emailului si a parolei
+// POST /autentificare - verificarea emailului si a parolei (regulile sunt in servicii/autentificare.js, comune cu API-ul)
 async function autentificarePost(req, res) {
   const email = String(req.body.email || '').trim().toLowerCase();
-  const parola = String(req.body.parola || '');
-  const u = email && parola ? await utilizatori.getByEmail(email) : null;
+  const { u, eroare, cod, neconfirmat } = await verificaConectarea(email, req.body.parola);
+  if (eroare) return res.status(cod).render('autentificare', { email, eroare, neconfirmat, sectiune: 'autentificare' });
 
-  // Acelasi mesaj indiferent ce e gresit: nu spunem daca emailul exista in aplicatie.
-  if (!u || !(await verificaParola(parola, u.parola_hash))) {
-    return res.status(401).render('autentificare', { email, eroare: 'Email sau parolă greșită.', sectiune: 'autentificare' });
-  }
-  if (u.stare === 'blocat') {
-    return res.status(403).render('autentificare', { email, eroare: 'Contul tău este blocat. Contactează administratorul.', sectiune: 'autentificare' });
-  }
-  // Fara email confirmat nu intra (parola era corecta, deci putem spune de ce).
-  if (!u.email_verificat) {
-    return res.status(403).render('autentificare', { email, eroare: 'Nu ți-ai confirmat încă adresa de email. Caută emailul de la Rentify (verifică și Spam) sau cere un link nou.', neconfirmat: true, sectiune: 'autentificare' });
-  }
-
-  // Sesiune noua dupa conectare (protectie impotriva furtului de sesiune), pastrand doar adresa dorita.
+  // Sesiune noua dupa conectare, pastrand doar adresa dorita si mesajul de bun venit.
   const dupa = adresaSigura(req.session.dupaAutentificare);
-  await new Promise((gata, esec) => req.session.regenerate((e) => (e ? esec(e) : gata())));
-  req.session.utilizatorId = u.id;
-  mesajFlash(req, `Bine ai venit, ${u.prenume}!`);
-  await new Promise((gata, esec) => req.session.save((e) => (e ? esec(e) : gata())));
-  await utilizatori.inregistreazaAutentificare(u.id);
+  await deschideSesiunea(req, u.id, { mesaj: `Bine ai venit, ${u.prenume}!`, tipMesaj: 'success' });
   res.redirect(dupa || PAGINA_ROL[u.rol.nume] || '/');
 }
 

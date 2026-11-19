@@ -14,9 +14,16 @@ function pregatesteToken(req, res, next) {
   next();
 }
 
-// true daca tokenul trimis de formular e cel din sesiune (comparatie in timp constant).
+// Tokenul sesiunii, creat daca nu exista inca (pentru API: React il cere o data, la pornire).
+function asiguraToken(req) {
+  if (!req.session.csrfToken) req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  return req.session.csrfToken;
+}
+
+// true daca tokenul trimis e cel din sesiune (comparatie in timp constant).
+// Formularele HTML il trimit in campul ascuns "_csrf"; React (API) il trimite in antetul "x-csrf-token".
 function tokenValid(req) {
-  const trimis = Buffer.from(String((req.body && req.body._csrf) || ''));
+  const trimis = Buffer.from(String((req.body && req.body._csrf) || req.get('x-csrf-token') || ''));
   const asteptat = Buffer.from(String(req.session.csrfToken || ''));
   return trimis.length > 0 && trimis.length === asteptat.length && crypto.timingSafeEqual(trimis, asteptat);
 }
@@ -38,4 +45,23 @@ function verificaToken(req, res, next) {
   next();
 }
 
-module.exports = { pregatesteToken, verificaToken, tokenValid, refuza };
+// Varianta pentru API (raspunde cu JSON, nu cu pagina). Atacul CSRF are nevoie de cookie-ul de sesiune
+// (browserul il trimite singur), deci regula se aplica doar cererilor care il au:
+//  - cererile cu antetul x-api-key sunt de la programe (Postman, alte aplicatii) -> trec; cheia o verifica cereCheie;
+//  - cererile FARA cookie de sesiune nu au un cont conectat de "furat" -> trec; autentificarea le opreste mai departe
+//    (ex. 401 "cheie lipsa"), cu mesajul potrivit - ca la laboratorul 7;
+//  - cererile din browser, CU cookie de sesiune (React), trebuie sa aiba antetul x-csrf-token.
+const areCookieDeSesiune = (req) => /(^|;\s*)rentify\.sid=/.test(req.get('cookie') || '');
+
+function verificaTokenApi(req, res, next) {
+  if (METODE_SIGURE.includes(req.method) || req.get('x-api-key') || !areCookieDeSesiune(req)) return next();
+  if (!req.session || !tokenValid(req)) {
+    return res.status(403).json({
+      eroare: 'Cerere respinsă: din browser trimite tokenul CSRF în antetul x-csrf-token (îl primești de la GET /api/auth/csrf); '
+        + 'dintr-un program trimite cheia API în antetul x-api-key.',
+    });
+  }
+  next();
+}
+
+module.exports = { pregatesteToken, verificaToken, tokenValid, refuza, asiguraToken, verificaTokenApi };

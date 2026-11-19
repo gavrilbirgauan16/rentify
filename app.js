@@ -34,12 +34,8 @@ app.use(helmet({
   strictTransportSecurity: config.esteProductie,
 }));
 
-// API-ul (JSON, laboratorul 7): inaintea sesiunilor si a CSRF, pentru ca nu foloseste cookie-uri.
-app.use('/api', apiRouter);
-
-app.use(express.urlencoded({ extended: false })); // citeste datele trimise de formulare
-
-// Fisiere statice: CSS-ul nostru, Bootstrap (instalat cu npm, merge si fara internet) si imaginile incarcate
+// Fisiere statice: CSS-ul nostru, Bootstrap (instalat cu npm, merge si fara internet) si imaginile incarcate.
+// Primele: o imagine sau un fisier CSS nu au nevoie de sesiune (nu mai citim baza de date pentru ele).
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist'), { maxAge: '7d' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -60,6 +56,16 @@ app.use(session({
   },
 }));
 
+// Utilizatorul conectat (sau null), disponibil in toate paginile ca "utilizator" (si in API).
+app.use(incarcaUtilizator);
+
+// API-ul (JSON): dupa sesiune, ca React sa poata folosi contul conectat (login prin API).
+// Cererile cu cheie API (Postman, alte programe) merg ca inainte, fara cookie-uri. Regula CSRF a API-ului
+// e in routes/api.js; inaintea mesajelor flash si a paginilor, ca un apel API sa nu "consume" mesajul unei pagini.
+app.use('/api', apiRouter);
+
+app.use(express.urlencoded({ extended: false })); // citeste datele trimise de formulare
+
 // Mesaj "flash": se afiseaza o singura data, pe pagina urmatoare, apoi dispare.
 // tipMesaj = culoarea Bootstrap: success (verde, implicit) sau warning (galben).
 app.use((req, res, next) => {
@@ -69,9 +75,6 @@ app.use((req, res, next) => {
   delete req.session.tipMesaj;
   next();
 });
-
-// Utilizatorul conectat (sau null), disponibil in toate paginile ca "utilizator"
-app.use(incarcaUtilizator);
 
 // Protectie CSRF: token pentru formulare + verificarea lui la fiecare trimitere (POST)
 app.use(pregatesteToken);
@@ -101,17 +104,24 @@ app.use((err, req, res, next) => {
   res.status(500).render('eroare', { titlu: 'A apărut o eroare', mesaj_eroare: 'Încearcă din nou mai târziu.' });
 });
 
-const server = app.listen(config.port, () => {
-  console.log(`Rentify ruleaza la http://localhost:${config.port}`);
-  verificaConexiunea(); // afiseaza daca emailurile pot pleca (SMTP din .env)
-});
-
-// La oprire (Ctrl+C sau oprire de catre server) se inchide si conexiunea la baza de date.
-async function opreste() {
-  server.close(async () => {
-    await context.$disconnect();
-    process.exit(0);
+// Serverul porneste doar cand fisierul e rulat direct (npm run dev / npm start).
+// Testele de integrare fac require('./app'): primesc aplicatia si o pornesc ele, pe un port liber ales de sistem,
+// fara sa ocupe portul 3000 si fara mesajele de pornire.
+if (require.main === module) {
+  const server = app.listen(config.port, () => {
+    console.log(`Rentify ruleaza la http://localhost:${config.port}`);
+    verificaConexiunea(); // afiseaza daca emailurile pot pleca (SMTP din .env)
   });
+
+  // La oprire (Ctrl+C sau oprire de catre server) se inchide si conexiunea la baza de date.
+  const opreste = () => {
+    server.close(async () => {
+      await context.$disconnect();
+      process.exit(0);
+    });
+  };
+  process.on('SIGINT', opreste);
+  process.on('SIGTERM', opreste);
 }
-process.on('SIGINT', opreste);
-process.on('SIGTERM', opreste);
+
+module.exports = app;

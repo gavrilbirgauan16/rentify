@@ -18,7 +18,8 @@ test('DTO-ul aduna date din 3 tabele si transforma tipurile', () => {
   assert.equal(dto.tip_afisat, 'Închiriere');
   assert.equal(dto.disponibil_de_la, '2026-12-01');
   assert.equal(dto.proprietar, 'Maria Popescu');
-  assert.deepEqual(dto.proprietate, { id: 3, denumire: 'Ap. centru', oras: 'Suceava', max_locatari: 3 });
+  // Comparam ce primeste clientul (JSON): campurile neaduse din baza (zona, nr_camere...) nu apar deloc.
+  assert.deepEqual(JSON.parse(JSON.stringify(dto.proprietate)), { id: 3, denumire: 'Ap. centru', oras: 'Suceava', max_locatari: 3 });
   assert.deepEqual(dto.imagini, ['/uploads/anunturi/a.jpg']);
 });
 
@@ -46,4 +47,19 @@ test('intrarea JSON devine forma pe care o valideaza ViewModel-ul', () => {
   assert.equal(f.promovat, 'on');
   assert.equal(f.garantie, '');
   assert.equal(dinBody({ promovat: 'true' }).promovat, ''); // doar true (boolean) inseamna promovat
+});
+
+test('cautarea publica: DTO-ul are detaliile locuintei, dar nu telefonul sau emailul proprietarului', () => {
+  const dto = catreDto({
+    ...entitate,
+    vizualizari: 7,
+    proprietate: { ...entitate.proprietate, zona: 'Centru', tip: 'apartament', nr_camere: 2, suprafata_mp: '54.50', are_balcon: true },
+  });
+  assert.deepEqual(
+    { zona: dto.proprietate.zona, nr_camere: dto.proprietate.nr_camere, suprafata_mp: dto.proprietate.suprafata_mp, are_balcon: dto.proprietate.are_balcon },
+    { zona: 'Centru', nr_camere: 2, suprafata_mp: 54.5, are_balcon: true },
+  );
+  assert.equal(dto.vizualizari, 7);
+  const json = JSON.stringify(dto);
+  assert.ok(!json.includes('telefon') && !json.includes('@'), 'fara telefon / email');
 });

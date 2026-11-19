@@ -3,12 +3,14 @@
 const AbonamentAccessor = require('../src/NivelAccesDate/AbonamentAccessor');
 const ProprietateAccessor = require('../src/NivelAccesDate/ProprietateAccessor');
 const AnuntAccessor = require('../src/NivelAccesDate/AnuntAccessor');
+const ContactareAccessor = require('../src/NivelAccesDate/ContactareAccessor');
 const limite = require('./limite');
-const { azi } = require('./date');
+const { azi, inceputLuna } = require('./date');
 
 const abonamente = new AbonamentAccessor();
 const proprietati = new ProprietateAccessor();
 const anunturi = new AnuntAccessor();
+const contactari = new ContactareAccessor();
 
 // Cum sta un utilizator fata de o limita din plan (cheie), stiind cate a folosit (numara).
 // Intoarce { plan, folosit, maxim, depaseste, text, poateAdauga }; plan = null daca nu are abonament in curs.
@@ -29,6 +31,9 @@ const situatieProprietati = (proprietarId) => situatie(proprietarId, 'max_propri
 // Anunturile publicate (active + in asteptare) ale unui proprietar fata de max_anunturi_active.
 const situatieAnunturi = (proprietarId) => situatie(proprietarId, 'max_anunturi_active', (id) => anunturi.numaraPublicateAleProprietarului(id));
 
+// Anunturile diferite contactate de un chirias luna aceasta fata de max_contactari_luna (planul Gratuit: 5).
+const situatieContactari = (chiriasId) => situatie(chiriasId, 'max_contactari_luna', (id) => contactari.numaraAnunturiContactate(id, inceputLuna(azi())));
+
 // Intoarce un text de avertizare daca proprietarul a depasit numarul de proprietati din plan, altfel null.
 async function avertizareProprietati(proprietarId) {
   const s = await situatieProprietati(proprietarId);
@@ -36,4 +41,4 @@ async function avertizareProprietati(proprietarId) {
   return s.depaseste ? `Atenție: proprietarul are acum ${s.folosit} proprietăți active, dar planul „${s.plan}” permite ${s.maxim}.` : null;
 }
 
-module.exports = { situatieProprietati, situatieAnunturi, avertizareProprietati };
+module.exports = { situatieProprietati, situatieAnunturi, situatieContactari, avertizareProprietati };
