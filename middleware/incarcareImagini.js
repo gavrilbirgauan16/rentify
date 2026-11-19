@@ -82,4 +82,17 @@ function incarcaImagini(req, res, next) {
   });
 }
 
-module.exports = { incarcaImagini, stergeFisiere, MAX_IMAGINI, MAX_MB };
+// Regula numarului de imagini, fara legatura cu cererea (folosita de pagini si de API).
+//   eroareIncarcare: mesajul de la incarcare (fisier prea mare, tip gresit) sau null
+//   numarNoi: cate imagini noi s-au primit; numarRamase: cate raman din cele existente
+//   alteErori: true daca formularul are si alte erori (atunci imaginile alese trebuie selectate din nou)
+// Intoarce mesajul de eroare pentru campul "imagini" sau null.
+function eroareImagini({ eroareIncarcare = null, numarNoi = 0, numarRamase = 0, alteErori = false }) {
+  if (eroareIncarcare) return eroareIncarcare;
+  if (numarRamase + numarNoi > MAX_IMAGINI) return `Un anunț poate avea cel mult ${MAX_IMAGINI} imagini.`;
+  // Browserul nu pastreaza fisierele alese cand pagina se reafiseaza cu erori.
+  if (alteErori && numarNoi > 0) return 'Formularul are erori: alege din nou imaginile.';
+  return null;
+}
+
+module.exports = { incarcaImagini, stergeFisiere, eroareImagini, MAX_IMAGINI, MAX_MB };
