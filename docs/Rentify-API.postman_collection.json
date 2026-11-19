@@ -1,66 +1,484 @@
 {
   "info": {
-    "name": "Rentify API – Anunțuri (Lab 7)",
-    "description": "Get, Get(id), Post, Put pentru anunturi. Inainte de rulare: in tab-ul Variables al colectiei completeaza apiKey cu valoarea API_KEY din .env (nu o salva pe GitHub).",
+    "name": "Rentify API",
+    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-4: API-ul folosit de interfata (cautare publica, autentificare, chirias).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000/api" },
-    { "key": "apiKey", "value": "" },
-    { "key": "idAnunt", "value": "3" }
-  ],
   "item": [
     {
-      "name": "1. Get – toate anunturile active",
-      "request": { "method": "GET", "url": "{{baseUrl}}/anunturi" }
+      "name": "1. Laboratorul 7 (cu cheie API)",
+      "description": "Get, Get(id), Post, Put pentru anunturi, cu antetul x-api-key.",
+      "item": [
+        {
+          "name": "1. Get – toate anunturile active",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/anunturi"
+          }
+        },
+        {
+          "name": "2. Get(id) – un anunt",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/anunturi/{{idAnunt}}"
+          }
+        },
+        {
+          "name": "3. Get – toate (cu cheie, inclusiv ciorne si inactive)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/anunturi"
+          }
+        },
+        {
+          "name": "4. Post – anunt nou",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('idAnunt', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/anunturi",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"proprietate_id\": 3,\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Garsoniera adaugata din Postman\",\n  \"descriere\": \"Aproape de USV\",\n  \"pret\": 1500,\n  \"pret_o_persoana\": 1100,\n  \"moneda\": \"RON\",\n  \"garantie\": 1500,\n  \"disponibil_de_la\": \"2026-12-01\",\n  \"stare\": \"activ\",\n  \"promovat\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "5. Put – modifica anuntul",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/anunturi/{{idAnunt}}",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"proprietate_id\": 3,\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Garsoniera modificata din Postman\",\n  \"descriere\": \"Pret redus\",\n  \"pret\": 1400,\n  \"moneda\": \"RON\",\n  \"stare\": \"activ\",\n  \"promovat\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "6. Post – date invalide (asteptat 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{apiKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/anunturi",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"titlu\": \"\",\n  \"pret\": -5\n}"
+            }
+          }
+        },
+        {
+          "name": "7. Post – fara cheie (asteptat 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/anunturi",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{}"
+            }
+          }
+        }
+      ]
     },
     {
-      "name": "2. Get(id) – un anunt",
-      "request": { "method": "GET", "url": "{{baseUrl}}/anunturi/{{idAnunt}}" }
+      "name": "2. Cautare publica (fara cont)",
+      "description": "Ce vede orice vizitator: doar anunturile active. Paginarea vine in antetele X-Total-Count, X-Pagina, X-Total-Pagini.",
+      "item": [
+        {
+          "name": "Cauta - filtre, sortare, paginare",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('lista + numarul total in antet', () => { pm.expect(pm.response.json()).to.be.an('array'); pm.expect(pm.response.headers.get('X-Total-Count')).to.exist; });",
+                  "pm.test('doar anunturi active', () => pm.response.json().forEach((a) => pm.expect(a.stare).to.eql('activ')));",
+                  "pm.test('sortate crescator dupa pret', () => { const p = pm.response.json().map((a) => a.pret); pm.expect(p).to.eql([...p].sort((x, y) => x - y)); });",
+                  "pm.test('fara telefonul proprietarului', () => pm.expect(pm.response.text()).to.not.include('telefon'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/anunturi?oras={{oras}}&pret_max=1.500&sort=pret_asc&pe_pagina=5",
+            "description": "Filtre: q, oras, tip, pret_min, pret_max (si scris romaneste: 1.500 = 1500), camere_min, persoane, sort (noi | pret_asc | pret_desc), pagina, pe_pagina (max 48)."
+          }
+        },
+        {
+          "name": "Pagina anuntului (numara vizualizarea)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('are vizualizari si detaliile locuintei', () => { const a = pm.response.json(); pm.expect(a.vizualizari).to.be.a('number'); pm.expect(a.proprietate).to.have.property('oras'); });",
+                  "pm.test('fara telefonul proprietarului', () => pm.expect(pm.response.text()).to.not.include('telefon'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/anunturi/{{idAnunt}}"
+          }
+        }
+      ]
     },
     {
-      "name": "3. Get – toate (cu cheie, inclusiv ciorne si inactive)",
-      "request": { "method": "GET", "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }], "url": "{{baseUrl}}/anunturi" }
+      "name": "3. Autentificare (ca interfata React)",
+      "description": "Cookie-ul de sesiune il pastreaza Postman singur (ca un browser). Tokenul CSRF se salveaza automat in variabila csrfToken. Completeaza emailChirias si parolaChirias DOAR la Current value.",
+      "item": [
+        {
+          "name": "1. Token CSRF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/csrf"
+          }
+        },
+        {
+          "name": "2. Login (chirias)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('e chirias, fara parola in raspuns', () => { const u = pm.response.json().utilizator; pm.expect(u.rol).to.eql('chirias'); pm.expect(u).to.not.have.property('parola'); });",
+                  "// sesiune noua dupa login -> token CSRF nou",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"{{emailChirias}}\",\n  \"parola\": \"{{parolaChirias}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3. Eu (cine e conectat)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/eu"
+          }
+        }
+      ]
     },
     {
-      "name": "4. Post – anunt nou",
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-        "pm.test('201 Created', () => pm.response.to.have.status(201));",
-        "if (pm.response.code === 201) pm.collectionVariables.set('idAnunt', pm.response.json().id);"
-      ] } }],
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }, { "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/anunturi",
-        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{\n  \"proprietate_id\": 3,\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Garsoniera adaugata din Postman\",\n  \"descriere\": \"Aproape de USV\",\n  \"pret\": 1500,\n  \"pret_o_persoana\": 1100,\n  \"moneda\": \"RON\",\n  \"garantie\": 1500,\n  \"disponibil_de_la\": \"2026-12-01\",\n  \"stare\": \"activ\",\n  \"promovat\": false\n}" }
-      }
+      "name": "4. Chirias (dupa login)",
+      "description": "Contactarea proprietarului (limita din plan: Gratuit = 5 anunturi pe luna) si favoritele.",
+      "item": [
+        {
+          "name": "Contactari ramase luna aceasta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('are maxim si ramase', () => pm.expect(pm.response.json()).to.have.all.keys('plan', 'folosite', 'maxim', 'ramase'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/contactari"
+          }
+        },
+        {
+          "name": "Contacteaza proprietarul (dezvaluie telefonul)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('primeste telefonul', () => pm.expect(pm.response.json().telefon).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/anunturi/{{idAnunt}}/contact",
+            "description": "Prima cerere a lunii pentru un anunt consuma o contactare; acelasi anunt, din nou, nu mai consuma."
+          }
+        },
+        {
+          "name": "Adauga la favorite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 (adaugat) sau 200 (era deja)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/favorite/{{idAnunt}}"
+          }
+        },
+        {
+          "name": "Lista favorite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('contine anuntul', () => pm.expect(pm.response.json().map((a) => a.id)).to.include(Number(pm.collectionVariables.get('idAnunt'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/favorite"
+          }
+        },
+        {
+          "name": "Fara token CSRF (asteptat 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/favorite/{{idAnunt}}",
+            "description": "Ca un site strain care incearca sa trimita cererea in numele chiriasului conectat."
+          }
+        },
+        {
+          "name": "Sterge din favorite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/favorite/{{idAnunt}}"
+          }
+        },
+        {
+          "name": "Iesire (logout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api"
     },
     {
-      "name": "5. Put – modifica anuntul",
-      "request": {
-        "method": "PUT",
-        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }, { "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/anunturi/{{idAnunt}}",
-        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{\n  \"proprietate_id\": 3,\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Garsoniera modificata din Postman\",\n  \"descriere\": \"Pret redus\",\n  \"pret\": 1400,\n  \"moneda\": \"RON\",\n  \"stare\": \"activ\",\n  \"promovat\": true\n}" }
-      }
+      "key": "apiKey",
+      "value": ""
     },
     {
-      "name": "6. Post – date invalide (asteptat 400)",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }, { "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/anunturi",
-        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{\n  \"titlu\": \"\",\n  \"pret\": -5\n}" }
-      }
+      "key": "idAnunt",
+      "value": "3"
     },
     {
-      "name": "7. Post – fara cheie (asteptat 401)",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": "{{baseUrl}}/anunturi",
-        "body": { "mode": "raw", "options": { "raw": { "language": "json" } }, "raw": "{}" }
-      }
+      "key": "oras",
+      "value": "salcea"
+    },
+    {
+      "key": "csrfToken",
+      "value": ""
+    },
+    {
+      "key": "emailChirias",
+      "value": ""
+    },
+    {
+      "key": "parolaChirias",
+      "value": ""
     }
   ]
 }
