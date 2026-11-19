@@ -8,6 +8,7 @@ const { asiguraToken, verificaTokenApi } = require('../middleware/csrf');
 const anunturi = require('../controllers/api/AnunturiApiController');
 const auth = require('../controllers/api/AutentificareApiController');
 const chirias = require('../controllers/api/ChiriasApiController');
+const conturi = require('../controllers/api/ConturiApiController');
 const { cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
@@ -25,14 +26,28 @@ router.use(verificaTokenApi);
 // Tokenul CSRF pentru interfata React: il cere o data (si din nou dupa login / logout, cand sesiunea se schimba).
 router.get('/auth/csrf', (req, res) => res.json({ csrfToken: asiguraToken(req) }));
 
-// Ca la pagina de login: cel mult 10 incercari GRESITE in 15 minute, de pe acelasi calculator (impotriva ghicirii parolei).
-const limitaLogin = rateLimit({
-  windowMs: 15 * 60 * 1000, limit: 10, skipSuccessfulRequests: true, standardHeaders: 'draft-8', legacyHeaders: false,
-  message: { eroare: 'Prea multe încercări greșite. Încearcă din nou peste 15 minute.' },
+// Limite de cereri pe calculator (IP), cu raspuns JSON. Aceleasi valori ca la paginile echivalente.
+const limita = (minute, maxim, extra = {}) => rateLimit({
+  windowMs: minute * 60 * 1000, limit: maxim, standardHeaders: 'draft-8', legacyHeaders: false, ...extra,
+  message: { eroare: `Prea multe cereri într-un timp scurt. Încearcă din nou peste ${minute} de minute.` },
 });
+// Login: cel mult 10 incercari GRESITE in 15 minute (impotriva ghicirii parolei).
+const limitaLogin = limita(15, 10, { skipSuccessfulRequests: true });
+const limitaInregistrare = limita(60, 10); // conturi false in masa
+const limitaEmailuri = limita(15, 5); // emailuri trimise la nesfarsit catre cineva
+const limitaResetare = limita(15, 10); // incercari de tokenuri
+
 router.post('/auth/login', limitaLogin, auth.login);
 router.post('/auth/logout', auth.logout);
 router.get('/auth/eu', auth.eu);
+
+// Conturi: inregistrare, confirmarea emailului, parola uitata (fara cont conectat).
+router.post('/auth/inregistrare', limitaInregistrare, conturi.inregistrare);
+router.post('/auth/confirmare', limitaResetare, conturi.confirmare);
+router.post('/auth/confirmare/retrimite', limitaEmailuri, conturi.retrimiteConfirmarea);
+router.post('/auth/parola-uitata', limitaEmailuri, conturi.parolaUitata);
+router.get('/auth/resetare/:token', limitaResetare, conturi.verificaResetarea);
+router.post('/auth/resetare', limitaResetare, conturi.resetare);
 
 router.get('/anunturi', anunturi.getAll);
 router.get('/anunturi/:id', anunturi.getById);
