@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Rentify API",
-    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-5: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
+    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-6: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi, contul meu).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -423,6 +423,225 @@
             ],
             "url": "{{baseUrl}}/favorite/{{idAnunt}}"
           }
+        }
+      ]
+    },
+    {
+      "name": "5. Contul meu (dupa login)",
+      "description": "Profilul, schimbarea parolei si a emailului, pentru contul conectat (ruleaza intai dosarul 3).\nContul vine mereu din sesiune: in adrese nu exista niciun id, deci nu se poate ajunge la contul altcuiva.\nSe termina cu iesirea din cont (logout), ca dosarul 6 sa ruleze fara cont conectat.",
+      "item": [
+        {
+          "name": "Profilul meu",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('fara parola in raspuns', () => pm.expect(pm.response.json()).to.not.have.any.keys('parola', 'parola_hash'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cont"
+          }
+        },
+        {
+          "name": "Modifica profilul",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('telefonul salvat ca 07xxxxxxxx', () => pm.expect(pm.response.json().telefon).to.match(/^07\\d{8}$/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/cont",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"prenume\": \"Vasile\",\n  \"nume\": \"Munteanu\",\n  \"telefon\": \"0722 333 444\",\n  \"oras\": \"Suceava\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Schimba parola - parola curenta gresita (asteptat 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 cu eroare la parola curenta', () => { pm.response.to.have.status(400); pm.expect(pm.response.json().erori).to.have.property('parola_curenta'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/cont/parola",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"parola_curenta\": \"gresita\",\n  \"parola_noua\": \"ParolaNoua123\",\n  \"confirmare\": \"ParolaNoua123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Schimba parola",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken); // sesiune noua -> token nou",
+                  "  pm.collectionVariables.set('parolaChirias', pm.collectionVariables.get('parolaNouaChirias'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/cont/parola",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"parola_curenta\": \"{{parolaChirias}}\",\n  \"parola_noua\": \"{{parolaNouaChirias}}\",\n  \"confirmare\": \"{{parolaNouaChirias}}\"\n}"
+            },
+            "description": "ATENTIE: chiar schimba parola contului. Pune parola noua in variabila parolaNouaChirias (Current value). Dupa reusita, scriptul o muta in parolaChirias, ca urmatoarea rulare sa se poata conecta. Celelalte sesiuni ale contului se inchid."
+          }
+        },
+        {
+          "name": "Cere schimbarea emailului",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('202 Accepted', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/cont/email",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"{{emailNou}}\",\n  \"parola_curenta\": \"{{parolaChirias}}\"\n}"
+            },
+            "description": "Trimite linkul de confirmare pe adresa NOUA (apare in consola fara SMTP). Adresa se schimba abia dupa confirmare."
+          }
+        },
+        {
+          "name": "Confirma noul email (token din email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK (a doua oara: 400)', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/cont/email/confirmare",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"token\": \"{{tokenDinEmail}}\"\n}"
+            },
+            "description": "Tokenul din linkul /cont/email/confirmare/... in variabila tokenDinEmail. Merge si fara sa fii conectat."
+          }
         },
         {
           "name": "Iesire (logout)",
@@ -451,8 +670,8 @@
       ]
     },
     {
-      "name": "5. Conturi (fara cont conectat)",
-      "description": "Inregistrare, confirmarea emailului, parola uitata. Raspunsurile NU spun daca o adresa are cont.\nLinkurile din emailuri apar in consola (CMD unde ruleaza npm run dev) cand nu e configurat SMTP: copiaza partea de dupa /confirmare/ sau /resetare/ in variabila tokenDinEmail. Ruleaza intai \"3. Autentificare / 1. Token CSRF\".",
+      "name": "6. Conturi (fara cont conectat)",
+      "description": "Inregistrare, confirmarea emailului, parola uitata. Raspunsurile NU spun daca o adresa are cont.\nLinkurile din emailuri apar in consola (CMD unde ruleaza npm run dev) cand nu e configurat SMTP: copiaza partea de dupa /confirmare/ sau /resetare/ in variabila tokenDinEmail. Ruleaza dupa dosarul 5 (care iese din cont): inregistrarea nu merge cu un cont conectat (409).",
       "item": [
         {
           "name": "Inregistrare (cont nou de chirias)",
@@ -736,6 +955,10 @@
     },
     {
       "key": "tokenDinEmail",
+      "value": ""
+    },
+    {
+      "key": "parolaNouaChirias",
       "value": ""
     }
   ]
