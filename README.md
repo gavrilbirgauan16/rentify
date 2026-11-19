@@ -100,6 +100,9 @@ iar interfața din browser folosește contul conectat (cookie de sesiune) și to
 | POST | `/api/auth/confirmare`, `/api/auth/confirmare/retrimite` | confirmarea emailului cu tokenul din link / link nou |
 | POST | `/api/auth/parola-uitata` | linkul de resetare pe email |
 | GET, POST | `/api/auth/resetare/:token`, `/api/auth/resetare` | verificarea linkului / parola nouă (închide toate sesiunile contului) |
+| GET, PUT | `/api/cont` | contul conectat: profilul (prenume, nume, telefon, oraș) |
+| POST | `/api/cont/parola` | schimbarea parolei (cu parola curentă); închide celelalte sesiuni; merge și cu parola temporară de la admin |
+| POST | `/api/cont/email`, `/api/cont/email/confirmare` | schimbarea emailului: link pe adresa nouă, apoi confirmarea lui |
 | GET | `/api/contactari` | chiriaș: câte contactări mai are luna asta |
 | POST | `/api/anunturi/:id/contact` | chiriaș: telefonul proprietarului (consumă o contactare din plan) |
 | GET, POST, DELETE | `/api/favorite`, `/api/favorite/:id` | chiriaș: favoritele |

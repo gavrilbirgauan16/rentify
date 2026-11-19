@@ -9,12 +9,17 @@ const anunturi = require('../controllers/api/AnunturiApiController');
 const auth = require('../controllers/api/AutentificareApiController');
 const chirias = require('../controllers/api/ChiriasApiController');
 const conturi = require('../controllers/api/ConturiApiController');
-const { cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
+const cont = require('../controllers/api/ContApiController');
+const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
 
+// In testele de integrare (NODE_ENV=test) toate cererile vin de pe acelasi calculator, unele dupa altele:
+// limitele sunt de 100 de ori mai mari, ca testele sa nu pice din cauza lor. In aplicatia reala raman neschimbate.
+const FACTOR_LIMITE = process.env.NODE_ENV === 'test' ? 100 : 1;
+
 // Cel mult 300 de cereri in 15 minute de pe acelasi calculator (protectie impotriva abuzului).
-router.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-8', legacyHeaders: false,
+router.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 * FACTOR_LIMITE, standardHeaders: 'draft-8', legacyHeaders: false,
   message: { eroare: 'Prea multe cereri. Încearcă din nou peste câteva minute.' } }));
 
 // Citeste Body-ul JSON (cel mult 100 KB).
@@ -28,7 +33,7 @@ router.get('/auth/csrf', (req, res) => res.json({ csrfToken: asiguraToken(req) }
 
 // Limite de cereri pe calculator (IP), cu raspuns JSON. Aceleasi valori ca la paginile echivalente.
 const limita = (minute, maxim, extra = {}) => rateLimit({
-  windowMs: minute * 60 * 1000, limit: maxim, standardHeaders: 'draft-8', legacyHeaders: false, ...extra,
+  windowMs: minute * 60 * 1000, limit: maxim * FACTOR_LIMITE, standardHeaders: 'draft-8', legacyHeaders: false, ...extra,
   message: { eroare: `Prea multe cereri într-un timp scurt. Încearcă din nou peste ${minute} de minute.` },
 });
 // Login: cel mult 10 incercari GRESITE in 15 minute (impotriva ghicirii parolei).
@@ -53,6 +58,15 @@ router.get('/anunturi', anunturi.getAll);
 router.get('/anunturi/:id', anunturi.getById);
 router.post('/anunturi', cereCheie, anunturi.post);
 router.put('/anunturi/:id', cereCheie, anunturi.put);
+
+// Contul meu (orice rol conectat). Schimbarea parolei merge si cu parola temporara de la admin (altfel ar ramane blocat).
+// Parola si emailul: cel mult 10 incercari in 15 minute (nu se poate ghici parola curenta de aici).
+const limitaParola = limita(15, 10);
+router.get('/cont', cereAutentificareApi, cont.profil);
+router.put('/cont', cereAutentificareApi, cont.modificaProfil);
+router.post('/cont/parola', cereConectatApi, limitaParola, cont.schimbaParola);
+router.post('/cont/email', cereAutentificareApi, limitaParola, cont.cereSchimbareaEmailului);
+router.post('/cont/email/confirmare', limitaResetare, cont.confirmaEmailul);
 
 // Chiriasul conectat: contactarea proprietarului (cu limita din plan) si favoritele.
 const doarChirias = [cereAutentificareApi, cereRolApi('chirias')];
