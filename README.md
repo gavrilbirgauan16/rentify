@@ -84,6 +84,22 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
   (dacă proprietarul o schimbă între timp, aprobarea se oprește).
 - Regulile sunt verificate și în baza de date (CHECK): stările permise și motivul obligatoriu la respingere.
 
+## Ștergerea datelor
+
+| Fel | Ce înseamnă | Unde |
+|---|---|---|
+| Ștergere **fizică** (hard delete) | rândul dispare din baza de date | favoritele chiriașului, pozele unui anunț (și fișierul de pe disc) |
+| Ștergere **logică** (soft delete) | rândul rămâne, marcat ca șters (`sters_la`), dar nu mai apare nicăieri | anunțurile |
+
+- Fizic se șterge doar ce nu e folosit de alte tabele: un favorit sau o poză nu lasă "găuri" în istoric.
+- Un anunț are contactări, favorite și vizionări legate de el, deci se șterge **logic**: dispare din căutare,
+  din pagina anunțului, din Anunțurile mele, din favorite și din API (Get și GetAll), dar istoricul rămâne.
+- Proprietarul șterge din **Anunțurile mele** (cu confirmare); ștergerea îi eliberează locul din plan.
+- Adminul vede anunțurile șterse la **Anunțuri → Afișează: Doar cele șterse** și le poate **restaura**;
+  un anunț restaurat revine ca ciornă și trebuie aprobat din nou (acțiunea apare în jurnal).
+- În baza de date (CHECK): un anunț șters nu poate fi activ sau în așteptare, deci nu poate ajunge pe site
+  chiar dacă o interogare ar uita condiția.
+
 ## API
 
 Două feluri de clienți: programele (Postman) trimit cheia API în antetul `x-api-key`,
@@ -110,6 +126,7 @@ iar interfața din browser folosește contul conectat (cookie de sesiune) și to
 | GET, POST | `/api/proprietar/anunturi` | proprietar: anunțurile lui (starea, motivul respingerii, pozele) / anunț nou |
 | GET, PUT | `/api/proprietar/anunturi/:id` | proprietar: un anunț al lui; o schimbare de conținut a unui anunț aprobat cere reaprobare |
 | POST | `/api/proprietar/anunturi/:id/publica`, `.../retrage` | proprietar: trimite spre aprobare (sau republică direct) / scoate de pe site |
+| DELETE | `/api/proprietar/anunturi/:id` | proprietar: ștergere logică (204; apoi anunțul nu mai există pentru API: 404) |
 | POST, DELETE | `/api/proprietar/anunturi/:id/imagini`, `.../imagini/:idImagine` | proprietar: pozele (multipart, câmpul `imagini`, maxim 6, verificate după conținut) |
 | GET | `/api/proprietar/abonament` | proprietar: abonamentul curent, schimbarea programată, limitele folosite, planurile, istoricul |
 | GET | `/api/proprietar/abonament/previzualizare?plan=&perioada=` | proprietar: cât costă schimbarea și de când (nu schimbă nimic) |

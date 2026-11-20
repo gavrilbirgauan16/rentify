@@ -921,7 +921,7 @@
     },
     {
       "name": "7. Proprietar (proprietatile si anunturile lui)",
-      "description": "Se conecteaza ca proprietar (emailProprietar / parolaProprietar, doar la Current value) si iese la final.\nDoar proprietatile si anunturile LUI (altfel 404); limitele din plan (403); \"Publica\" trimite anuntul la aprobare.\nLa \"Adauga poze\", alege in tab-ul Body o imagine JPG / PNG / WEBP de pe calculator.",
+      "description": "Se conecteaza ca proprietar (emailProprietar / parolaProprietar, doar la Current value) si iese la final.\nDoar proprietatile si anunturile LUI (altfel 404); limitele din plan (403); \"Publica\" trimite anuntul la aprobare.\nLa \"Adauga poze\", alege in tab-ul Body o imagine JPG / PNG / WEBP de pe calculator.\nLa final, anuntul creat de dosar e sters LOGIC (ramane in baza; adminul il vede la Anunturi -> Afiseaza: Doar cele sterse).",
       "item": [
         {
           "name": "Token CSRF",
@@ -1277,6 +1277,50 @@
               }
             ],
             "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}/retrage"
+          }
+        },
+        {
+          "name": "Sterge anuntul (stergere logica)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}"
+          }
+        },
+        {
+          "name": "Anuntul sters nu mai exista (asteptat 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "// Randul a ramas in baza (sters_la completat), dar pentru API anuntul nu mai exista. Doar adminul il poate restaura."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}"
           }
         },
         {
