@@ -201,12 +201,15 @@ class AnuntAccessor {
 
   // Restaureaza un anunt sters (doar adminul): revine ca CIORNA, fara aprobare si fara motiv de respingere,
   // ca proprietarul sa-l verifice si sa-l trimita din nou spre aprobare (limita din plan se verifica atunci).
+  // Intoarce anuntul restaurat sau null (nu exista ori nu e sters - ex. alt admin l-a restaurat deja).
   async restaureaza(id) {
-    const r = await context.anunt.updateMany({
-      where: { id, ...STERS },
-      data: { sters_la: null, stare: 'ciorna', aprobat_la: null, motiv_respingere: null },
+    return context.$transaction(async (tx) => {
+      const r = await tx.anunt.updateMany({
+        where: { id, ...STERS },
+        data: { sters_la: null, stare: 'ciorna', aprobat_la: null, motiv_respingere: null },
+      });
+      return r.count === 1 ? tx.anunt.findUnique({ where: { id }, include: CU_PROPRIETATE }) : null;
     });
-    return r.count === 1;
   }
 
   // Imaginile mai multor anunturi, cu o singura interogare (fara problema N+1).
