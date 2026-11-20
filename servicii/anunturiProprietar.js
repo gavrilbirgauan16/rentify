@@ -149,6 +149,17 @@ async function retrage(proprietarId, id) {
   return { anunt: { ...entitate, stare: 'inactiv', motiv_respingere: null }, stareVeche: entitate.stare, schimbat: true };
 }
 
+// Stergerea LOGICA a unui anunt al lui: dispare din toate listele (si de pe site), dar ramane in baza, pentru
+// istoricul chiriasilor (contactari, favorite). Proprietarul nu-l mai poate aduce inapoi; doar adminul il poate
+// restaura. Pozele raman pe disc (le-ar folosi restaurarea). Intoarce { negasit } | { anunt } (cel sters).
+async function sterge(proprietarId, id) {
+  const gasit = await getALui(proprietarId, id);
+  if (!gasit) return { negasit: true };
+  // false = l-a sters altcineva intre timp (ex. dublu-click / alt tab): pentru el, anuntul nu mai exista.
+  if (!(await anunturi.stergeLogic(id))) return { negasit: true };
+  return { anunt: gasit.entitate };
+}
+
 // Schimbarea pozelor unui anunt al lui, fara restul datelor (API: adaugare / stergere separata).
 // imagini = { noi: [{ nume, cale }], eroare, deSters: [id] }.
 // Moderarea: o poza adaugata sau stearsa e o schimbare de continut -> aprobarea se pierde, iar un anunt activ
@@ -177,4 +188,4 @@ async function schimbaImagini(proprietarId, id, imagini = {}) {
   return { anunt: dupa.entitate, imagini: dupa.imagini, stare };
 }
 
-module.exports = { proprietatiPentruFormular, lista, getALui, adauga, modifica, publica, retrage, schimbaImagini };
+module.exports = { proprietatiPentruFormular, lista, getALui, adauga, modifica, publica, retrage, sterge, schimbaImagini };

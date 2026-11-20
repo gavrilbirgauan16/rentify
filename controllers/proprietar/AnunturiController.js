@@ -131,4 +131,12 @@ async function dezactiveaza(req, res) {
   res.redirect(LISTA);
 }
 
-module.exports = { index, createGet, createPost, editGet, editPost, activeaza, dezactiveaza };
+// POST /proprietar/anunturi/:id/sterge - stergere LOGICA (dupa confirmarea din fereastra): dispare din toate listele
+async function sterge(req, res) {
+  const r = await serviciu.sterge(req.idUtilizator, citesteId(req));
+  if (r.negasit) return anuntNegasit(res);
+  mesajFlash(req, `Anunțul „${r.anunt.titlu}” a fost șters.`);
+  res.redirect(LISTA);
+}
+
+module.exports = { index, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, sterge };

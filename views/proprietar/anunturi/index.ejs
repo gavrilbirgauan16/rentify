@@ -65,6 +65,31 @@
                 <%- include('../../partials/csrf') %>
                 <button type="submit" class="btn btn-sm <%= buton.clasa %>"><%= buton.text %></button>
               </form>
+              <%# Stergerea cere confirmare: o fereastra Bootstrap (fara JavaScript scris de noi, permis de CSP). %>
+              <button type="button" class="btn btn-sm btn-link text-danger ms-auto" data-bs-toggle="modal" data-bs-target="#sterge-<%= a.id %>">Șterge</button>
+            </div>
+            <div class="modal fade" id="sterge-<%= a.id %>" tabindex="-1" aria-labelledby="titlu-sterge-<%= a.id %>" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h2 class="modal-title h5" id="titlu-sterge-<%= a.id %>">Ștergi anunțul?</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p class="mb-2">„<strong><%= a.titlu %></strong>” dispare de pe site și din lista ta.</p>
+                    <p class="mb-0 text-body-secondary small">Nu îl mai poți aduce înapoi.
+                      <% if (a.esteActiv || a.esteInAsteptare) { %>Dacă vrei doar să-l scoți de pe site pentru o vreme,
+                      folosește <strong><%= a.esteActiv ? 'Dezactivează' : 'Retrage' %></strong>.<% } %></p>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Renunță</button>
+                    <form method="post" action="/proprietar/anunturi/<%= a.id %>/sterge" class="d-inline">
+                      <%- include('../../partials/csrf') %>
+                      <button type="submit" class="btn btn-danger">Da, șterge</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
