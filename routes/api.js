@@ -96,6 +96,7 @@ router.post('/proprietar/anunturi', doarProprietar, anunturiProprietar.adauga);
 router.put('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.modifica);
 router.post('/proprietar/anunturi/:id/publica', doarProprietar, anunturiProprietar.publica);
 router.post('/proprietar/anunturi/:id/retrage', doarProprietar, anunturiProprietar.retrage);
+router.delete('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.sterge); // stergere logica
 // Pozele: intai rolul (cine nu e proprietar nu poate urca nimic), apoi incarcarea si verificarea fisierelor.
 router.post('/proprietar/anunturi/:id/imagini', doarProprietar, incarcaImagini, anunturiProprietar.adaugaImagini);
 router.delete('/proprietar/anunturi/:id/imagini/:idImagine', doarProprietar, anunturiProprietar.stergeImagine);

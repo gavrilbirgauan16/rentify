@@ -76,6 +76,14 @@ async function retrage(req, res) {
   res.json({ id: r.anunt.id, stare: 'inactiv' });
 }
 
+// DELETE /api/proprietar/anunturi/:id - stergere LOGICA: 204 (sters), apoi 404 la orice cerere pentru el
+// (inclusiv un al doilea DELETE: pentru client, anuntul nu mai exista).
+async function sterge(req, res) {
+  const r = await serviciu.sterge(res.locals.utilizator.id, citesteId(req));
+  if (r.negasit) return negasit(res);
+  res.status(204).end();
+}
+
 // Raspunsul comun pentru schimbarea pozelor.
 function raspunsImagini(res, r, statusReusit) {
   if (r.negasit) return negasit(res);
@@ -100,4 +108,4 @@ async function stergeImagine(req, res) {
   raspunsImagini(res, r, 200);
 }
 
-module.exports = { lista, unul, adauga, modifica, publica, retrage, adaugaImagini, stergeImagine, catreDtoProprietar };
+module.exports = { lista, unul, adauga, modifica, publica, retrage, sterge, adaugaImagini, stergeImagine, catreDtoProprietar };
