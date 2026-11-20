@@ -4,6 +4,7 @@
 const serviciu = require('../../servicii/anunturiProprietar');
 const { catreDto, dinBody } = require('../../models/api/AnuntDto');
 const { citesteId } = require('../../utils/http');
+const { imaginiIncarcate } = require('../AnunturiController');
 
 const corp = (req) => (req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {});
 const negasit = (res) => res.status(404).json({ eroare: 'Anunțul nu există printre anunțurile tale.' });
@@ -75,4 +76,28 @@ async function retrage(req, res) {
   res.json({ id: r.anunt.id, stare: 'inactiv' });
 }
 
-module.exports = { lista, unul, adauga, modifica, publica, retrage, catreDtoProprietar };
+// Raspunsul comun pentru schimbarea pozelor.
+function raspunsImagini(res, r, statusReusit) {
+  if (r.negasit) return negasit(res);
+  if (r.imagineNegasita) return res.status(404).json({ eroare: 'Imaginea nu aparține acestui anunț.' });
+  if (r.erori) return res.status(400).json({ eroare: 'Imagini invalide.', erori: r.erori });
+  return res.status(statusReusit).json(catreDtoProprietar(r.anunt, r.imagini));
+}
+
+// POST /api/proprietar/anunturi/:id/imagini  (multipart/form-data, campul "imagini", una sau mai multe)
+// Pozele sunt deja verificate dupa continut de incarcaImagini; daca anuntul nu e al lui, se sterg de pe disc.
+async function adaugaImagini(req, res) {
+  const noi = imaginiIncarcate(req);
+  const r = await serviciu.schimbaImagini(res.locals.utilizator.id, citesteId(req), { noi, eroare: req.eroareImagini || null });
+  raspunsImagini(res, r, 201);
+}
+
+// DELETE /api/proprietar/anunturi/:id/imagini/:idImagine
+async function stergeImagine(req, res) {
+  const idImagine = Number(req.params.idImagine);
+  if (!Number.isInteger(idImagine) || idImagine <= 0) return res.status(404).json({ eroare: 'Imaginea nu aparține acestui anunț.' });
+  const r = await serviciu.schimbaImagini(res.locals.utilizator.id, citesteId(req), { deSters: [idImagine] });
+  raspunsImagini(res, r, 200);
+}
+
+module.exports = { lista, unul, adauga, modifica, publica, retrage, adaugaImagini, stergeImagine, catreDtoProprietar };

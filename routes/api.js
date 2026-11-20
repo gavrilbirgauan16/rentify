@@ -12,6 +12,7 @@ const conturi = require('../controllers/api/ConturiApiController');
 const cont = require('../controllers/api/ContApiController');
 const proprietati = require('../controllers/api/ProprietatiApiController');
 const anunturiProprietar = require('../controllers/api/AnunturiProprietarApiController');
+const { incarcaImagini } = require('../middleware/incarcareImagini');
 const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
@@ -94,6 +95,9 @@ router.post('/proprietar/anunturi', doarProprietar, anunturiProprietar.adauga);
 router.put('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.modifica);
 router.post('/proprietar/anunturi/:id/publica', doarProprietar, anunturiProprietar.publica);
 router.post('/proprietar/anunturi/:id/retrage', doarProprietar, anunturiProprietar.retrage);
+// Pozele: intai rolul (cine nu e proprietar nu poate urca nimic), apoi incarcarea si verificarea fisierelor.
+router.post('/proprietar/anunturi/:id/imagini', doarProprietar, incarcaImagini, anunturiProprietar.adaugaImagini);
+router.delete('/proprietar/anunturi/:id/imagini/:idImagine', doarProprietar, anunturiProprietar.stergeImagine);
 
 // Orice alta adresa din /api: raspuns JSON, nu pagina HTML.
 router.use((req, res) => res.status(404).json({ eroare: 'Adresa API nu există.' }));

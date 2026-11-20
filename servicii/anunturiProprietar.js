@@ -149,4 +149,32 @@ async function retrage(proprietarId, id) {
   return { anunt: { ...entitate, stare: 'inactiv', motiv_respingere: null }, stareVeche: entitate.stare, schimbat: true };
 }
 
-module.exports = { proprietatiPentruFormular, lista, getALui, adauga, modifica, publica, retrage };
+// Schimbarea pozelor unui anunt al lui, fara restul datelor (API: adaugare / stergere separata).
+// imagini = { noi: [{ nume, cale }], eroare, deSters: [id] }.
+// Moderarea: o poza adaugata sau stearsa e o schimbare de continut -> aprobarea se pierde, iar un anunt activ
+// ajunge din nou "in asteptare" (altfel s-ar putea pune o poza nepotrivita dupa aprobare).
+// Intoarce { negasit } | { imagineNegasita } | { erori } | { anunt, imagini, stare }.
+async function schimbaImagini(proprietarId, id, imagini = {}) {
+  const noi = imagini.noi || [];
+  const renunta = (rezultat) => { stergeFisiere(noi.map((i) => i.cale)); return rezultat; };
+
+  const gasit = await getALui(proprietarId, id);
+  if (!gasit) return renunta({ negasit: true });
+  const { entitate, imagini: actuale } = gasit;
+  const ceruteDeSters = imagini.deSters || [];
+  const deSters = ceruteDeSters.filter((idImg) => actuale.some((f) => f.id === idImg)); // doar ale ACESTUI anunt
+  if (deSters.length < ceruteDeSters.length) return renunta({ imagineNegasita: true });
+  if (noi.length === 0 && deSters.length === 0 && !imagini.eroare) return renunta({ erori: { imagini: 'Alege cel puțin o imagine.' } });
+
+  const eImg = eroareImagini({ eroareIncarcare: imagini.eroare, numarNoi: noi.length, numarRamase: actuale.length - deSters.length });
+  if (eImg) return renunta({ erori: { imagini: eImg } });
+
+  // Starea dupa schimbare: un anunt publicat si aprobat trece inapoi la aprobare; restul isi pastreaza starea.
+  const stare = entitate.stare === 'activ' ? 'in_asteptare' : entitate.stare;
+  const { caiSterse } = await anunturi.updateEntity(id, { stare, aprobat_la: null }, noi, deSters, proprietarId);
+  stergeFisiere(caiSterse);
+  const dupa = await getALui(proprietarId, id);
+  return { anunt: dupa.entitate, imagini: dupa.imagini, stare };
+}
+
+module.exports = { proprietatiPentruFormular, lista, getALui, adauga, modifica, publica, retrage, schimbaImagini };
