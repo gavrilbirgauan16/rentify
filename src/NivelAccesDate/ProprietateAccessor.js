@@ -1,5 +1,6 @@
 // Metode de acces la date pentru modelul "proprietate".
 const context = require('../Repository_CodeFirst/context');
+const { NESTERS } = require('./AnuntAccessor');
 
 class ProprietateAccessor {
   // Toate proprietatile, cu numele proprietarului (pagina Index).
@@ -17,7 +18,7 @@ class ProprietateAccessor {
       where,
       include: {
         utilizator: { select: { nume: true, prenume: true } },
-        _count: { select: { anunt: { where: { stare: 'activ' } } } },
+        _count: { select: { anunt: { where: { stare: 'activ', ...NESTERS } } } },
       },
       orderBy,
       skip,
@@ -66,7 +67,7 @@ class ProprietateAccessor {
   async getAleProprietarului(proprietarId) {
     return context.proprietate.findMany({
       where: { proprietar_id: proprietarId },
-      include: { _count: { select: { anunt: { where: { stare: 'activ' } } } } },
+      include: { _count: { select: { anunt: { where: { stare: 'activ', ...NESTERS } } } } },
       orderBy: [{ creat_la: 'desc' }, { id: 'desc' }],
     });
   }
@@ -124,7 +125,7 @@ class ProprietateAccessor {
       if (proprietate.stare === 'inactiv' && inainte.stare !== 'inactiv') {
         // Motivul respingerii se sterge: ramane doar pe anunturile respinse (regula anunt_motiv_check).
         const rezultat = await tx.anunt.updateMany({
-          where: { proprietate_id: id, NOT: { stare: 'inactiv' } },
+          where: { proprietate_id: id, NOT: { stare: 'inactiv' }, ...NESTERS },
           data: { stare: 'inactiv', motiv_respingere: null },
         });
         anunturiDezactivate = rezultat.count;
@@ -133,11 +134,11 @@ class ProprietateAccessor {
         // Doar adminul reactiveaza anunturile odata cu proprietatea; fiind moderatorul, le si aproba
         // (cele aprobate deja isi pastreaza data aprobarii).
         const neaprobate = await tx.anunt.updateMany({
-          where: { proprietate_id: id, stare: 'inactiv', aprobat_la: null },
+          where: { proprietate_id: id, stare: 'inactiv', aprobat_la: null, ...NESTERS }, // cele sterse raman sterse
           data: { stare: 'activ', aprobat_la: new Date() },
         });
         const aprobate = await tx.anunt.updateMany({
-          where: { proprietate_id: id, stare: 'inactiv' },
+          where: { proprietate_id: id, stare: 'inactiv', ...NESTERS },
           data: { stare: 'activ' },
         });
         anunturiActivate = neaprobate.count + aprobate.count;

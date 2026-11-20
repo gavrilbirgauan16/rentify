@@ -20,9 +20,15 @@ const CU_PROPRIETATE = {
   },
 };
 
-// Conditia "anunt public": activ si pe o proprietate care nu e inactiva. Pusa MEREU la cautarea publica,
+// Stergerea LOGICA (soft delete): un anunt sters are sters_la completat si NU apare nicaieri (Get si GetAll).
+// Conditia e scrisa o singura data aici si pusa EXPLICIT in fiecare interogare de mai jos. In plus, baza de date
+// refuza un anunt sters care sa fie activ sau in asteptare (regula anunt_sters_check), deci nu poate ajunge pe site.
+const NESTERS = { sters_la: null };
+const STERS = { sters_la: { not: null } };
+
+// Conditia "anunt public": activ, nesters si pe o proprietate care nu e inactiva. Pusa MEREU la cautarea publica,
 // chiar daca where-ul primit o contine deja (aparare in profunzime: nu depindem de cine construieste where-ul).
-const PUBLIC = { stare: 'activ', proprietate: { NOT: { stare: 'inactiv' } } };
+const PUBLIC = { stare: 'activ', ...NESTERS, proprietate: { NOT: { stare: 'inactiv' } } };
 
 // Ce vede chiriasul despre proprietate: detaliile locuintei si numele proprietarului. FARA telefon si email.
 const CU_PROPRIETATE_PUBLIC = {
@@ -38,7 +44,7 @@ class AnuntAccessor {
   // Anunturile active, cu proprietatea fiecaruia (ce apare pe prima pagina).
   async getActive() {
     return context.anunt.findMany({
-      where: { stare: 'activ' },
+      where: { stare: 'activ', ...NESTERS },
       include: {
         proprietate: { select: { denumire: true, oras: true, zona: true } },
       },
@@ -52,6 +58,7 @@ class AnuntAccessor {
       where: {
         tip: 'inchiriere',
         stare: 'activ',
+        ...NESTERS,
         pret: { gte: pretMinim, lte: pretMaxim },
       },
       orderBy: { pret: 'asc' },
@@ -63,6 +70,7 @@ class AnuntAccessor {
     return context.anunt.findMany({
       where: {
         stare: 'activ',
+        ...NESTERS,
         OR: [
           { titlu: { contains: text, mode: 'insensitive' } },
           { descriere: { contains: text, mode: 'insensitive' } },
@@ -106,19 +114,21 @@ class AnuntAccessor {
     return a ? a.proprietate.utilizator : null;
   }
 
-  // Toate anunturile, cu proprietatea si proprietarul ei (pagina Index din admin).
+  // Toate anunturile nesterse, cu proprietatea si proprietarul ei (API-ul cu cheie, laboratorul 7).
   async getAll() {
-    return context.anunt.findMany({ include: CU_PROPRIETATE, orderBy: { creat_la: 'desc' } });
+    return context.anunt.findMany({ where: NESTERS, include: CU_PROPRIETATE, orderBy: { creat_la: 'desc' } });
   }
 
   // O pagina din lista filtrata (admin). where si orderBy vin din filtrele alese in controller.
-  async getPagina(where, orderBy, { skip, take }) {
-    return context.anunt.findMany({ where, include: CU_PROPRIETATE, orderBy, skip, take });
+  // Implicit fara cele sterse; sterse = true -> DOAR cele sterse (filtrul "Sterse" al adminului).
+  // AND, nu spread: where poate avea deja chei proprii (OR, proprietate...).
+  async getPagina(where, orderBy, { skip, take }, { sterse = false } = {}) {
+    return context.anunt.findMany({ where: { AND: [where, sterse ? STERS : NESTERS] }, include: CU_PROPRIETATE, orderBy, skip, take });
   }
 
-  // Cate anunturi se potrivesc filtrelor (pentru paginare).
-  async numara(where) {
-    return context.anunt.count({ where });
+  // Cate anunturi se potrivesc filtrelor (pentru paginare). Aceeasi regula pentru sterse ca la getPagina.
+  async numara(where, { sterse = false } = {}) {
+    return context.anunt.count({ where: { AND: [where, sterse ? STERS : NESTERS] } });
   }
 
   // ===== Zona proprietarului: un anunt e "al lui" daca proprietatea anuntului e a lui =====
@@ -126,21 +136,21 @@ class AnuntAccessor {
   // Anunturile proprietarului, cele mai noi primele (pagina "Anunturile mele").
   async getAleProprietarului(proprietarId) {
     return context.anunt.findMany({
-      where: { proprietate: { proprietar_id: proprietarId } },
+      where: { ...NESTERS, proprietate: { proprietar_id: proprietarId } },
       include: CU_PROPRIETATE,
       orderBy: [{ creat_la: 'desc' }, { id: 'desc' }],
     });
   }
 
-  // Un anunt, doar daca e al acestui proprietar; altfel null (pagina 404, protectie IDOR).
+  // Un anunt, doar daca e al acestui proprietar si nu e sters; altfel null (pagina 404, protectie IDOR).
   async getByIdSiProprietar(id, proprietarId) {
-    return context.anunt.findFirst({ where: { id, proprietate: { proprietar_id: proprietarId } }, include: CU_PROPRIETATE });
+    return context.anunt.findFirst({ where: { id, ...NESTERS, proprietate: { proprietar_id: proprietarId } }, include: CU_PROPRIETATE });
   }
 
   // Cate anunturi publicate are un proprietar (pentru limita max_anunturi_active din plan):
   // cele active si cele trimise spre aprobare (altfel ar putea trimite oricate deodata).
   async numaraPublicateAleProprietarului(proprietarId) {
-    return context.anunt.count({ where: { stare: { in: STARI_PUBLICATE }, proprietate: { proprietar_id: proprietarId } } });
+    return context.anunt.count({ where: { stare: { in: STARI_PUBLICATE }, ...NESTERS, proprietate: { proprietar_id: proprietarId } } });
   }
 
   // ===== Moderarea (adminul) =====
@@ -150,7 +160,7 @@ class AnuntAccessor {
   // Intoarce true daca s-a aprobat.
   async aproba(id) {
     const r = await context.anunt.updateMany({
-      where: { id, stare: 'in_asteptare' },
+      where: { id, stare: 'in_asteptare', ...NESTERS },
       data: { stare: 'activ', aprobat_la: new Date(), motiv_respingere: null },
     });
     return r.count === 1;
@@ -159,15 +169,44 @@ class AnuntAccessor {
   // Respinge un anunt in asteptare (sau scoate de pe site unul activ), cu motiv. Intoarce true daca s-a respins.
   async respinge(id, motiv) {
     const r = await context.anunt.updateMany({
-      where: { id, stare: { in: STARI_PUBLICATE } },
+      where: { id, stare: { in: STARI_PUBLICATE }, ...NESTERS },
       data: { stare: 'respins', motiv_respingere: motiv, aprobat_la: null },
     });
     return r.count === 1;
   }
 
-  // Un anunt dupa id, cu proprietatea lui (Edit si butoanele de stare).
+  // Un anunt nesters dupa id, cu proprietatea lui (Edit si butoanele de stare); null daca nu exista sau e sters.
+  // findFirst, nu findUnique: findUnique cauta doar dupa campuri unice (id), nu accepta si conditia NESTERS.
   async getById(id) {
-    return context.anunt.findUnique({ where: { id }, include: CU_PROPRIETATE });
+    return context.anunt.findFirst({ where: { id, ...NESTERS }, include: CU_PROPRIETATE });
+  }
+
+  // ===== Stergerea logica =====
+
+  // Sterge LOGIC un anunt: randul ramane (contactarile, favoritele si vizionarile arata spre el), dar anuntul dispare
+  // din toate listele. Un anunt activ / in asteptare devine si inactiv (regula anunt_sters_check).
+  // Conditia "nesters" e in WHERE: daca e apasat de doua ori deodata, se sterge o singura data. Intoarce true / false.
+  async stergeLogic(id) {
+    return context.$transaction(async (tx) => {
+      const a = await tx.anunt.findFirst({ where: { id, ...NESTERS }, select: { stare: true } });
+      if (!a) return false;
+      const dePeSite = STARI_PUBLICATE.includes(a.stare);
+      const r = await tx.anunt.updateMany({
+        where: { id, ...NESTERS },
+        data: { sters_la: new Date(), ...(dePeSite ? { stare: 'inactiv' } : {}) },
+      });
+      return r.count === 1;
+    });
+  }
+
+  // Restaureaza un anunt sters (doar adminul): revine ca CIORNA, fara aprobare si fara motiv de respingere,
+  // ca proprietarul sa-l verifice si sa-l trimita din nou spre aprobare (limita din plan se verifica atunci).
+  async restaureaza(id) {
+    const r = await context.anunt.updateMany({
+      where: { id, ...STERS },
+      data: { sters_la: null, stare: 'ciorna', aprobat_la: null, motiv_respingere: null },
+    });
+    return r.count === 1;
   }
 
   // Imaginile mai multor anunturi, cu o singura interogare (fara problema N+1).
@@ -215,7 +254,7 @@ class AnuntAccessor {
 
   // Cate anunturi asteapta aprobarea (Panou -> "De rezolvat").
   async numaraInAsteptare() {
-    return context.anunt.count({ where: { stare: 'in_asteptare' } });
+    return context.anunt.count({ where: { stare: 'in_asteptare', ...NESTERS } });
   }
 
   // Salveaza in tabelul fisier imaginile primite de la formular.
@@ -236,3 +275,5 @@ class AnuntAccessor {
 module.exports = AnuntAccessor;
 // Selectia publica a proprietatii, folosita si de favorite (FavoritAccessor): chiriasul vede aceleasi date peste tot.
 module.exports.CU_PROPRIETATE_PUBLIC = CU_PROPRIETATE_PUBLIC;
+// Conditia "anunt nesters", pentru interogarile din alte tabele care aduc anunturi (favorite, panou, proprietati).
+module.exports.NESTERS = NESTERS;
