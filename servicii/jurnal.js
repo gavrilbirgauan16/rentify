@@ -19,6 +19,7 @@ const ACTIUNI = {
   link_confirmare: 'a retrimis linkul de confirmare către',
   aprobare: 'a aprobat',
   respingere: 'a respins',
+  restaurare: 'a restaurat', // un anunt sters logic, readus (ca ciorna)
 };
 const ENTITATI = {
   proprietate: 'proprietatea', anunt: 'anunțul', plan: 'planul', abonament: 'abonamentul', utilizator: 'utilizatorul',

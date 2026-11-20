@@ -1,0 +1,26 @@
+<%# Anunturile sterse LOGIC (filtrul "Afiseaza: Doar cele sterse"). Randul a ramas in baza de date, deci adminul
+    il poate restaura. Fara Detalii / Editeaza / Activeaza: un anunt sters nu se mai deschide, doar se restaureaza.
+    Primeste: anunturi (lista de AnuntViewModel), adresaCurenta. %>
+<div class="alert alert-secondary small py-2">
+  Anunțurile șterse nu mai apar nicăieri: nici pe site, nici la proprietar, nici în favoritele chiriașilor.
+  Rândul lor a rămas în baza de date (pentru istoricul contactărilor), deci pot fi <strong>restaurate</strong>; revin ca ciornă.
+</div>
+<div class="list-group shadow-sm">
+  <% anunturi.forEach(function(a) { %>
+  <div class="list-group-item d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
+    <div class="flex-grow-1">
+      <div class="fw-semibold"><%= a.titlu %> <span class="badge text-bg-secondary ms-1">Șters</span></div>
+      <div class="small text-body-secondary">
+        <%= a.tipAfisat %> · <%= a.pretAfisat %> · <%= a.proprietate_denumire %>, <%= a.proprietate_oras %>
+        · proprietar: <a class="link-secondary" href="/admin/utilizatori/<%= a.proprietar_id %>"><%= a.proprietar_nume %></a>
+        <br>Șters pe <%= a.stersLaAfisat %>
+      </div>
+    </div>
+    <form method="post" action="/admin/anunturi/<%= a.id %>/restaureaza" class="flex-shrink-0">
+      <%- include('../../partials/csrf') %>
+      <input type="hidden" name="inapoi" value="<%= adresaCurenta %>">
+      <button type="submit" class="btn btn-sm btn-outline-success w-100">Restaurează</button>
+    </form>
+  </div>
+  <% }) %>
+</div>

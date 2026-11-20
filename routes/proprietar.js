@@ -38,6 +38,7 @@ router.get('/anunturi/:id/edit', anunturi.editGet);
 router.post('/anunturi/:id/edit', incarcaImagini, anunturi.editPost);
 router.post('/anunturi/:id/activeaza', anunturi.activeaza);
 router.post('/anunturi/:id/dezactiveaza', anunturi.dezactiveaza);
+router.post('/anunturi/:id/sterge', anunturi.sterge); // stergere logica (formularul are token CSRF)
 
 // Abonamentul meu: afisare, schimbarea planului (confirmare + plata simulata), anularea unei schimbari programate.
 router.use('/abonament', sectiune('abonament'));

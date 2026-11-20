@@ -62,6 +62,7 @@ class AnuntViewModel {
     this.stare = date.stare ?? 'ciorna';
     this.aprobat_la = date.aprobat_la ?? null;             // cand l-a aprobat adminul (null = neaprobat)
     this.motiv_respingere = date.motiv_respingere ?? '';  // doar la starea "respins"
+    this.sters_la = date.sters_la ?? null;                 // stergerea logica: cand a fost sters (null = exista)
     this.promovat = date.promovat ?? false;
     // campuri din alte tabele (doar pentru afisare)
     this.proprietate_denumire = date.proprietate_denumire ?? '';
@@ -114,6 +115,13 @@ class AnuntViewModel {
   get esteInAsteptare() { return this.stare === 'in_asteptare'; }
   get esteRespins() { return this.stare === 'respins'; }
   get esteAprobat() { return Boolean(this.aprobat_la); }
+  get esteSters() { return Boolean(this.sters_la); }
+  // Data si ora stergerii, dupa ora Romaniei (serverul poate fi in alt fus orar).
+  get stersLaAfisat() {
+    return this.sters_la
+      ? new Date(this.sters_la).toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest', dateStyle: 'short', timeStyle: 'short' })
+      : '';
+  }
   get proprietateInactiva() { return this.proprietate_stare === 'inactiv'; }
   get disponibilAfisat() { return this.disponibil_de_la ? formateazaData(new Date(this.disponibil_de_la)) : 'imediat'; }
 

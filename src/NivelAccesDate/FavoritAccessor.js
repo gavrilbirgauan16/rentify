@@ -1,16 +1,17 @@
 // Metode de acces la date pentru favorite (tabelul "favorit"): anunturile salvate de un utilizator.
 // Toate cauta dupa utilizator + anunt impreuna: nimeni nu poate vedea sau sterge favoritele altcuiva (IDOR).
 const context = require('../Repository_CodeFirst/context');
-const { CU_PROPRIETATE_PUBLIC } = require('./AnuntAccessor');
+const { CU_PROPRIETATE_PUBLIC, NESTERS } = require('./AnuntAccessor');
 
 // Aceleasi date despre proprietate ca la cautare + starea ei (ca sa stim daca anuntul salvat mai e disponibil).
 const PROPRIETATE_FAVORIT = { select: { ...CU_PROPRIETATE_PUBLIC.proprietate.select, stare: true } };
 
 class FavoritAccessor {
   // Favoritele unui utilizator, cele mai noi primele, cu anuntul si proprietatea lui (fara telefon / email).
+  // Anunturile sterse nu apar (randul din "favorit" ramane, dar chiriasul nu-l mai vede).
   async getAleUtilizatorului(utilizatorId) {
     return context.favorit.findMany({
-      where: { utilizator_id: utilizatorId },
+      where: { utilizator_id: utilizatorId, anunt: NESTERS },
       include: { anunt: { include: { proprietate: PROPRIETATE_FAVORIT } } },
       orderBy: { creat_la: 'desc' },
     });
@@ -18,7 +19,7 @@ class FavoritAccessor {
 
   // Id-urile anunturilor favorite (ca pagina de cautare sa arate inima plina / goala).
   async getIdAnunturi(utilizatorId) {
-    const randuri = await context.favorit.findMany({ where: { utilizator_id: utilizatorId }, select: { anunt_id: true } });
+    const randuri = await context.favorit.findMany({ where: { utilizator_id: utilizatorId, anunt: NESTERS }, select: { anunt_id: true } });
     return randuri.map((r) => r.anunt_id);
   }
 

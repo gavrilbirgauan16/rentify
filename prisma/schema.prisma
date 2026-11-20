@@ -42,7 +42,8 @@ model anunt {
   stare            String       @default("ciorna") @db.VarChar(20)
   aprobat_la       DateTime?    @db.Timestamp(6)
   motiv_respingere String?      @db.VarChar(300)
-  promovat         Boolean      @default(false)
+  sters_la         DateTime?    @db.Timestamp(6)
+  promovat        Boolean      @default(false)
   promovat_pana_la DateTime?    @db.Date
   vizualizari      Int          @default(0)
   creat_la         DateTime     @default(now()) @db.Timestamp(6)
