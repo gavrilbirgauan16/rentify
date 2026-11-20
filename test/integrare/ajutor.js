@@ -55,6 +55,18 @@ class Browser {
     return { status: r.status, date, antete: r.headers };
   }
 
+  // Trimite fisiere (multipart/form-data), ca un formular cu <input type="file">. fisiere = [{ nume, continut, tip }].
+  async trimiteFisiere(adresa, fisiere, camp = 'imagini') {
+    const fd = new FormData();
+    for (const f of fisiere) fd.append(camp, new Blob([f.continut], { type: f.tip }), f.nume);
+    const antete = { ...(this.cookie ? { cookie: this.cookie } : {}), ...(this.csrf ? { 'x-csrf-token': this.csrf } : {}) };
+    const r = await fetch(this.url + adresa, { method: 'POST', headers: antete, body: fd });
+    const text = await r.text();
+    let date;
+    try { date = text ? JSON.parse(text) : null; } catch { date = text; }
+    return { status: r.status, date };
+  }
+
   get(adresa) { return this.cere('GET', adresa); }
   post(adresa, body) { return this.cere('POST', adresa, body ?? {}); }
   delete(adresa) { return this.cere('DELETE', adresa); }
@@ -97,4 +109,11 @@ async function creeazaAnunt(proprietateId, { stare = 'activ', pret = 1000, titlu
   });
 }
 
-module.exports = { pornesteAplicatia, Browser, creeazaUtilizator, creeazaProprietate, creeazaAnunt, unic };
+// O "poza" PNG pentru teste: semnatura PNG (dupa care aplicatia recunoaste tipul real) + cativa octeti.
+const pozaPng = (nume = 'poza.png') => ({
+  nume, tip: 'image/png', continut: Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64)]),
+});
+// Un fisier text redenumit ".png": browserul spune "image/png", dar continutul nu e o imagine.
+const pozaFalsa = () => ({ nume: 'virus.png', tip: 'image/png', continut: Buffer.from('nu sunt o imagine') });
+
+module.exports = { pornesteAplicatia, Browser, creeazaUtilizator, creeazaProprietate, creeazaAnunt, unic, pozaPng, pozaFalsa };

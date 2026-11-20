@@ -2,14 +2,25 @@
 // Ruleaza cu: npm run test:integrare (pe baza rentify_test). Un proprietar nou are planul Gratuit: 1 proprietate, 1 anunt.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { pornesteAplicatia, Browser, creeazaUtilizator, creeazaProprietate, creeazaAnunt } = require('./ajutor');
+const fs = require('fs');
+const path = require('path');
+const { pornesteAplicatia, Browser, creeazaUtilizator, creeazaProprietate, creeazaAnunt, pozaPng, pozaFalsa } = require('./ajutor');
 const AnuntAccessor = require('../../src/NivelAccesDate/AnuntAccessor');
 
 const anunturi = new AnuntAccessor();
 
+// Pozele se salveaza in acelasi folder ca ale aplicatiei (uploads/anunturi). Retinem ce era la inceput
+// si la final stergem DOAR pozele aparute in timpul testelor (sa nu ramana fisiere orfane).
+const FOLDER_POZE = path.join(__dirname, '..', '..', 'uploads', 'anunturi');
+const pozePeDisc = () => (fs.existsSync(FOLDER_POZE) ? fs.readdirSync(FOLDER_POZE) : []);
+let pozeLaInceput;
+
 let aplicatie;
-before(async () => { aplicatie = await pornesteAplicatia(); });
-after(async () => { await aplicatie.opreste(); });
+before(async () => { aplicatie = await pornesteAplicatia(); pozeLaInceput = new Set(pozePeDisc()); });
+after(async () => {
+  for (const f of pozePeDisc()) if (!pozeLaInceput.has(f)) fs.unlinkSync(path.join(FOLDER_POZE, f));
+  await aplicatie.opreste();
+});
 
 async function conectat(rol = 'proprietar') {
   const cont = await creeazaUtilizator(rol);
@@ -175,4 +186,79 @@ test('pe o proprietate inactiva anuntul nu poate fi publicat (409)', async () =>
   const creat = (await b.post('/api/proprietar/anunturi', anunt({ stare: 'ciorna' }))).date;
   await b.post(`/api/proprietar/proprietati/${p.id}/dezactiveaza`);
   assert.equal((await b.post(`/api/proprietar/anunturi/${creat.id}/publica`)).status, 409);
+});
+
+// ===== Pozele anunturilor =====
+
+test('pozele: adaugare (201) si stergere; poza stearsa dispare si de pe disc', async () => {
+  const { b, anunt } = await cuProprietate();
+  const creat = (await b.post('/api/proprietar/anunturi', anunt({ stare: 'ciorna' }))).date;
+  const r = await b.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [pozaPng('a.png'), pozaPng('b.png')]);
+  assert.equal(r.status, 201);
+  assert.equal(r.date.imagini.length, 2);
+  const [prima] = r.date.imagini;
+  const peDisc = path.join(FOLDER_POZE, path.basename(prima.url));
+  assert.ok(fs.existsSync(peDisc));
+
+  const sters = await b.delete(`/api/proprietar/anunturi/${creat.id}/imagini/${prima.id}`);
+  assert.equal(sters.status, 200);
+  assert.equal(sters.date.imagini.length, 1);
+  assert.equal(fs.existsSync(peDisc), false);
+});
+
+test('pozele sunt verificate dupa continut: un fisier text redenumit .png e refuzat si nu ramane pe disc', async () => {
+  const { b, anunt } = await cuProprietate();
+  const creat = (await b.post('/api/proprietar/anunturi', anunt({ stare: 'ciorna' }))).date;
+  const inainte = pozePeDisc().length;
+  const r = await b.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [pozaFalsa()]);
+  assert.equal(r.status, 400);
+  assert.ok(r.date.erori.imagini);
+  assert.equal(pozePeDisc().length, inainte);
+});
+
+test('cel mult 6 poze pe anunt', async () => {
+  const { b, anunt } = await cuProprietate();
+  const creat = (await b.post('/api/proprietar/anunturi', anunt({ stare: 'ciorna' }))).date;
+  await b.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [1, 2, 3, 4, 5].map((i) => pozaPng(`${i}.png`)));
+  const inainte = pozePeDisc().length;
+  const prea = await b.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [pozaPng('6.png'), pozaPng('7.png')]);
+  assert.equal(prea.status, 400);
+  assert.match(prea.date.erori.imagini, /cel mult 6/);
+  assert.equal(pozePeDisc().length, inainte); // pozele refuzate s-au sters
+});
+
+test('moderarea: o poza noua la un anunt aprobat il trimite inapoi la aprobare', async () => {
+  const { b, anunt } = await cuProprietate();
+  const creat = (await b.post('/api/proprietar/anunturi', anunt())).date;
+  await anunturi.aproba(creat.id);
+  const r = await b.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [pozaPng()]);
+  assert.equal(r.status, 201);
+  assert.equal(r.date.stare, 'in_asteptare');
+  assert.equal(r.date.aprobat, false);
+});
+
+test('IDOR la poze: alt proprietar nu poate adauga sau sterge poze la anuntul meu; nimic nu ramane pe disc', async () => {
+  const { b, anunt } = await cuProprietate();
+  const creat = (await b.post('/api/proprietar/anunturi', anunt({ stare: 'ciorna' }))).date;
+  const poza = (await b.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [pozaPng()])).date.imagini[0];
+  const { b: strain } = await cuProprietate();
+
+  const inainte = pozePeDisc().length;
+  assert.equal((await strain.trimiteFisiere(`/api/proprietar/anunturi/${creat.id}/imagini`, [pozaPng()])).status, 404);
+  assert.equal(pozePeDisc().length, inainte); // poza urcata de strain s-a sters
+  assert.equal((await strain.delete(`/api/proprietar/anunturi/${creat.id}/imagini/${poza.id}`)).status, 404);
+
+  // O poza a anuntului A nu se poate sterge prin adresa altui anunt (B), nici macar al aceluiasi proprietar.
+  const alDoilea = (await b.post('/api/proprietar/anunturi', anunt({ titlu: 'Al doilea', stare: 'ciorna' }))).date;
+  assert.equal((await b.delete(`/api/proprietar/anunturi/${alDoilea.id}/imagini/${poza.id}`)).status, 404);
+  assert.equal((await b.get(`/api/proprietar/anunturi/${creat.id}`)).date.imagini.length, 1); // poza a ramas
+});
+
+test('un chirias nu poate urca poze (oprit inainte de incarcare)', async () => {
+  const chirias = await creeazaUtilizator('chirias');
+  const b = new Browser(aplicatie.url);
+  await b.conecteaza(chirias.email, chirias.parola);
+  const inainte = pozePeDisc().length;
+  assert.equal((await b.trimiteFisiere('/api/proprietar/anunturi/1/imagini', [pozaPng()])).status, 403);
+  assert.equal(pozePeDisc().length, inainte);
 });
