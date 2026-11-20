@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Rentify API",
-    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-6: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi, contul meu).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
+    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-7: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi, contul meu, proprietar).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -918,6 +918,411 @@
           }
         }
       ]
+    },
+    {
+      "name": "7. Proprietar (proprietatile si anunturile lui)",
+      "description": "Se conecteaza ca proprietar (emailProprietar / parolaProprietar, doar la Current value) si iese la final.\nDoar proprietatile si anunturile LUI (altfel 404); limitele din plan (403); \"Publica\" trimite anuntul la aprobare.\nLa \"Adauga poze\", alege in tab-ul Body o imagine JPG / PNG / WEBP de pe calculator.",
+      "item": [
+        {
+          "name": "Token CSRF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/csrf"
+          }
+        },
+        {
+          "name": "Login (proprietar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK, rol proprietar', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().utilizator.rol).to.eql('proprietar'); });",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"{{emailProprietar}}\",\n  \"parola\": \"{{parolaProprietar}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Proprietatile mele (+ limita din plan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json().proprietati; if (p.length) pm.collectionVariables.set('idProprietate', p[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/proprietati"
+          }
+        },
+        {
+          "name": "Adauga proprietate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 sau 403', () => pm.expect(pm.response.code).to.be.oneOf([201, 403]));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('idProprietate', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/proprietati",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"denumire\": \"Garsoniera din Postman\",\n  \"tip\": \"garsoniera\",\n  \"judet\": \"Suceava\",\n  \"oras\": \"Suceava\",\n  \"zona\": \"Centru\",\n  \"nr_camere\": 1,\n  \"suprafata_mp\": 32,\n  \"max_locatari\": 2,\n  \"are_balcon\": true,\n  \"stare\": \"liber\"\n}"
+            },
+            "description": "201 = adaugata; 403 = planul nu mai permite (mesajul spune ce poti face)."
+          }
+        },
+        {
+          "name": "Modifica proprietatea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 sau 400', () => pm.expect(pm.response.code).to.be.oneOf([200, 400]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/proprietati/{{idProprietate}}",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"denumire\": \"Garsoniera din Postman (modificata)\",\n  \"tip\": \"garsoniera\",\n  \"judet\": \"Suceava\",\n  \"oras\": \"Suceava\",\n  \"zona\": \"Centru\",\n  \"nr_camere\": 1,\n  \"suprafata_mp\": 33,\n  \"max_locatari\": 2,\n  \"are_balcon\": true,\n  \"stare\": \"liber\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Anunturile mele (+ limita din plan)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/anunturi"
+          }
+        },
+        {
+          "name": "Adauga anunt (ciorna)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created, ciorna', () => { pm.response.to.have.status(201); pm.expect(pm.response.json().stare).to.eql('ciorna'); });",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('idAnuntProprietar', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"proprietate_id\": \"{{idProprietate}}\",\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Anunt din Postman\",\n  \"descriere\": \"Aproape de USV\",\n  \"pret\": 1200,\n  \"moneda\": \"RON\",\n  \"stare\": \"ciorna\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Modifica anuntul",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"proprietate_id\": \"{{idProprietate}}\",\n  \"tip\": \"inchiriere\",\n  \"titlu\": \"Anunt din Postman (modificat)\",\n  \"pret\": 1150,\n  \"moneda\": \"RON\",\n  \"stare\": \"ciorna\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Adauga poze (alege un fisier)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 sau 400', () => pm.expect(pm.response.code).to.be.oneOf([201, 400]));",
+                  "if (pm.response.code === 201) { const img = pm.response.json().imagini; pm.collectionVariables.set('idImagine', img[img.length - 1].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}/imagini",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "imagini",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "description": "multipart/form-data, campul \"imagini\" (una sau mai multe; maxim 6 pe anunt; JPG, PNG, WEBP; verificate dupa continut)."
+          }
+        },
+        {
+          "name": "Sterge o poza",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 sau 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}/imagini/{{idImagine}}"
+          }
+        },
+        {
+          "name": "Publica anuntul (spre aprobare)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 sau 403', () => pm.expect(pm.response.code).to.be.oneOf([200, 403]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}/publica",
+            "description": "200 = trimis la aprobare (sau direct activ, daca era deja aprobat si nemodificat); 403 = limita planului."
+          }
+        },
+        {
+          "name": "Retrage anuntul",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK, inactiv', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().stare).to.eql('inactiv'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/anunturi/{{idAnuntProprietar}}/retrage"
+          }
+        },
+        {
+          "name": "IDOR: anunt inexistent / al altcuiva (asteptat 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/anunturi/999999"
+          }
+        },
+        {
+          "name": "Iesire (logout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -959,6 +1364,26 @@
     },
     {
       "key": "parolaNouaChirias",
+      "value": ""
+    },
+    {
+      "key": "emailProprietar",
+      "value": ""
+    },
+    {
+      "key": "parolaProprietar",
+      "value": ""
+    },
+    {
+      "key": "idProprietate",
+      "value": ""
+    },
+    {
+      "key": "idAnuntProprietar",
+      "value": ""
+    },
+    {
+      "key": "idImagine",
       "value": ""
     }
   ]
