@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Rentify API",
-    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-7: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi, contul meu, proprietar).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
+    "description": "API-ul Rentify. Dosarul 1: laboratorul 7 (cu cheie API). Dosarele 2-8: API-ul folosit de interfata (cautare publica, autentificare, chirias, conturi, contul meu, proprietar, abonamentul proprietarului).\nInainte de rulare, in tab-ul Variables: apiKey (din .env), emailChirias si parolaChirias - DOAR la Current value, ca sa nu ajunga pe GitHub.\nOrdinea conteaza: dosarul 3 (login) inaintea dosarului 4.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -1323,6 +1323,218 @@
           }
         }
       ]
+    },
+    {
+      "name": "8. Abonamentul proprietarului",
+      "description": "Se conecteaza ca proprietar (emailProprietar / parolaProprietar) si iese la final.\nPlata e SIMULATA (fara date de card). Pretul, creditul si datele le calculeaza serverul: din cerere se citesc doar planul si perioada.\nCa sa nu schimbe datele: \"Schimba planul\" alege planul Gratuit (downgrade programat, 0 lei), iar cererea urmatoare il anuleaza.",
+      "item": [
+        {
+          "name": "Token CSRF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/csrf"
+          }
+        },
+        {
+          "name": "Login (proprietar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK, rol proprietar', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().utilizator.rol).to.eql('proprietar'); });",
+                  "if (pm.response.code === 200) pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"email\": \"{{emailProprietar}}\",\n  \"parola\": \"{{parolaProprietar}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Abonamentul meu (curent, programat, limite, planuri, istoric)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "// planul ales mai departe: Gratuit (downgrade fara plata); daca e deja pe Gratuit, cel mai ieftin plan platit",
+                  "const gratuit = d.planuri.find((p) => p.gratuit && p.id !== (d.curent && d.curent.plan_id));",
+                  "const platit = d.planuri.filter((p) => !p.gratuit).sort((a, b) => a.pret_lunar - b.pret_lunar)[0];",
+                  "pm.collectionVariables.set('idPlan', (gratuit || platit).id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/abonament"
+          }
+        },
+        {
+          "name": "Previzualizare (cat costa, de cand; nu schimba nimic)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('are tipul si suma de plata', () => { const d = pm.response.json(); pm.expect(d.tip).to.be.oneOf(['nou', 'upgrade', 'downgrade']); pm.expect(d.de_plata).to.be.a('number'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/abonament/previzualizare?plan={{idPlan}}&perioada=lunar"
+          }
+        },
+        {
+          "name": "Previzualizare cu perioada inventata (asteptat 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/proprietar/abonament/previzualizare?plan={{idPlan}}&perioada=saptamanal"
+          }
+        },
+        {
+          "name": "Schimba planul (plata simulata; \"pret\" trimis e ignorat)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('pretul e calculat de server, nu luat din cerere', () => pm.expect(pm.response.json().de_plata).to.not.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/abonament/schimba",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"plan\": {{idPlan}},\n  \"perioada\": \"lunar\",\n  \"pret\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Anuleaza schimbarea programata (204; daca nu e niciuna: 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 sau 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/proprietar/abonament/programat"
+          }
+        },
+        {
+          "name": "Iesire (logout)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -1384,6 +1596,10 @@
     },
     {
       "key": "idImagine",
+      "value": ""
+    },
+    {
+      "key": "idPlan",
       "value": ""
     }
   ]
