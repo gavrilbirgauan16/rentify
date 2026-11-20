@@ -88,6 +88,7 @@ class AbonamentAccessor {
   // Intoarce abonamentul nou sau null daca abonamentul curent s-a schimbat intre timp.
   async schimbaPlanul({ utilizatorId, curentId, tip, azi, abonamentNou, plata }) {
     return context.$transaction(async (tx) => {
+      await this.#blocheazaUtilizatorul(tx, utilizatorId);
       const ziua = catreDate(azi);
       const curente = await tx.abonament.findMany({
         where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { lte: ziua }, data_sfarsit: { gte: ziua } },
@@ -112,6 +113,7 @@ class AbonamentAccessor {
   // Intoarce cate s-au anulat.
   async anuleazaProgramate(utilizatorId, azi) {
     return context.$transaction(async (tx) => {
+      await this.#blocheazaUtilizatorul(tx, utilizatorId);
       const ziua = catreDate(azi);
       const anulate = await this.#anuleazaProgramateTx(tx, utilizatorId, ziua);
       if (anulate > 0) {
@@ -122,6 +124,14 @@ class AbonamentAccessor {
       }
       return anulate;
     });
+  }
+
+  // Blocheaza randul utilizatorului pana la finalul tranzactiei (SELECT ... FOR UPDATE). Fara asta, doua cereri
+  // trimise DEODATA (dublu-click, doua taburi) ar citi amandoua acelasi abonament curent si ar plati de doua ori.
+  // Cu blocarea, a doua asteapta, apoi vede abonamentul nou si e refuzata (curentId nu mai e acelasi).
+  // Blocam doar acel utilizator: ceilalti nu asteapta nimic. Valoarea e parametru (${}), nu text lipit -> fara SQL injection.
+  async #blocheazaUtilizatorul(tx, utilizatorId) {
+    await tx.$queryRaw`SELECT id FROM utilizator WHERE id = ${utilizatorId} FOR UPDATE`;
   }
 
   // In tranzactia data: anuleaza abonamentele programate si marcheaza platile lor ca rambursate
