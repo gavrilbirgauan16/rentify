@@ -3,7 +3,7 @@
 const AnuntAccessor = require('../src/NivelAccesDate/AnuntAccessor');
 const ProprietateAccessor = require('../src/NivelAccesDate/ProprietateAccessor');
 const AnuntViewModel = require('../models/AnuntViewModel');
-const { stergeFisiere, MAX_IMAGINI, MAX_MB } = require('../middleware/incarcareImagini');
+const { stergeFisiere, eroareImagini, MAX_IMAGINI, MAX_MB } = require('../middleware/incarcareImagini');
 const { citesteId, negasit, mesajFlash, adresaInapoi } = require('../utils/http');
 const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
 const F = require('../servicii/filtre');
@@ -91,16 +91,8 @@ async function dateFormular(proprietateActuala = null, stareActuala = null) {
   };
 }
 
-// Verificarile care tin de legatura cu proprietatea (le adauga peste erorile din model).
-function verificaProprietatea(model, listaProprietati, erori) {
-  if (!model.proprietate_id) return;
-  const aleasa = listaProprietati.find((p) => String(p.id) === String(model.proprietate_id));
-  if (!aleasa) {
-    erori.proprietate_id = 'Proprietatea aleasă nu există sau este inactivă.'; // cineva a trimis un id inventat
-  } else if (aleasa.stare === 'inactiv' && model.stare !== 'inactiv') {
-    erori.stare = 'Proprietatea este inactivă, deci anunțul poate fi doar Inactiv.';
-  }
-}
+// Verificarile care tin de legatura cu proprietatea: regula e in AnuntViewModel (comuna cu proprietarul si cu API-ul).
+const { verificaProprietatea } = AnuntViewModel;
 
 // Imaginile primite de la formular, in forma pentru baza de date.
 function imaginiIncarcate(req) {
@@ -113,16 +105,12 @@ function imaginiDeSters(req) {
 }
 
 // Verificarile pentru imagini: eroarea de la incarcare si numarul maxim pe anunt.
+// (Regula e in middleware/incarcareImagini.js -> eroareImagini, comuna cu proprietarul si cu API-ul.)
 function verificaImaginile(req, numarRamase, erori) {
-  if (req.eroareImagini) {
-    erori.imagini = req.eroareImagini;
-  } else if (numarRamase + req.files.length > MAX_IMAGINI) {
-    erori.imagini = `Un anunț poate avea cel mult ${MAX_IMAGINI} imagini.`;
-  }
-  // Daca formularul are erori, imaginile alese trebuie selectate din nou (browserul nu le pastreaza).
-  if (Object.keys(erori).length > 0 && req.files.length > 0 && !erori.imagini) {
-    erori.imagini = 'Formularul are erori: alege din nou imaginile.';
-  }
+  const eroare = eroareImagini({
+    eroareIncarcare: req.eroareImagini, numarNoi: req.files.length, numarRamase, alteErori: Object.keys(erori).length > 0,
+  });
+  if (eroare) erori.imagini = eroare;
 }
 
 // GET /admin/anunturi - lista anunturilor, cu date din anunt, proprietate, proprietar si imagini

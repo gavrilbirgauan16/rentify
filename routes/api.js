@@ -10,6 +10,9 @@ const auth = require('../controllers/api/AutentificareApiController');
 const chirias = require('../controllers/api/ChiriasApiController');
 const conturi = require('../controllers/api/ConturiApiController');
 const cont = require('../controllers/api/ContApiController');
+const proprietati = require('../controllers/api/ProprietatiApiController');
+const anunturiProprietar = require('../controllers/api/AnunturiProprietarApiController');
+const { incarcaImagini } = require('../middleware/incarcareImagini');
 const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
@@ -75,6 +78,26 @@ router.post('/anunturi/:id/contact', doarChirias, chirias.contact);
 router.get('/favorite', doarChirias, chirias.listaFavorite);
 router.post('/favorite/:id', doarChirias, chirias.adaugaFavorit);
 router.delete('/favorite/:id', doarChirias, chirias.stergeFavorit);
+
+// Proprietarul conectat: proprietatile lui (limita din plan, doar ale lui).
+const doarProprietar = [cereAutentificareApi, cereRolApi('proprietar')];
+router.get('/proprietar/proprietati', doarProprietar, proprietati.lista);
+router.get('/proprietar/proprietati/:id', doarProprietar, proprietati.una);
+router.post('/proprietar/proprietati', doarProprietar, proprietati.adauga);
+router.put('/proprietar/proprietati/:id', doarProprietar, proprietati.modifica);
+router.post('/proprietar/proprietati/:id/dezactiveaza', doarProprietar, proprietati.dezactiveaza);
+router.post('/proprietar/proprietati/:id/activeaza', doarProprietar, proprietati.activeaza);
+
+// Proprietarul conectat: anunturile lui (limita, moderarea, doar pe proprietatile lui).
+router.get('/proprietar/anunturi', doarProprietar, anunturiProprietar.lista);
+router.get('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.unul);
+router.post('/proprietar/anunturi', doarProprietar, anunturiProprietar.adauga);
+router.put('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.modifica);
+router.post('/proprietar/anunturi/:id/publica', doarProprietar, anunturiProprietar.publica);
+router.post('/proprietar/anunturi/:id/retrage', doarProprietar, anunturiProprietar.retrage);
+// Pozele: intai rolul (cine nu e proprietar nu poate urca nimic), apoi incarcarea si verificarea fisierelor.
+router.post('/proprietar/anunturi/:id/imagini', doarProprietar, incarcaImagini, anunturiProprietar.adaugaImagini);
+router.delete('/proprietar/anunturi/:id/imagini/:idImagine', doarProprietar, anunturiProprietar.stergeImagine);
 
 // Orice alta adresa din /api: raspuns JSON, nu pagina HTML.
 router.use((req, res) => res.status(404).json({ eroare: 'Adresa API nu există.' }));

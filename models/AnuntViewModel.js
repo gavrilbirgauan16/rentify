@@ -210,6 +210,18 @@ class AnuntViewModel {
 AnuntViewModel.TIPURI = TIPURI;
 AnuntViewModel.STARI = STARI;
 AnuntViewModel.STARI_FORMULAR = STARI_FORMULAR;
+
+// Validarea legaturii cu proprietatea (se adauga peste erorile din valideaza()): proprietatea aleasa trebuie sa fie
+// in lista permisa (la proprietar: doar ale lui si active), iar pe o proprietate inactiva anuntul poate fi doar Inactiv.
+AnuntViewModel.verificaProprietatea = function verificaProprietatea(model, listaProprietati, erori) {
+  if (!model.proprietate_id) return;
+  const aleasa = listaProprietati.find((p) => String(p.id) === String(model.proprietate_id));
+  if (!aleasa) {
+    erori.proprietate_id = 'Proprietatea aleasă nu există sau este inactivă.'; // cineva a trimis un id inventat / al altcuiva
+  } else if (aleasa.stare === 'inactiv' && model.stare !== 'inactiv') {
+    erori.stare = 'Proprietatea este inactivă, deci anunțul poate fi doar Inactiv.';
+  }
+};
 AnuntViewModel.MONEDE = MONEDE;
 AnuntViewModel.ETICHETE_TIP = ETICHETE_TIP;
 AnuntViewModel.ETICHETE_STARE = ETICHETE_STARE;

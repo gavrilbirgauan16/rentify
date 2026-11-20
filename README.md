@@ -103,13 +103,20 @@ iar interfața din browser folosește contul conectat (cookie de sesiune) și to
 | GET, PUT | `/api/cont` | contul conectat: profilul (prenume, nume, telefon, oraș) |
 | POST | `/api/cont/parola` | schimbarea parolei (cu parola curentă); închide celelalte sesiuni; merge și cu parola temporară de la admin |
 | POST | `/api/cont/email`, `/api/cont/email/confirmare` | schimbarea emailului: link pe adresa nouă, apoi confirmarea lui |
+| GET, POST | `/api/proprietar/proprietati` | proprietar: proprietățile lui (cu limita din plan) / proprietate nouă |
+| GET, PUT | `/api/proprietar/proprietati/:id` | proprietar: o proprietate a lui |
+| POST | `/api/proprietar/proprietati/:id/dezactiveaza`, `.../activeaza` | proprietar: scoate din uz (și anunțurile ei) / repune în uz, dacă planul permite |
+| GET, POST | `/api/proprietar/anunturi` | proprietar: anunțurile lui (starea, motivul respingerii, pozele) / anunț nou |
+| GET, PUT | `/api/proprietar/anunturi/:id` | proprietar: un anunț al lui; o schimbare de conținut a unui anunț aprobat cere reaprobare |
+| POST | `/api/proprietar/anunturi/:id/publica`, `.../retrage` | proprietar: trimite spre aprobare (sau republică direct) / scoate de pe site |
+| POST, DELETE | `/api/proprietar/anunturi/:id/imagini`, `.../imagini/:idImagine` | proprietar: pozele (multipart, câmpul `imagini`, maxim 6, verificate după conținut) |
 | GET | `/api/contactari` | chiriaș: câte contactări mai are luna asta |
 | POST | `/api/anunturi/:id/contact` | chiriaș: telefonul proprietarului (consumă o contactare din plan) |
 | GET, POST, DELETE | `/api/favorite`, `/api/favorite/:id` | chiriaș: favoritele |
 
 Filtrele căutării: `q`, `oras`, `tip`, `pret_min`, `pret_max`, `camere_min`, `persoane`, `sort` (`noi`, `pret_asc`, `pret_desc`), `pagina`, `pe_pagina`.
 
-Colecția Postman: `docs/Rentify-API.postman_collection.json`. În tab-ul Variables, `apiKey`, `emailChirias` și `parolaChirias` se completează doar la Current value.
+Colecția Postman: `docs/Rentify-API.postman_collection.json`. În tab-ul Variables, `apiKey`, `emailChirias`, `parolaChirias`, `emailProprietar` și `parolaProprietar` se completează doar la Current value.
 
 ## Structura
 
