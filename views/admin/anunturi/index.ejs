@@ -1,6 +1,6 @@
 <%- include('../../partials/header', { titluPagina: 'Anunțuri' }) %>
 <%
-  const avansate = filtre.proprietar || filtre.pret_min !== '' || filtre.pret_max !== '' || filtre.promovat || filtre.problema;
+  const avansate = filtre.proprietar || filtre.pret_min !== '' || filtre.pret_max !== '' || filtre.promovat || filtre.problema || filtre.sterse;
   const sortari = { noi: 'Cele mai noi', vechi: 'Cele mai vechi', pret_asc: 'Preț crescător', pret_desc: 'Preț descrescător', titlu: 'Titlu (A–Z)' };
 %>
 
@@ -86,6 +86,13 @@
           <option value="fara_disponibilitate" <%= filtre.problema === 'fara_disponibilitate' ? 'selected' : '' %>>Fără dată de disponibilitate</option>
         </select>
       </div>
+      <div class="col-6 col-md-6 col-lg-3">
+        <label for="sterse" class="form-label">Afișează</label>
+        <select class="form-select" id="sterse" name="sterse">
+          <option value="">Anunțurile existente</option>
+          <option value="da" <%= filtre.sterse === 'da' ? 'selected' : '' %>>Doar cele șterse</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -99,7 +106,9 @@
 <%- include('../../partials/_rezultate', { singular: 'anunț', plural: 'anunțuri' }) %>
 
 <% if (anunturi.length === 0) { %>
-  <div class="card card-body text-center text-body-secondary"><%= areFiltre ? 'Niciun anunț nu se potrivește filtrelor.' : 'Nu există încă niciun anunț.' %></div>
+  <div class="card card-body text-center text-body-secondary"><%= filtre.sterse ? 'Nu există anunțuri șterse care să se potrivească filtrelor.' : areFiltre ? 'Niciun anunț nu se potrivește filtrelor.' : 'Nu există încă niciun anunț.' %></div>
+<% } else if (filtre.sterse) { %>
+  <%- include('_lista_sterse', { anunturi: anunturi }) %>
 <% } else { %>
 
   <!-- Laptop si monitor: tabel -->

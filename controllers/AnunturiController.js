@@ -33,6 +33,7 @@ const FILTRE = {
   pret_max: { tip: 'numar' },
   promovat: { tip: 'enum', valori: ['da', 'nu'] },
   problema: { tip: 'enum', valori: ['proprietate_inactiva', 'fara_disponibilitate'] },
+  sterse: { tip: 'enum', valori: ['da'] }, // stergerea logica: "da" = DOAR anunturile sterse (de restaurat)
   sort: { tip: 'enum', valori: ['noi', 'vechi', 'pret_asc', 'pret_desc', 'titlu'], implicit: 'noi' },
 };
 const SORTARI = {
@@ -117,9 +118,10 @@ function verificaImaginile(req, numarRamase, erori) {
 async function index(req, res) {
   const f = F.citesteFiltre(req.query, FILTRE);
   const where = conditie(f);
-  const pag = F.paginare(await anunturi.numara(where), f.pagina, PE_PAGINA);
+  const sterse = { sterse: f.sterse === 'da' }; // implicit lista NU contine anunturile sterse
+  const pag = F.paginare(await anunturi.numara(where, sterse), f.pagina, PE_PAGINA);
   const [entitati, orase, proprietari, proprietateAleasa] = await Promise.all([
-    anunturi.getPagina(where, SORTARI[f.sort], pag),
+    anunturi.getPagina(where, SORTARI[f.sort], pag, sterse),
     proprietati.getOrase(),
     utilizatori.getByRol('proprietar'),
     f.proprietate ? proprietati.getById(f.proprietate) : null,
@@ -323,8 +325,22 @@ async function respinge(req, res) {
   res.redirect(`/admin/anunturi/${id}`);
 }
 
+// POST /admin/anunturi/:id/restaureaza - readuce un anunt sters logic, ca CIORNA (proprietarul il verifica si
+// il trimite din nou spre aprobare). Doar adminul poate restaura; actiunea se scrie in jurnal.
+async function restaureaza(req, res) {
+  const id = citesteId(req);
+  const anunt = id && (await anunturi.restaureaza(id));
+  if (!anunt) {
+    mesajFlash(req, 'Anunțul nu mai este printre cele șterse (poate a fost deja restaurat).', 'warning');
+    return res.redirect('/admin/anunturi?sterse=da');
+  }
+  await noteaza(res, 'restaurare', 'anunt', id, anunt.titlu);
+  mesajFlash(req, `Anunțul „${anunt.titlu}” a fost restaurat ca ciornă. Proprietarul îl poate trimite din nou spre aprobare.`);
+  res.redirect(inapoi(req));
+}
+
 module.exports = {
-  index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, aproba, respinge,
+  index, details, createGet, createPost, editGet, editPost, activeaza, dezactiveaza, aproba, respinge, restaureaza,
   // Folosite si de API si de zona proprietarului (aceleasi reguli, scrise o singura data).
   verificaProprietatea, imaginiIncarcate, imaginiDeSters, verificaImaginile,
 };

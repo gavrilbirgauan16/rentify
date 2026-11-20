@@ -21,5 +21,6 @@ router.post('/:id/activeaza', controller.activeaza);
 router.post('/:id/dezactiveaza', controller.dezactiveaza);
 router.post('/:id/aproba', controller.aproba);     // moderarea: anuntul in asteptare devine activ
 router.post('/:id/respinge', controller.respinge); // moderarea: cu motiv obligatoriu
+router.post('/:id/restaureaza', controller.restaureaza); // stergerea logica: readuce un anunt sters (ca ciorna)
 
 module.exports = router;
