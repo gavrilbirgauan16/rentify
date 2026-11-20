@@ -12,6 +12,7 @@ const conturi = require('../controllers/api/ConturiApiController');
 const cont = require('../controllers/api/ContApiController');
 const proprietati = require('../controllers/api/ProprietatiApiController');
 const anunturiProprietar = require('../controllers/api/AnunturiProprietarApiController');
+const abonament = require('../controllers/api/AbonamentApiController');
 const { incarcaImagini } = require('../middleware/incarcareImagini');
 const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
@@ -98,6 +99,13 @@ router.post('/proprietar/anunturi/:id/retrage', doarProprietar, anunturiPropriet
 // Pozele: intai rolul (cine nu e proprietar nu poate urca nimic), apoi incarcarea si verificarea fisierelor.
 router.post('/proprietar/anunturi/:id/imagini', doarProprietar, incarcaImagini, anunturiProprietar.adaugaImagini);
 router.delete('/proprietar/anunturi/:id/imagini/:idImagine', doarProprietar, anunturiProprietar.stergeImagine);
+
+// Abonamentul proprietarului: situatia, previzualizarea pretului, schimbarea (plata simulata), renuntarea la cea programata.
+const limitaPlati = limita(15, 20); // cineva care apasa "Plateste" la nesfarsit (sau un script)
+router.get('/proprietar/abonament', doarProprietar, abonament.situatie);
+router.get('/proprietar/abonament/previzualizare', doarProprietar, abonament.previzualizare);
+router.post('/proprietar/abonament/schimba', doarProprietar, limitaPlati, abonament.schimba);
+router.delete('/proprietar/abonament/programat', doarProprietar, abonament.anuleazaProgramat);
 
 // Orice alta adresa din /api: raspuns JSON, nu pagina HTML.
 router.use((req, res) => res.status(404).json({ eroare: 'Adresa API nu există.' }));
