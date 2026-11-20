@@ -64,7 +64,8 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 - **Abonamentul meu**: planul curent, cât s-a folosit din limite, istoricul și schimbarea planului:
   - **upgrade** - începe imediat; zilele plătite și nefolosite se scad din preț (credit proporțional, rotunjit în jos);
   - **downgrade** - începe după ce se termină perioada plătită; se poate renunța la el, cu rambursare;
-  - plata este **simulată** (nu se cer date de card); prețul se recalculează mereu pe server.
+  - plata este **simulată** (nu se cer date de card); prețul se recalculează mereu pe server;
+  - două plăți trimise deodată (dublu-click, două ferestre) nu trec amândouă: schimbarea blochează contul până se termină.
 
 ## Moderarea anunțurilor
 
@@ -110,6 +111,10 @@ iar interfața din browser folosește contul conectat (cookie de sesiune) și to
 | GET, PUT | `/api/proprietar/anunturi/:id` | proprietar: un anunț al lui; o schimbare de conținut a unui anunț aprobat cere reaprobare |
 | POST | `/api/proprietar/anunturi/:id/publica`, `.../retrage` | proprietar: trimite spre aprobare (sau republică direct) / scoate de pe site |
 | POST, DELETE | `/api/proprietar/anunturi/:id/imagini`, `.../imagini/:idImagine` | proprietar: pozele (multipart, câmpul `imagini`, maxim 6, verificate după conținut) |
+| GET | `/api/proprietar/abonament` | proprietar: abonamentul curent, schimbarea programată, limitele folosite, planurile, istoricul |
+| GET | `/api/proprietar/abonament/previzualizare?plan=&perioada=` | proprietar: cât costă schimbarea și de când (nu schimbă nimic) |
+| POST | `/api/proprietar/abonament/schimba` | proprietar: schimbă planul (`plan`, `perioada`), cu plată simulată; prețul îl calculează serverul; 409 dacă abonamentul s-a schimbat între timp |
+| DELETE | `/api/proprietar/abonament/programat` | proprietar: renunță la schimbarea programată (plata ei se rambursează) |
 | GET | `/api/contactari` | chiriaș: câte contactări mai are luna asta |
 | POST | `/api/anunturi/:id/contact` | chiriaș: telefonul proprietarului (consumă o contactare din plan) |
 | GET, POST, DELETE | `/api/favorite`, `/api/favorite/:id` | chiriaș: favoritele |
