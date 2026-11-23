@@ -15,6 +15,8 @@ import PaginaAnunt from './pagini/PaginaAnunt.jsx';
 import ParolaUitata from './pagini/cont/ParolaUitata.jsx';
 import ResetareParola from './pagini/cont/ResetareParola.jsx';
 import ConfirmareCont from './pagini/cont/ConfirmareCont.jsx';
+import ConfirmareEmail from './pagini/cont/ConfirmareEmail.jsx';
+import ContulMeu from './pagini/cont/ContulMeu.jsx';
 import RutaProtejata from './componente/RutaProtejata.jsx';
 import ZonaProprietar from './pagini/proprietar/ZonaProprietar.jsx';
 import AnunturileMele from './pagini/proprietar/AnunturileMele.jsx';
@@ -44,6 +46,12 @@ const router = createBrowserRouter([
           { path: 'parola-uitata', Component: ParolaUitata },
           { path: 'resetare/:token', Component: ResetareParola },
           { path: 'confirmare/:token', Component: ConfirmareCont },
+          { path: 'cont/email/confirmare/:token', Component: ConfirmareEmail }, // merge si fara sa fii conectat
+          {
+            // "Contul meu": orice cont conectat (chirias, proprietar, admin)
+            element: <RutaProtejata />,
+            children: [{ path: 'cont', Component: ContulMeu }],
+          },
           {
             // Zona proprietarului: doar pentru conturile de proprietar (altfel -> "Intra in cont").
             element: <RutaProtejata rol="proprietar" />,
