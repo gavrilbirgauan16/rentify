@@ -1,8 +1,6 @@
 // Metode de acces la date pentru abonamente si platile lor (tabelele abonament si plata_abonament).
 // Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
 // laboratorul 10), de la containerul din infrastructura/container.js.
-// TEMPORAR: pana cand nimeni nu mai creeaza accesori cu "new" (pasul 4), constructorul are o valoare implicita.
-const contextImplicit = require('../Repository_CodeFirst/context');
 const { catreDate } = require('../../servicii/date');
 
 // Ce aducem mereu impreuna cu un abonament: cine il are (fara parola!), ce plan si platile.
@@ -14,7 +12,7 @@ const CU_DETALII = {
 
 class AbonamentAccessor {
   // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
-  constructor({ context = contextImplicit } = {}) {
+  constructor({ context }) {
     this.context = context;
   }
 
