@@ -6,6 +6,9 @@ node_modules/
 # Setarile pentru testele de integrare (contin parola bazei de date) - doar exemplul .env.test.example merge in Git
 .env.test
 
+# Interfata React impachetata (npm run build in client/) - se reface oricand din cod
+client/dist/
+
 # Imaginile incarcate de utilizatori (sunt date, nu cod)
 uploads/
 

@@ -1,6 +1,7 @@
 # Verificare automata (CI = Continuous Integration).
 # La fiecare "git push" si la fiecare Pull Request, GitHub instaleaza proiectul pe un calculator curat,
-# verifica stilul codului (ESLint) si ruleaza testele. Rezultatul apare ca ✅ sau ❌ langa commit.
+# verifica stilul codului (ESLint), construieste interfata React si ruleaza testele.
+# Rezultatul apare ca ✅ sau ❌ langa commit.
 name: Teste
 
 on:
@@ -38,6 +39,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          # doua proiecte npm (serverul si interfata React), deci doua liste de pachete de tinut minte
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
 
       - name: Instaleaza pachetele (exact versiunile din package-lock.json)
         run: npm ci
@@ -52,6 +57,14 @@ jobs:
 
       - name: Ruleaza testele unitare
         run: npm test
+
+      # Interfata React (client/) are pachetele ei. "build" o impacheteaza pentru publicare: daca un fisier
+      # are o greseala care o opreste (import gresit, sintaxa), CI-ul devine rosu.
+      - name: Instaleaza pachetele interfetei React
+        run: npm ci --prefix client
+
+      - name: Construieste interfata React
+        run: npm run build --prefix client
 
       # Testele de integrare: API-ul cu baza reala (cea temporara de mai sus). Scriptul reface baza din migrari,
       # apoi ruleaza test/integrare/. Setarile de mai jos sunt doar pentru teste, nu secrete reale.
