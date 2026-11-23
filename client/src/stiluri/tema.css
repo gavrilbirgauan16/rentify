@@ -701,6 +701,27 @@ select.intrare {
 }
 .sari-la-continut:focus { top: 12px; }
 
+/* ---------- Paginile scurte ale contului (parola uitata, resetare, confirmare) ---------- */
+/* Acelasi aspect ca fata cardului "Intra in cont": utilizatorul simte ca e in acelasi loc */
+.pagina-simpla { display: grid; place-items: center; padding: 48px 0 72px; }
+.card-simplu {
+  width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: 24px; box-shadow: var(--umbra-mare); padding: 28px;
+}
+.card-simplu.card-schelet { min-height: 320px; }
+.card-simplu .titlu-card { text-align: center; }
+.card-simplu .titlu-card h1 { font-size: 1.55rem; margin-bottom: .15em; }
+.card-simplu .titlu-card p { margin: 0; color: var(--text-secundar); font-size: .92rem; }
+.card-simplu .iconita-mare { font-size: 2.6rem; margin-bottom: 8px; }
+.card-simplu .nota { text-align: center; }
+.card-simplu .schimba { text-align: center; color: var(--text-secundar); font-size: .9rem; margin: 0; }
+.card-simplu .schimba a, .card-simplu .alerta a { font-weight: 700; color: var(--principal); }
+.card-simplu > .buton { text-align: center; text-decoration: none; }
+.formular-simplu { display: flex; flex-direction: column; gap: 12px; }
+
+/* "Ai uitat parola?" - mic, aliniat la dreapta sub parola (cardul de intrare trebuie sa incapa fara derulare) */
+.link-uitat { align-self: flex-end; margin-top: -4px; font-size: .85rem; font-weight: 600; color: var(--principal); text-underline-offset: 3px; }
+
 /* ---------- Abonamentul meu ---------- */
 /* Text citit doar de cititoarele de ecran (ex. "Inclus:" langa bifa), ascuns vizual */
 .ascuns-vizual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

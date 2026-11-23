@@ -43,7 +43,7 @@ function RetrimiteConfirmarea({ email }) {
     : <button className="buton buton-moale buton-lat" type="button" onClick={retrimite} disabled={seTrimite}>{seTrimite ? 'Se trimite…' : 'Trimite din nou linkul de confirmare'}</button>;
 }
 
-function FormularIntrare({ ascuns, laSchimbare, destinatie }) {
+function FormularIntrare({ ascuns, laSchimbare, destinatie, mesaj }) {
   const { conecteaza } = useSesiune();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -69,6 +69,8 @@ function FormularIntrare({ ascuns, laSchimbare, destinatie }) {
   return (
     <form className="fata" inert={ascuns} onSubmit={trimite}>
       <div className="titlu-card"><h1>Bine ai revenit</h1><p>Intră în contul tău Rentify.</p></div>
+      {/* ex. dupa resetarea parolei: "Parola a fost schimbata. Conecteaza-te cu parola noua." */}
+      {mesaj && !eroare && <div className="alerta alerta-succes" role="status">{mesaj}</div>}
       {eroare && (
         <div className="alerta alerta-eroare" role="alert">
           <span>{eroare.message}</span>
@@ -78,6 +80,8 @@ function FormularIntrare({ ascuns, laSchimbare, destinatie }) {
       )}
       <Camp eticheta="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email (nume@exemplu.ro)" />
       <CampParola eticheta="Parolă" autoComplete="current-password" required value={parola} onChange={(e) => setParola(e.target.value)} placeholder="Parola" />
+      {/* emailul deja scris merge mai departe, ca sa nu-l scrie a doua oara */}
+      <Link className="link-uitat" to="/parola-uitata" state={{ email: email.trim() }}>Ai uitat parola?</Link>
       <button className="buton buton-principal buton-lat" type="submit" disabled={seTrimite}>{seTrimite ? 'Se verifică…' : 'Intră în cont'}</button>
       <p className="schimba">Nu ai cont? <button type="button" onClick={laSchimbare}>Creează unul</button></p>
     </form>
@@ -268,7 +272,8 @@ export default function PaginaCont() {
     return <Navigate to={state?.de || paginaDeStart(utilizator)} replace />;
   }
 
-  const schimba = () => navigate(intors ? '/intrare' : '/inregistrare', { state });
+  // la intoarcerea cardului pastram doar unde voia sa ajunga (nu si mesajul verde, care era pentru intrare)
+  const schimba = () => navigate(intors ? '/intrare' : '/inregistrare', { state: state?.de ? { de: state.de } : null });
 
   return (
     <div className="pagina-cont">
@@ -283,7 +288,7 @@ export default function PaginaCont() {
       </section>
       <div className="card-cont" ref={card}>
         <div className={`interior${intors ? ' intors' : ''}${seIntoarce ? ' se-intoarce' : ''}`}>
-          <FormularIntrare ascuns={intors} laSchimbare={schimba} destinatie={state?.de} />
+          <FormularIntrare ascuns={intors} laSchimbare={schimba} destinatie={state?.de} mesaj={state?.mesaj} />
           <FormularCreare ascuns={!intors} laSchimbare={schimba} />
         </div>
       </div>

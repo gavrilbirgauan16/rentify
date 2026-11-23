@@ -12,6 +12,9 @@ import NuExista from './pagini/NuExista.jsx';
 import PaginaCont from './pagini/PaginaCont.jsx';
 import Cautare from './pagini/Cautare.jsx';
 import PaginaAnunt from './pagini/PaginaAnunt.jsx';
+import ParolaUitata from './pagini/cont/ParolaUitata.jsx';
+import ResetareParola from './pagini/cont/ResetareParola.jsx';
+import ConfirmareCont from './pagini/cont/ConfirmareCont.jsx';
 import RutaProtejata from './componente/RutaProtejata.jsx';
 import ZonaProprietar from './pagini/proprietar/ZonaProprietar.jsx';
 import AnunturileMele from './pagini/proprietar/AnunturileMele.jsx';
@@ -37,6 +40,10 @@ const router = createBrowserRouter([
             Component: PaginaCont,
             children: [{ path: 'intrare' }, { path: 'inregistrare' }],
           },
+          // Paginile deschise din linkurile primite pe email (adresele sunt cele din servicii/emailuri.js)
+          { path: 'parola-uitata', Component: ParolaUitata },
+          { path: 'resetare/:token', Component: ResetareParola },
+          { path: 'confirmare/:token', Component: ConfirmareCont },
           {
             // Zona proprietarului: doar pentru conturile de proprietar (altfel -> "Intra in cont").
             element: <RutaProtejata rol="proprietar" />,
