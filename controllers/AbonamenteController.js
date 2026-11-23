@@ -9,7 +9,6 @@ const { citesteId, negasit, mesajFlash } = require('../utils/http');
 const F = require('../servicii/filtre');
 const D = require('../servicii/date');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
-const { noteaza } = require('../servicii/jurnal');
 
 const abonamente = new AbonamentAccessor();
 const planuri = new PlanAccessor();
@@ -131,7 +130,7 @@ async function createPost(req, res) {
   // Plata pe loc are sens doar daca planul costa ceva.
   const plata = model.plata_acum && model.pret > 0 ? { suma: model.pret, metoda: model.metoda } : null;
   const nou = await abonamente.addEntity(model.catreEntitate(), plata);
-  await noteaza(res, 'creare', 'abonament', nou.id, `${u.prenume} ${u.nume} – ${plan.nume}, ${model.perioadaAfisata.toLowerCase()}, ${model.pretAfisat}${plata ? ', plătit' : ''}`);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'creare', 'abonament', nou.id, `${u.prenume} ${u.nume} – ${plan.nume}, ${model.perioadaAfisata.toLowerCase()}, ${model.pretAfisat}${plata ? ', plătit' : ''}`);
   mesajFlash(req, `Abonamentul „${plan.nume}” pentru ${u.prenume} ${u.nume} a fost creat.`);
   res.redirect(`/admin/abonamente/${nou.id}`);
 }
@@ -150,7 +149,7 @@ async function plataPost(req, res) {
   if (Object.keys(erori).length > 0) return details(req, res, erori, req.body);
 
   await abonamente.adaugaPlata(id, plata);
-  await noteaza(res, 'plata', 'abonament', id, `${AbonamentViewModel.lei(plata.suma)} (${AbonamentViewModel.METODE[plata.metoda].toLowerCase()})`);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'plata', 'abonament', id, `${AbonamentViewModel.lei(plata.suma)} (${AbonamentViewModel.METODE[plata.metoda].toLowerCase()})`);
   mesajFlash(req, `Plata de ${AbonamentViewModel.lei(plata.suma)} a fost înregistrată.`);
   res.redirect(`/admin/abonamente/${id}`);
 }
@@ -165,7 +164,7 @@ async function anuleaza(req, res) {
     mesajFlash(req, 'Abonamentul nu mai poate fi anulat (este deja anulat sau expirat).', 'warning');
   } else {
     await abonamente.anuleaza(id);
-    await noteaza(res, 'anulare', 'abonament', id, `${a.utilizator_nume} – ${a.plan_nume}`);
+    await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'anulare', 'abonament', id, `${a.utilizator_nume} – ${a.plan_nume}`);
     mesajFlash(req, `Abonamentul lui ${a.utilizator_nume} a fost anulat. Istoricul plăților rămâne păstrat.`);
   }
   res.redirect(`/admin/abonamente/${id}`);

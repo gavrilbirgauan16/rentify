@@ -8,7 +8,6 @@ const { citesteId, negasit, mesajFlash, adresaInapoi } = require('../utils/http'
 const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
 const F = require('../servicii/filtre');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
-const { noteaza } = require('../servicii/jurnal');
 const { valideazaMotiv, amprentaContinut } = require('../servicii/moderare');
 const emailuri = require('../servicii/emailuri');
 const { trimite } = require('../servicii/email');
@@ -183,7 +182,7 @@ async function createPost(req, res) {
   // Adminul e moderatorul: un anunt pus de el "Activ" e si aprobat.
   const deSalvat = model.catreEntitate();
   const nou = await anunturi.addEntity({ ...deSalvat, aprobat_la: deSalvat.stare === 'activ' ? new Date() : null }, imagini, res.locals.utilizator.id);
-  await noteaza(res, 'creare', 'anunt', nou.id, nou.titlu);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'creare', 'anunt', nou.id, nou.titlu);
   mesajFlash(req, `Anunțul „${nou.titlu}” a fost adăugat.`);
   res.redirect('/admin/anunturi'); // Post/Redirect/Get
 }
@@ -233,7 +232,7 @@ async function editPost(req, res) {
   deSalvat.aprobat_la = deSalvat.stare === 'activ' ? (entitate.aprobat_la ?? new Date()) : entitate.aprobat_la;
   const { caiSterse } = await anunturi.updateEntity(id, deSalvat, imaginiNoi, deSters, res.locals.utilizator.id);
   stergeFisiere(caiSterse); // imaginile sterse dispar si de pe disc
-  await noteaza(res, 'modificare', 'anunt', id, model.titlu);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'modificare', 'anunt', id, model.titlu);
   mesajFlash(req, `Anunțul „${model.titlu}” a fost modificat.`);
   res.redirect('/admin/anunturi');
 }
@@ -253,7 +252,7 @@ async function activeaza(req, res) {
     return res.redirect(inapoi(req));
   }
   await anunturi.schimbaStare(id, 'activ', { aprobat_la: entitate.aprobat_la ?? new Date() }); // adminul activeaza = aproba
-  await noteaza(res, 'activare', 'anunt', id, entitate.titlu);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'activare', 'anunt', id, entitate.titlu);
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost activat.`);
   res.redirect(inapoi(req));
 }
@@ -264,7 +263,7 @@ async function dezactiveaza(req, res) {
   const entitate = id && (await anunturi.getById(id));
   if (!entitate) return anuntNegasit(res);
   await anunturi.schimbaStare(id, 'inactiv');
-  await noteaza(res, 'dezactivare', 'anunt', id, entitate.titlu);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'dezactivare', 'anunt', id, entitate.titlu);
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost dezactivat.`);
   res.redirect(inapoi(req));
 }
@@ -299,7 +298,7 @@ async function aproba(req, res) {
     mesajFlash(req, 'Anunțul nu mai așteaptă aprobarea (poate a fost deja aprobat sau retras de proprietar).', 'warning');
     return res.redirect(inapoi(req));
   }
-  await noteaza(res, 'aprobare', 'anunt', id, entitate.titlu);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'aprobare', 'anunt', id, entitate.titlu);
   await anuntaProprietarul(entitate, emailuri.anuntAprobat(entitate.proprietate.utilizator, entitate.titlu));
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost aprobat și apare pe site. Proprietarul a fost anunțat pe email.`);
   res.redirect(inapoi(req));
@@ -319,7 +318,7 @@ async function respinge(req, res) {
     mesajFlash(req, 'Doar un anunț în așteptare sau activ poate fi respins.', 'warning');
     return res.redirect(`/admin/anunturi/${id}`);
   }
-  await noteaza(res, 'respingere', 'anunt', id, `${entitate.titlu} – motiv: ${motiv}`);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'respingere', 'anunt', id, `${entitate.titlu} – motiv: ${motiv}`);
   await anuntaProprietarul(entitate, emailuri.anuntRespins(entitate.proprietate.utilizator, entitate.titlu, motiv));
   mesajFlash(req, `Anunțul „${entitate.titlu}” a fost respins. Proprietarul a primit motivul pe email.`);
   res.redirect(`/admin/anunturi/${id}`);
@@ -334,7 +333,7 @@ async function restaureaza(req, res) {
     mesajFlash(req, 'Anunțul nu mai este printre cele șterse (poate a fost deja restaurat).', 'warning');
     return res.redirect('/admin/anunturi?sterse=da');
   }
-  await noteaza(res, 'restaurare', 'anunt', id, anunt.titlu);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'restaurare', 'anunt', id, anunt.titlu);
   mesajFlash(req, `Anunțul „${anunt.titlu}” a fost restaurat ca ciornă. Proprietarul îl poate trimite din nou spre aprobare.`);
   res.redirect(inapoi(req));
 }

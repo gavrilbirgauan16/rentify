@@ -9,7 +9,6 @@ const { citesteId, negasit, mesajFlash } = require('../utils/http');
 const F = require('../servicii/filtre');
 const { azi } = require('../servicii/date');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
-const { noteaza } = require('../servicii/jurnal');
 
 const utilizatori = new UtilizatorAccessor();
 const abonamente = new AbonamentAccessor();
@@ -108,7 +107,7 @@ async function schimbaStare(req, res, stare) {
   if (!u) return;
   if (u.stare !== stare) {
     await utilizatori.schimbaStare(u.id, stare);
-    await noteaza(res, stare === 'blocat' ? 'blocare' : 'deblocare', 'utilizator', u.id, u.numeComplet);
+    await req.container.cradle.jurnal.noteaza(res.locals.utilizator, stare === 'blocat' ? 'blocare' : 'deblocare', 'utilizator', u.id, u.numeComplet);
     mesajFlash(req, stare === 'blocat'
       ? `Contul lui ${u.numeComplet} a fost blocat. Dacă era conectat, este deconectat imediat.`
       : `Contul lui ${u.numeComplet} a fost deblocat.`);
@@ -125,7 +124,7 @@ async function reseteazaParola(req, res) {
   const parola = genereazaParolaTemporara();
   await utilizatori.seteazaParola(u.id, await hashParola(parola), { temporara: true });
   await utilizatori.inchideSesiunile(u.id);
-  await noteaza(res, 'resetare_parola', 'utilizator', u.id, u.numeComplet); // parola NU se scrie in jurnal
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'resetare_parola', 'utilizator', u.id, u.numeComplet); // parola NU se scrie in jurnal
 
   // Parola NU se pune in mesajul flash (care se salveaza in sesiune, in baza de date):
   // o afisam direct, in raspuns, si cerem browserului sa nu pastreze pagina.
@@ -148,7 +147,7 @@ async function trimiteLinkParola(req, res) {
     mesajFlash(req, 'Emailul nu a putut fi trimis (verifică setările SMTP). Poți folosi parola temporară.', 'warning');
     return res.redirect(`/admin/utilizatori/${u.id}`);
   }
-  await noteaza(res, 'link_resetare', 'utilizator', u.id, u.numeComplet);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'link_resetare', 'utilizator', u.id, u.numeComplet);
   mesajFlash(req, `I-am trimis lui ${u.numeComplet} un link de resetare pe ${u.email} (valabil o oră).`);
   res.redirect(`/admin/utilizatori/${u.id}`);
 }
@@ -162,7 +161,7 @@ async function retrimiteConfirmare(req, res) {
     return res.redirect(`/admin/utilizatori/${u.id}`);
   }
   await req.container.cradle.conturi.trimiteConfirmarea(u); // TEMPORAR (pana la pasul 3)
-  await noteaza(res, 'link_confirmare', 'utilizator', u.id, u.numeComplet);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'link_confirmare', 'utilizator', u.id, u.numeComplet);
   mesajFlash(req, `Am retrimis linkul de confirmare pe ${u.email}.`);
   res.redirect(`/admin/utilizatori/${u.id}`);
 }

@@ -7,7 +7,6 @@ const AnuntViewModel = require('../models/AnuntViewModel');
 const { citesteId, negasit, mesajFlash, adresaInapoi } = require('../utils/http');
 const F = require('../servicii/filtre');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
-const { noteaza } = require('../servicii/jurnal');
 
 const proprietati = new ProprietateAccessor();
 const utilizatori = new UtilizatorAccessor();
@@ -122,7 +121,7 @@ async function createPost(req, res) {
     return res.status(400).render('admin/proprietati/create', { p: model, erori, ...(await dateFormular()) });
   }
   const noua = await proprietati.addEntity(model.catreEntitate());
-  await noteaza(res, 'creare', 'proprietate', noua.id, noua.denumire);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'creare', 'proprietate', noua.id, noua.denumire);
   // Adminul nu e blocat de limita planului (poate corecta orice), dar e avertizat.
   // TEMPORAR (pana la pasul 3 al laboratorului 10, cand acest controller primeste totul prin injectie):
   // serviciul il luam din containerul cererii.
@@ -151,7 +150,7 @@ async function editPost(req, res) {
     return res.status(400).render('admin/proprietati/edit', { p: model, erori, ...(await dateFormular()) });
   }
   const rezultat = await proprietati.updateEntity(id, model.catreEntitate());
-  await noteaza(res, 'modificare', 'proprietate', id, model.denumire);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'modificare', 'proprietate', id, model.denumire);
   mesajFlash(req, 'Modificările au fost salvate.' + textAnunturi(rezultat));
   res.redirect(`/admin/proprietati/${id}`);
 }
@@ -162,7 +161,7 @@ async function dezactiveaza(req, res) {
   const entitate = id && (await proprietati.getById(id));
   if (!entitate) return proprietateNegasita(res);
   const rezultat = await proprietati.schimbaStare(id, 'inactiv');
-  await noteaza(res, 'dezactivare', 'proprietate', id, entitate.denumire);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'dezactivare', 'proprietate', id, entitate.denumire);
   mesajFlash(req, `Proprietatea „${entitate.denumire}” a fost dezactivată.` + textAnunturi(rezultat));
   res.redirect(inapoi(req));
 }
@@ -173,7 +172,7 @@ async function activeaza(req, res) {
   const entitate = id && (await proprietati.getById(id));
   if (!entitate) return proprietateNegasita(res);
   const rezultat = await proprietati.schimbaStare(id, 'liber');
-  await noteaza(res, 'activare', 'proprietate', id, entitate.denumire);
+  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'activare', 'proprietate', id, entitate.denumire);
   mesajFlash(req, `Proprietatea „${entitate.denumire}” a fost activată.` + textAnunturi(rezultat));
   res.redirect(inapoi(req));
 }
