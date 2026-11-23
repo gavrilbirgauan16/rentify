@@ -36,6 +36,8 @@ const ProprietatiAdmin = require('../servicii/proprietatiAdmin');
 const PlanuriAdmin = require('../servicii/planuriAdmin');
 const AnunturiAdmin = require('../servicii/anunturiAdmin');
 const AnunturiPublice = require('../servicii/anunturiPublice');
+const UtilizatoriAdmin = require('../servicii/utilizatoriAdmin');
+const AbonamenteAdmin = require('../servicii/abonamenteAdmin');
 
 function creeazaContainer() {
   const container = createContainer({
@@ -82,6 +84,8 @@ function creeazaContainer() {
     planuriAdmin: asClass(PlanuriAdmin).scoped(),
     anunturiAdmin: asClass(AnunturiAdmin).scoped(),
     anunturiPublice: asClass(AnunturiPublice).scoped(),
+    utilizatoriAdmin: asClass(UtilizatoriAdmin).scoped(),
+    abonamenteAdmin: asClass(AbonamenteAdmin).scoped(),
   });
 
   return container;
