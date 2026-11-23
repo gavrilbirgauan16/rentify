@@ -469,6 +469,23 @@ body { margin: 0; background: var(--fundal); }
 .buton-pericol-plin { background: #c0362c; color: #fff; }
 .buton-pericol-plin:hover { background: #a1271b; }
 
+/* ---------- Proprietatile mele: carduri intr-o grila ---------- */
+.grila-proprietati { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; }
+.card-proprietate {
+  display: flex; flex-direction: column; gap: 8px; padding: 18px 20px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra);
+  border-top: 4px solid var(--accent);   /* o dunga aurie sus: cardul "casei" */
+}
+.card-proprietate.inactiva { border-top-color: var(--bordura); opacity: .8; }
+.card-proprietate .meta { margin: 0; color: var(--text-secundar); font-size: .9rem; }
+.caracteristici { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.caracteristici li { padding: .2em .7em; border-radius: 999px; background: var(--suprafata-2); font-size: .82rem; color: var(--text-secundar); }
+.anunturi-active { margin: 4px 0 0; font-size: .88rem; font-weight: 600; color: var(--principal); }
+.actiuni-card { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
+.actiuni-card .buton { flex: 1; padding: .55em 1em; font-size: .9rem; }
+.rand-trei { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 560px) { .rand-trei { grid-template-columns: 1fr 1fr; } }
+
 /* ---------- Formularul de anunt ---------- */
 .formular-anunt { display: grid; gap: 18px; }
 .formular-cap { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

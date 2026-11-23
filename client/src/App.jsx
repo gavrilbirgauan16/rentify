@@ -14,6 +14,8 @@ import RutaProtejata from './componente/RutaProtejata.jsx';
 import ZonaProprietar from './pagini/proprietar/ZonaProprietar.jsx';
 import AnunturileMele from './pagini/proprietar/AnunturileMele.jsx';
 import FormularAnunt from './pagini/proprietar/FormularAnunt.jsx';
+import ProprietatileMele from './pagini/proprietar/ProprietatileMele.jsx';
+import FormularProprietate from './pagini/proprietar/FormularProprietate.jsx';
 
 const router = createBrowserRouter([
   {
@@ -40,6 +42,9 @@ const router = createBrowserRouter([
                 { path: 'anunturi', Component: AnunturileMele },
                 { path: 'anunturi/nou', Component: FormularAnunt },
                 { path: 'anunturi/:id', Component: FormularAnunt },
+                { path: 'proprietati', Component: ProprietatileMele },
+                { path: 'proprietati/nou', Component: FormularProprietate },
+                { path: 'proprietati/:id', Component: FormularProprietate },
               ],
             }],
           },

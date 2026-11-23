@@ -91,7 +91,7 @@ export default function AnunturileMele() {
         </div>
         {areProprietati
           ? <Link className="buton buton-principal" to="/proprietar/anunturi/nou">+ Anunț nou</Link>
-          : <span className="nota">Ca să adaugi un anunț, ai nevoie întâi de o proprietate activă.</span>}
+          : <span className="nota">Ca să adaugi un anunț, ai nevoie întâi de o proprietate activă. <Link to="/proprietar/proprietati/nou">Adaugă o proprietate</Link></span>}
       </div>
       {mesajLimita && <p className="nota-stare">{mesajLimita}</p>}
 
