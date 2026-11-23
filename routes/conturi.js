@@ -1,10 +1,11 @@
 // Rutele publice pentru conturi: inregistrare, confirmarea emailului, parola uitata.
 // (Paginile contului unui utilizator conectat sunt in routes/cont.js.)
 const express = require('express');
+const { actiune } = require('../infrastructura/container'); // DI: controllerele isi primesc serviciile
 const { rateLimit } = require('express-rate-limit');
-const inregistrare = require('../controllers/InregistrareController');
-const parolaUitata = require('../controllers/ParolaUitataController');
-const cont = require('../controllers/ContController');
+const InregistrareController = require('../controllers/InregistrareController');
+const ParolaUitataController = require('../controllers/ParolaUitataController');
+const ContController = require('../controllers/ContController');
 
 const router = express.Router();
 
@@ -23,20 +24,20 @@ const limita = (minute, maxim) => rateLimit({
 const limitaInregistrare = limita(60, 10);
 const limitaEmailuri = limita(15, 5);
 
-router.get('/inregistrare', inregistrare.inregistrareGet);
-router.post('/inregistrare', limitaInregistrare, inregistrare.inregistrarePost);
-router.get('/inregistrare/trimis', inregistrare.trimis);
+router.get('/inregistrare', actiune(InregistrareController, 'inregistrareGet'));
+router.post('/inregistrare', limitaInregistrare, actiune(InregistrareController, 'inregistrarePost'));
+router.get('/inregistrare/trimis', actiune(InregistrareController, 'trimis'));
 
-router.get('/confirmare/retrimite', inregistrare.retrimiteGet);
-router.post('/confirmare/retrimite', limitaEmailuri, inregistrare.retrimitePost);
-router.get('/confirmare/:token', inregistrare.confirmare);
+router.get('/confirmare/retrimite', actiune(InregistrareController, 'retrimiteGet'));
+router.post('/confirmare/retrimite', limitaEmailuri, actiune(InregistrareController, 'retrimitePost'));
+router.get('/confirmare/:token', actiune(InregistrareController, 'confirmare'));
 
-router.get('/parola-uitata', parolaUitata.cerereGet);
-router.post('/parola-uitata', limitaEmailuri, parolaUitata.cererePost);
-router.get('/resetare/:token', parolaUitata.resetareGet);
-router.post('/resetare/:token', limita(15, 10), parolaUitata.resetarePost);
+router.get('/parola-uitata', actiune(ParolaUitataController, 'cerereGet'));
+router.post('/parola-uitata', limitaEmailuri, actiune(ParolaUitataController, 'cererePost'));
+router.get('/resetare/:token', actiune(ParolaUitataController, 'resetareGet'));
+router.post('/resetare/:token', limita(15, 10), actiune(ParolaUitataController, 'resetarePost'));
 
 // Confirmarea noului email: din link, poate fi deschis si fara sa fii conectat
-router.get('/cont/email/confirmare/:token', cont.emailConfirmare);
+router.get('/cont/email/confirmare/:token', actiune(ContController, 'emailConfirmare'));
 
 module.exports = router;

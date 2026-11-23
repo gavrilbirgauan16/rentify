@@ -25,6 +25,10 @@ const ProprietatiProprietar = require('../servicii/proprietatiProprietar');
 const AnunturiProprietar = require('../servicii/anunturiProprietar');
 const AbonamentProprietar = require('../servicii/abonamentProprietar');
 const Chirias = require('../servicii/chirias');
+const Tokenuri = require('../servicii/tokenuri');
+const Autentificare = require('../servicii/autentificare');
+const Cont = require('../servicii/cont');
+const Conturi = require('../servicii/conturi');
 
 function creeazaContainer() {
   const container = createContainer({
@@ -60,6 +64,10 @@ function creeazaContainer() {
     anunturiProprietar: asClass(AnunturiProprietar).scoped(),
     abonamentProprietar: asClass(AbonamentProprietar).scoped(),
     chirias: asClass(Chirias).scoped(),
+    tokenuri: asClass(Tokenuri).scoped(),
+    autentificare: asClass(Autentificare).scoped(),
+    cont: asClass(Cont).scoped(),
+    conturi: asClass(Conturi).scoped(),
   });
 
   return container;

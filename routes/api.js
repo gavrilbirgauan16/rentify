@@ -6,10 +6,10 @@ const { rateLimit } = require('express-rate-limit');
 const { cereCheie } = require('../middleware/cheieApi');
 const { asiguraToken, verificaTokenApi } = require('../middleware/csrf');
 const anunturi = require('../controllers/api/AnunturiApiController');
-const auth = require('../controllers/api/AutentificareApiController');
+const AutentificareApiController = require('../controllers/api/AutentificareApiController');
 const ChiriasApiController = require('../controllers/api/ChiriasApiController');
-const conturi = require('../controllers/api/ConturiApiController');
-const cont = require('../controllers/api/ContApiController');
+const ConturiApiController = require('../controllers/api/ConturiApiController');
+const ContApiController = require('../controllers/api/ContApiController');
 const ProprietatiApiController = require('../controllers/api/ProprietatiApiController');
 const AnunturiProprietarApiController = require('../controllers/api/AnunturiProprietarApiController');
 const AbonamentApiController = require('../controllers/api/AbonamentApiController');
@@ -47,17 +47,17 @@ const limitaInregistrare = limita(60, 10); // conturi false in masa
 const limitaEmailuri = limita(15, 5); // emailuri trimise la nesfarsit catre cineva
 const limitaResetare = limita(15, 10); // incercari de tokenuri
 
-router.post('/auth/login', limitaLogin, auth.login);
-router.post('/auth/logout', auth.logout);
-router.get('/auth/eu', auth.eu);
+router.post('/auth/login', limitaLogin, actiune(AutentificareApiController, 'login'));
+router.post('/auth/logout', actiune(AutentificareApiController, 'logout'));
+router.get('/auth/eu', actiune(AutentificareApiController, 'eu'));
 
 // Conturi: inregistrare, confirmarea emailului, parola uitata (fara cont conectat).
-router.post('/auth/inregistrare', limitaInregistrare, conturi.inregistrare);
-router.post('/auth/confirmare', limitaResetare, conturi.confirmare);
-router.post('/auth/confirmare/retrimite', limitaEmailuri, conturi.retrimiteConfirmarea);
-router.post('/auth/parola-uitata', limitaEmailuri, conturi.parolaUitata);
-router.get('/auth/resetare/:token', limitaResetare, conturi.verificaResetarea);
-router.post('/auth/resetare', limitaResetare, conturi.resetare);
+router.post('/auth/inregistrare', limitaInregistrare, actiune(ConturiApiController, 'inregistrare'));
+router.post('/auth/confirmare', limitaResetare, actiune(ConturiApiController, 'confirmare'));
+router.post('/auth/confirmare/retrimite', limitaEmailuri, actiune(ConturiApiController, 'retrimiteConfirmarea'));
+router.post('/auth/parola-uitata', limitaEmailuri, actiune(ConturiApiController, 'parolaUitata'));
+router.get('/auth/resetare/:token', limitaResetare, actiune(ConturiApiController, 'verificaResetarea'));
+router.post('/auth/resetare', limitaResetare, actiune(ConturiApiController, 'resetare'));
 
 router.get('/anunturi', anunturi.getAll);
 router.get('/anunturi/:id', anunturi.getById);
@@ -67,11 +67,11 @@ router.put('/anunturi/:id', cereCheie, anunturi.put);
 // Contul meu (orice rol conectat). Schimbarea parolei merge si cu parola temporara de la admin (altfel ar ramane blocat).
 // Parola si emailul: cel mult 10 incercari in 15 minute (nu se poate ghici parola curenta de aici).
 const limitaParola = limita(15, 10);
-router.get('/cont', cereAutentificareApi, cont.profil);
-router.put('/cont', cereAutentificareApi, cont.modificaProfil);
-router.post('/cont/parola', cereConectatApi, limitaParola, cont.schimbaParola);
-router.post('/cont/email', cereAutentificareApi, limitaParola, cont.cereSchimbareaEmailului);
-router.post('/cont/email/confirmare', limitaResetare, cont.confirmaEmailul);
+router.get('/cont', cereAutentificareApi, actiune(ContApiController, 'profil'));
+router.put('/cont', cereAutentificareApi, actiune(ContApiController, 'modificaProfil'));
+router.post('/cont/parola', cereConectatApi, limitaParola, actiune(ContApiController, 'schimbaParola'));
+router.post('/cont/email', cereAutentificareApi, limitaParola, actiune(ContApiController, 'cereSchimbareaEmailului'));
+router.post('/cont/email/confirmare', limitaResetare, actiune(ContApiController, 'confirmaEmailul'));
 
 // Chiriasul conectat: contactarea proprietarului (cu limita din plan) si favoritele.
 const doarChirias = [cereAutentificareApi, cereRolApi('chirias')];

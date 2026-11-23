@@ -1,8 +1,9 @@
 // Rutele pentru contul utilizatorului conectat (/cont/...), pentru orice rol: profil, parola, email.
 const express = require('express');
+const { actiune } = require('../infrastructura/container'); // DI: controllerele isi primesc serviciile
 const { rateLimit } = require('express-rate-limit');
 const { cereAutentificare } = require('../middleware/autentificare');
-const controller = require('../controllers/ContController');
+const ContController = require('../controllers/ContController');
 
 const router = express.Router();
 router.use(cereAutentificare);
@@ -20,11 +21,11 @@ const limitaParola = rateLimit({
   },
 });
 
-router.get('/', controller.profilGet);
-router.post('/', controller.profilPost);
-router.get('/parola', controller.parolaGet);
-router.post('/parola', limitaParola, controller.parolaPost);
-router.get('/email', controller.emailGet);
-router.post('/email', limitaParola, controller.emailPost);
+router.get('/', actiune(ContController, 'profilGet'));
+router.post('/', actiune(ContController, 'profilPost'));
+router.get('/parola', actiune(ContController, 'parolaGet'));
+router.post('/parola', limitaParola, actiune(ContController, 'parolaPost'));
+router.get('/email', actiune(ContController, 'emailGet'));
+router.post('/email', limitaParola, actiune(ContController, 'emailPost'));
 
 module.exports = router;
