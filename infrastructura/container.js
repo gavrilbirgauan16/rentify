@@ -32,6 +32,7 @@ const Conturi = require('../servicii/conturi');
 const Jurnal = require('../servicii/jurnal');
 const PanouAdmin = require('../servicii/panouAdmin');
 const CautareAdmin = require('../servicii/cautareAdmin');
+const Cache = require('../servicii/cache');
 const ProprietatiAdmin = require('../servicii/proprietatiAdmin');
 const PlanuriAdmin = require('../servicii/planuriAdmin');
 const AnunturiAdmin = require('../servicii/anunturiAdmin');
@@ -54,6 +55,8 @@ function creeazaContainer() {
     // PrismaClient tine un "pool" de conexiuni la PostgreSQL: daca am crea unul nou la fiecare cerere,
     // baza de date ar ramane repede fara conexiuni libere.
     context: asValue(context),
+    // Cache-ul (planurile etc.): tot Singleton - trebuie sa supravietuiasca intre cereri, altfel n-ar folosi la nimic.
+    cache: asClass(Cache).singleton(),
 
     // Accesorii (NivelAccesDate): cate unul pe cerere (Scoped). Nu tin date intre cereri.
     abonamentAccessor: asClass(AbonamentAccessor).scoped(),
