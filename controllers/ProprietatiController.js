@@ -8,7 +8,6 @@ const { citesteId, negasit, mesajFlash, adresaInapoi } = require('../utils/http'
 const F = require('../servicii/filtre');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
 const { noteaza } = require('../servicii/jurnal');
-const { avertizareProprietati } = require('../servicii/verificariPlan');
 
 const proprietati = new ProprietateAccessor();
 const utilizatori = new UtilizatorAccessor();
@@ -125,7 +124,9 @@ async function createPost(req, res) {
   const noua = await proprietati.addEntity(model.catreEntitate());
   await noteaza(res, 'creare', 'proprietate', noua.id, noua.denumire);
   // Adminul nu e blocat de limita planului (poate corecta orice), dar e avertizat.
-  const avertizare = await avertizareProprietati(noua.proprietar_id);
+  // TEMPORAR (pana la pasul 3 al laboratorului 10, cand acest controller primeste totul prin injectie):
+  // serviciul il luam din containerul cererii.
+  const avertizare = await req.container.cradle.verificariPlan.avertizareProprietati(noua.proprietar_id);
   mesajFlash(req, `Proprietatea „${noua.denumire}” a fost adăugată.` + (avertizare ? ` ${avertizare}` : ''), avertizare ? 'warning' : 'success');
   res.redirect(`/admin/proprietati/${noua.id}`); // Post/Redirect/Get: refresh-ul nu mai trimite formularul a doua oara
 }
