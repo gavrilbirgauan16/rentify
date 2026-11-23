@@ -10,7 +10,6 @@ const F = require('../servicii/filtre');
 const { azi } = require('../servicii/date');
 const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
 const { noteaza } = require('../servicii/jurnal');
-const { trimiteLinkResetare, trimiteConfirmarea } = require('../servicii/conturi');
 
 const utilizatori = new UtilizatorAccessor();
 const abonamente = new AbonamentAccessor();
@@ -143,7 +142,8 @@ async function trimiteLinkParola(req, res) {
     mesajFlash(req, 'Contul este blocat: deblochează-l întâi, altfel utilizatorul nu se poate conecta oricum.', 'warning');
     return res.redirect(`/admin/utilizatori/${u.id}`);
   }
-  const plecat = await trimiteLinkResetare(u);
+  // TEMPORAR (pana la pasul 3 al laboratorului 10): serviciul il luam din containerul cererii.
+  const plecat = await req.container.cradle.conturi.trimiteLinkResetare(u);
   if (!plecat) {
     mesajFlash(req, 'Emailul nu a putut fi trimis (verifică setările SMTP). Poți folosi parola temporară.', 'warning');
     return res.redirect(`/admin/utilizatori/${u.id}`);
@@ -161,7 +161,7 @@ async function retrimiteConfirmare(req, res) {
     mesajFlash(req, 'Adresa de email este deja confirmată.', 'warning');
     return res.redirect(`/admin/utilizatori/${u.id}`);
   }
-  await trimiteConfirmarea(u);
+  await req.container.cradle.conturi.trimiteConfirmarea(u); // TEMPORAR (pana la pasul 3)
   await noteaza(res, 'link_confirmare', 'utilizator', u.id, u.numeComplet);
   mesajFlash(req, `Am retrimis linkul de confirmare pe ${u.email}.`);
   res.redirect(`/admin/utilizatori/${u.id}`);
