@@ -3,8 +3,8 @@
    Fonturi: Playfair Display (titluri, elegant) + Inter (text, foarte clar), puse IN PROIECT (pachetele
    @fontsource-variable, importate in main.jsx): merg si fara internet si nu trimit date catre Google. */
 
-/* ---------- Valorile temei ---------- */
-.aplicatie {
+/* ---------- Valorile temei (pe :root, ca sa le vada si ecranul de intrare, din afara paginii) ---------- */
+:root {
   --fundal: #f3f5f9;
   --suprafata: #ffffff;
   --suprafata-2: #eaeef5;
@@ -30,7 +30,7 @@
 
 /* ---------- Baza ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; }
+body { margin: 0; background: var(--fundal); }
 
 .aplicatie {
   min-height: 100vh;
@@ -61,12 +61,22 @@ body { margin: 0; }
 /* ---------- Antet (plutitor, rotunjit) ----------
    "container query": antetul se aranjeaza dupa LATIMEA LUI (nu a ecranului), deci arata bine si pe
    ecran impartit in doua, si in fereastra micsorata, si pe telefon. */
-.antet { position: sticky; top: 12px; z-index: 10; padding-top: 12px; container: antet / inline-size; }
+.antet {
+  position: sticky; top: 12px; z-index: 10; padding-top: 12px; container: antet / inline-size;
+  transition: transform .4s cubic-bezier(.2, .75, .2, 1);
+}
 .antet .bara {
   position: relative; display: flex; align-items: center; gap: 20px; min-height: 66px; padding: 8px 10px 8px 16px;
   background: rgb(255 255 255 / 90%); backdrop-filter: blur(12px);
   border: 1px solid var(--bordura); border-radius: 20px; box-shadow: var(--umbra);
+  transition: min-height .3s ease, box-shadow .3s ease, background-color .3s ease;
 }
+/* Antetul inteligent: derulezi in jos -> aluneca in sus, afara din ecran; derulezi in sus -> revine */
+.antet.ascuns { transform: translateY(calc(-100% - 16px)); }
+/* ...dar nu cat timp navighezi in el cu tastatura (Tab): ce are focus trebuie sa se vada */
+.antet.ascuns:focus-within { transform: none; }
+/* Dupa ce ai derulat putin: mai compact, mai opac si cu umbra mai mare (pluteste deasupra continutului) */
+.antet.derulat .bara { min-height: 58px; background: rgb(255 255 255 / 96%); box-shadow: var(--umbra-mare); }
 .antet .logo-link { text-decoration: none; flex-shrink: 0; }
 .meniu { display: flex; gap: 22px; margin-right: auto; }
 .meniu a {
@@ -260,6 +270,50 @@ body { margin: 0; }
 .ecran-intrare .nume span { color: var(--accent); }
 @keyframes aparitie { from { opacity: 0; transform: translateY(12px) scale(.92); } to { opacity: 1; transform: none; } }
 
+/* ---------- Sectiuni, stari de incarcare, pagina goala ---------- */
+.sectiune { padding-bottom: 56px; }
+.titlu-sectiune { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.titlu-sectiune h2 { margin: 0; }
+.numar-rezultate { color: var(--text-secundar); font-weight: 600; }
+.alerta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* "Scheletul" unui card cat se incarca datele: o lumina care trece peste el */
+.card-schelet {
+  aspect-ratio: 4 / 4.4; border-radius: var(--raza); border: 1px solid var(--bordura);
+  background: linear-gradient(100deg, var(--suprafata) 40%, var(--suprafata-2) 50%, var(--suprafata) 60%) 0 0 / 300% 100%;
+  animation: lumina 1.4s linear infinite;
+}
+@keyframes lumina { to { background-position: -150% 0; } }
+.se-actualizeaza { opacity: .55; transition: opacity .2s; }   /* rezultatele vechi, cat vin cele noi */
+
+.gol {
+  display: grid; justify-items: center; gap: 6px; text-align: center; padding: 48px 20px;
+  background: var(--suprafata); border: 1px dashed var(--bordura); border-radius: var(--raza);
+}
+.gol p { margin: 0 0 10px; color: var(--text-secundar); }
+
+/* Pagina 404 / eroare */
+.pagina-mesaj { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 80px 0 96px; }
+.pagina-mesaj .cod { margin: 0; font-family: var(--font-titlu); font-size: clamp(4rem, 10vw, 7rem); font-weight: 800; line-height: 1; color: var(--accent); }
+.pagina-mesaj p { color: var(--text-secundar); max-width: 46ch; margin: 0 0 18px; }
+
+/* Utilizatorul conectat, in antet */
+.salut { color: var(--text-secundar); white-space: nowrap; padding: 0 8px; }
+.salut strong { color: var(--text); }
+
+/* ---------- Subsol ---------- */
+.subsol { border-top: 1px solid var(--bordura); background: var(--suprafata); padding: 28px 0; margin-top: 24px; }
+.subsol .continut { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.subsol p { margin: 0; color: var(--text-secundar); font-size: .9rem; }
+.subsol .logo-text { font-size: 1.2rem; }
+
+/* "Sari la continut": ascuns, apare doar cand ajungi la el cu tastatura (Tab) */
+.sari-la-continut {
+  position: absolute; left: 12px; top: -60px; z-index: 50; padding: 10px 16px; border-radius: 10px;
+  background: var(--principal); color: #fff !important; font-weight: 600; transition: top .15s;
+}
+.sari-la-continut:focus { top: 12px; }
+
 /* ---------- Telefon ---------- */
 @media (max-width: 760px) {
   .hero { padding-top: 36px; }
@@ -269,4 +323,5 @@ body { margin: 0; }
 /* Cine a cerut miscare redusa (setare a sistemului) nu vede animatiile si rotirile */
 @media (prefers-reduced-motion: reduce) {
   .aplicatie *, .ecran-intrare, .ecran-intrare * { transition: none !important; animation: none !important; }
+  .card-schelet { animation: none; }
 }
