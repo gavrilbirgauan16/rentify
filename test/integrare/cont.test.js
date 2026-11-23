@@ -4,7 +4,10 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { pornesteAplicatia, Browser, creeazaUtilizator, unic } = require('./ajutor');
 const UtilizatorAccessor = require('../../src/NivelAccesDate/UtilizatorAccessor');
-const tokenuri = require('../../servicii/tokenuri');
+// Serviciul de tokenuri, construit de containerul DI - exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
+
+const tokenuri = container.createScope().resolve('tokenuri');
 const { hashParola } = require('../../servicii/parole');
 
 const utilizatori = new UtilizatorAccessor();
