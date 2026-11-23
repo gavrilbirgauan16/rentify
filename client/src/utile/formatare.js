@@ -16,6 +16,9 @@ export const STARI_ANUNT = {
 
 export const TIPURI_ANUNT = { inchiriere: 'Închiriere', vanzare: 'Vânzare' };
 
+// Filtrele cautarii publice (aceleasi nume ca in API: GET /api/anunturi?q=...&oras=...).
+export const FILTRE_CAUTARE = ['q', 'oras', 'tip', 'pret_min', 'pret_max', 'camere_min', 'persoane'];
+
 // Proprietatile: tipurile si starile (aceleasi valori ca pe server, in models/ProprietateViewModel.js).
 export const TIPURI_PROPRIETATE = { apartament: 'Apartament', garsoniera: 'Garsonieră', casa: 'Casă', camera: 'Cameră' };
 export const STARI_PROPRIETATE = {
