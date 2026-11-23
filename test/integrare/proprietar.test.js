@@ -5,9 +5,11 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const { pornesteAplicatia, Browser, creeazaUtilizator, creeazaProprietate, creeazaAnunt, pozaPng, pozaFalsa } = require('./ajutor');
-const AnuntAccessor = require('../../src/NivelAccesDate/AnuntAccessor');
+// Accesorii ii construieste containerul DI, exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
+const scop = container.createScope();
 
-const anunturi = new AnuntAccessor();
+const anunturi = scop.resolve('anuntAccessor');
 
 // Pozele se salveaza in acelasi folder ca ale aplicatiei (uploads/anunturi). Retinem ce era la inceput
 // si la final stergem DOAR pozele aparute in timpul testelor (sa nu ramana fisiere orfane).
