@@ -10,6 +10,8 @@ import Cadru from './componente/Cadru.jsx';
 import Acasa from './pagini/Acasa.jsx';
 import NuExista from './pagini/NuExista.jsx';
 import PaginaCont from './pagini/PaginaCont.jsx';
+import Cautare from './pagini/Cautare.jsx';
+import PaginaAnunt from './pagini/PaginaAnunt.jsx';
 import RutaProtejata from './componente/RutaProtejata.jsx';
 import ZonaProprietar from './pagini/proprietar/ZonaProprietar.jsx';
 import AnunturileMele from './pagini/proprietar/AnunturileMele.jsx';
@@ -26,6 +28,8 @@ const router = createBrowserRouter([
         ErrorBoundary: NuExista,
         children: [
           { index: true, Component: Acasa },
+          { path: 'cautare', Component: Cautare },
+          { path: 'anunturi/:id', Component: PaginaAnunt },
           {
             // Ambele adrese folosesc ACEEASI pagina (nu se reface la schimbare), deci cardul se poate intoarce animat.
             Component: PaginaCont,

@@ -3,7 +3,8 @@
 // Escape o inchide, iar restul paginii nu poate fi apasat cat timp e deschisa.
 import { useEffect, useId, useRef } from 'react';
 
-export default function Fereastra({ deschisa, titlu, laInchidere, children }) {
+// lata = pentru continut mare (ex. o poza marita); implicit e ingusta (confirmari).
+export default function Fereastra({ deschisa, titlu, laInchidere, lata = false, children }) {
   const ref = useRef(null);
   const idTitlu = useId();
 
@@ -15,7 +16,7 @@ export default function Fereastra({ deschisa, titlu, laInchidere, children }) {
   }, [deschisa]);
 
   return (
-    <dialog ref={ref} className="fereastra" aria-labelledby={idTitlu} onClose={laInchidere}
+    <dialog ref={ref} className={`fereastra${lata ? ' lata' : ''}`} aria-labelledby={idTitlu} onClose={laInchidere}
       // clic pe fundalul intunecat (in afara continutului) = inchide
       onClick={(e) => { if (e.target === ref.current) laInchidere(); }}>
       <div className="fereastra-continut">

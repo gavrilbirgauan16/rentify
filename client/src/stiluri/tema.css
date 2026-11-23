@@ -546,6 +546,117 @@ select.intrare {
 .fereastra-continut p { margin: 0 0 12px; color: var(--text-secundar); }
 .butoane-fereastra { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
 
+/* ---------- Cardul de anunt e clicabil (un singur link, intins peste tot cardul) ---------- */
+.card-anunt { position: relative; }
+.link-card { color: inherit !important; text-decoration: none; }
+.link-card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.card-anunt:has(.link-card:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.link-card:focus-visible { outline: none; }
+.vezi-toate { font-weight: 650; text-decoration: none; }
+
+/* ---------- Pagina de cautare: filtrele in stanga, rezultatele in dreapta ---------- */
+.pagina-cautare { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 32px; padding: 28px 0 64px; align-items: start; }
+.coloana-filtre {
+  position: sticky; top: 100px; max-height: calc(100dvh - 120px); overflow-y: auto;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); padding: 20px; box-shadow: var(--umbra);
+}
+.coloana-filtre h2 { font-size: 1.3rem; margin-bottom: 12px; }
+.panou-filtre { display: grid; gap: 16px; }
+.grup-filtru { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
+.grup-filtru legend { padding: 0; margin-bottom: 8px; font-size: .875rem; font-weight: 600; }
+/* Butoane-pastila pentru alegeri (radio): cercul radio e ascuns, se vede pastila; cea aleasa e bleumarin */
+.optiuni-pastila { display: flex; flex-wrap: wrap; gap: 6px; }
+.optiuni-pastila label { cursor: pointer; }
+.optiuni-pastila input { position: absolute; opacity: 0; pointer-events: none; }
+.optiuni-pastila span {
+  display: inline-block; padding: .4em .9em; border-radius: 999px; border: 1.5px solid var(--bordura);
+  font-size: .88rem; font-weight: 600; color: var(--text-secundar); background: var(--suprafata); transition: all .15s;
+}
+.optiuni-pastila input:checked + span { background: var(--principal); border-color: var(--principal); color: #fff; }
+.optiuni-pastila input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.butoane-filtre { display: grid; gap: 8px; padding-top: 4px; }
+
+.cap-rezultate { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 18px; }
+.cap-rezultate h1 { font-size: clamp(1.7rem, 2vw + 1rem, 2.3rem); margin: 0 0 4px; }
+.cap-rezultate .numar-rezultate { margin: 0; }
+.unelte-rezultate { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sortare { display: flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--text-secundar); white-space: nowrap; }
+.sortare .intrare { width: auto; padding-block: .55em; }
+.buton-filtre { display: none; }
+@media (max-width: 900px) {
+  .pagina-cautare { grid-template-columns: 1fr; }
+  .coloana-filtre { display: none; }        /* pe ecran ingust, filtrele sunt in fereastra */
+  .buton-filtre { display: inline-flex; }
+}
+.fereastra .panou-filtre { margin-top: 4px; }
+.fereastra { max-height: 92dvh; overflow-y: auto; }
+
+/* Paginile cu rezultate */
+.paginare { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 32px; }
+.paginare a, .paginare span {
+  min-width: 42px; height: 42px; padding: 0 10px; display: grid; place-items: center; border-radius: 12px;
+  font-weight: 650; text-decoration: none; color: var(--text);
+}
+.paginare a { background: var(--suprafata); border: 1px solid var(--bordura); }
+.paginare a:hover { border-color: var(--principal); }
+.paginare a[aria-current='page'] { background: var(--principal); border-color: var(--principal); color: #fff; }
+.paginare .dezactivat { color: var(--bordura); }
+.paginare .puncte { color: var(--text-secundar); }
+
+/* ---------- Pagina anuntului ---------- */
+.pagina-anunt { padding: 20px 0 64px; }
+.buton-text-simplu { border: 0; background: none; padding: 0; font: inherit; color: var(--principal); cursor: pointer; }
+.buton-text-simplu:hover { text-decoration: underline; text-underline-offset: 3px; }
+.cap-anunt { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 14px 0 18px; }
+.cap-anunt h1 { font-size: clamp(1.8rem, 2.5vw + 1rem, 2.7rem); margin: 4px 0 0; max-width: 28ch; }
+.supratitlu { margin: 0; color: var(--accent-text); font-weight: 650; font-size: .85rem; letter-spacing: .04em; text-transform: uppercase; }
+.anunt-grila { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; align-items: start; }
+@media (max-width: 900px) { .anunt-grila { grid-template-columns: 1fr; } }
+.anunt-continut { display: grid; gap: 22px; min-width: 0; }
+
+/* Galeria */
+.galerie { display: grid; gap: 10px; }
+.galerie.goala { aspect-ratio: 16 / 9; place-items: center; border-radius: var(--raza); background: linear-gradient(135deg, var(--suprafata-2), var(--principal-fin)); color: var(--text-secundar); }
+.poza-mare { position: relative; padding: 0; border: 0; cursor: zoom-in; border-radius: var(--raza); overflow: hidden; aspect-ratio: 16 / 10; background: var(--suprafata-2); box-shadow: var(--umbra); }
+.poza-mare img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
+.poza-mare:hover img { transform: scale(1.02); }
+.numar-poza { position: absolute; right: 12px; bottom: 12px; padding: .25em .7em; border-radius: 999px; background: rgb(18 25 51 / 70%); color: #fff; font-size: .82rem; font-weight: 600; }
+.miniaturi { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.miniaturi button { padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; cursor: pointer; aspect-ratio: 4 / 3; width: 100%; opacity: .7; transition: opacity .15s, border-color .15s; }
+.miniaturi button:hover, .miniaturi button.aleasa { opacity: 1; }
+.miniaturi button.aleasa { border-color: var(--accent); }
+.miniaturi img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fereastra.lata { max-width: min(1100px, calc(100% - 32px)); }
+.poza-marita { position: relative; display: grid; place-items: center; background: #0d1530; border-radius: 12px; overflow: hidden; }
+.poza-marita img { max-width: 100%; max-height: 72dvh; object-fit: contain; display: block; }
+.sageata {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 0;
+  background: rgb(255 255 255 / 90%); font-size: 1.6rem; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.sageata.stanga { left: 12px; }
+.sageata.dreapta { right: 12px; }
+
+.caracteristici.mari li { font-size: .92rem; padding: .35em .9em; background: var(--suprafata); border: 1px solid var(--bordura); color: var(--text); }
+.sectiune-anunt h2 { font-size: 1.4rem; margin-bottom: 8px; }
+.descriere { margin: 0; white-space: pre-line; line-height: 1.7; }   /* pastreaza randurile noi scrise de proprietar */
+.tabel-preturi { width: 100%; border-collapse: collapse; margin-top: 10px; background: var(--suprafata); border-radius: 14px; overflow: hidden; border: 1px solid var(--bordura); }
+.tabel-preturi th, .tabel-preturi td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--bordura); }
+.tabel-preturi thead th { background: var(--suprafata-2); font-size: .85rem; color: var(--text-secundar); }
+.tabel-preturi tbody tr:last-child th, .tabel-preturi tbody tr:last-child td { border-bottom: 0; }
+.meta-anunt { margin: 0; }
+
+/* Cardul cu pretul si actiunile (sta pe loc cand derulezi, pe ecran lat) */
+.card-contact {
+  position: sticky; top: 100px; display: grid; gap: 12px; padding: 22px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra-mare);
+  border-top: 4px solid var(--accent);
+}
+.pret-mare { margin: 0; font-family: var(--font-titlu); font-size: 2rem; font-weight: 700; }
+.pret-mare small { font-family: var(--font-text); font-size: 1rem; font-weight: 400; color: var(--text-secundar); }
+.card-contact .proprietar { margin: 0; color: var(--text-secundar); }
+.card-contact .telefon { font-size: 1.15rem; letter-spacing: .02em; }
+.favorit-buton.salvat { background: #fde4e1; color: #a1271b; }
+
 /* ---------- Sectiuni, stari de incarcare, pagina goala ---------- */
 .sectiune { padding-bottom: 56px; }
 .titlu-sectiune { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
