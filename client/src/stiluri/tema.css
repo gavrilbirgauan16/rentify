@@ -701,6 +701,79 @@ select.intrare {
 }
 .sari-la-continut:focus { top: 12px; }
 
+/* ---------- Abonamentul meu ---------- */
+/* Text citit doar de cititoarele de ecran (ex. "Inclus:" langa bifa), ascuns vizual */
+.ascuns-vizual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.grila-abonament { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px; margin-bottom: 32px; }
+.card-abonament {
+  display: grid; gap: 10px; align-content: start; padding: 22px 24px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra);
+}
+.card-abonament .supratitlu { margin: 0; color: var(--accent-text); font-weight: 650; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
+.card-abonament h2 { margin: 0; font-size: 1.6rem; }
+.detalii-abonament { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 4px 0 0; }
+.detalii-abonament dt { color: var(--text-secundar); }
+.detalii-abonament dd { margin: 0; font-weight: 550; }
+
+.limita-abonament { display: grid; gap: 6px; }
+.linie-limita { display: flex; justify-content: space-between; gap: 12px; color: var(--text-secundar); }
+.linie-limita strong { color: var(--text); }
+.progres.lat { width: 100%; height: 8px; }
+.progres.depasit span { background: #c0362c; }
+.nota-pericol { color: #a1271b; }
+
+.nota-stare.programat { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.titlu-abonament { font-size: 1.4rem; margin: 0 0 16px; }
+
+/* Cardurile cu planuri: dunga aurie sus ca la proprietati; cel recomandat are chenar auriu, al tau unul bleumarin */
+.grila-planuri { list-style: none; margin: 0 0 32px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 16px; }
+.card-plan {
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 22px 20px 20px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra);
+  border-top: 4px solid var(--principal-fin);
+}
+.card-plan.recomandat { border-color: var(--accent); border-top-color: var(--accent); }
+.card-plan.al-meu { border-color: var(--principal); border-top-color: var(--principal); }
+.card-plan h3 { margin: 0; font-size: 1.3rem; }
+.eticheta-plan {
+  position: absolute; top: -12px; right: 16px; padding: .25em .8em; border-radius: 999px;
+  background: var(--accent); color: #1b1305; font-size: .75rem; font-weight: 700; letter-spacing: .03em;
+}
+.pret-plan { margin: 4px 0; font-family: var(--font-titlu); font-size: 1.9rem; font-weight: 700; display: grid; gap: 2px; }
+.pret-plan small { font-family: var(--font-text); font-size: .9rem; font-weight: 500; color: var(--text-secundar); }
+.pret-anual { font-family: var(--font-text); font-size: .85rem; font-weight: 500; color: var(--text-secundar); }
+.pret-anual strong { color: #17663a; }
+.beneficii { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .92rem; }
+.beneficii li { display: flex; gap: 8px; align-items: baseline; }
+.beneficii .semn { color: #17663a; font-weight: 700; }
+.beneficii li.neinclus { color: var(--text-secundar); text-decoration: line-through; }
+.beneficii li.neinclus .semn { color: var(--text-secundar); }
+.actiuni-plan { display: grid; gap: 8px; margin-top: auto; padding-top: 8px; }
+.actiuni-plan .buton { text-align: center; text-decoration: none; }
+.buton.dezactivat { opacity: .7; cursor: default; }
+
+.tabel-derulant { overflow-x: auto; background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra); }
+.tabel { width: 100%; border-collapse: collapse; font-size: .93rem; }
+.tabel th, .tabel td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--bordura); }
+.tabel th { color: var(--text-secundar); font-weight: 600; background: var(--suprafata-2); }
+.tabel tr:last-child td { border-bottom: 0; }
+.fara-rupere { white-space: nowrap; }
+
+/* Pagina de confirmare */
+.confirmare-plan { max-width: 640px; margin: 0 auto; }
+.fir-ariadna { font-size: .9rem; color: var(--text-secundar); }
+.fir-ariadna a { color: var(--principal); }
+.calcul-plata { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; margin: 8px 0; }
+.calcul-plata dt small { color: var(--text-secundar); }
+.calcul-plata dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.calcul-plata .credit { color: #17663a; }
+.calcul-plata .total { padding-top: 10px; border-top: 1px solid var(--bordura); font-weight: 700; }
+.calcul-plata dd.total { font-size: 1.3rem; }
+.explicatii-plata { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; color: var(--text-secundar); font-size: .93rem; }
+.actiuni-confirmare { display: flex; gap: 10px; flex-wrap: wrap; }
+.actiuni-confirmare .buton { text-decoration: none; }
+
 /* ---------- Telefon ---------- */
 @media (max-width: 760px) {
   .hero { padding-top: 36px; }

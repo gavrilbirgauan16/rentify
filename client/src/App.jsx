@@ -18,6 +18,8 @@ import AnunturileMele from './pagini/proprietar/AnunturileMele.jsx';
 import FormularAnunt from './pagini/proprietar/FormularAnunt.jsx';
 import ProprietatileMele from './pagini/proprietar/ProprietatileMele.jsx';
 import FormularProprietate from './pagini/proprietar/FormularProprietate.jsx';
+import AbonamentulMeu from './pagini/proprietar/AbonamentulMeu.jsx';
+import ConfirmarePlan from './pagini/proprietar/ConfirmarePlan.jsx';
 
 const router = createBrowserRouter([
   {
@@ -49,6 +51,8 @@ const router = createBrowserRouter([
                 { path: 'proprietati', Component: ProprietatileMele },
                 { path: 'proprietati/nou', Component: FormularProprietate },
                 { path: 'proprietati/:id', Component: FormularProprietate },
+                { path: 'abonament', Component: AbonamentulMeu },
+                { path: 'abonament/schimba', Component: ConfirmarePlan }, // ?plan=3&perioada=lunar
               ],
             }],
           },
