@@ -5,6 +5,7 @@ import { useSesiune } from '../../sesiune/sesiune.js';
 const FILE = [
   { adresa: '/proprietar/anunturi', text: 'Anunțurile mele' },
   { adresa: '/proprietar/proprietati', text: 'Proprietățile mele' },
+  { adresa: '/proprietar/abonament', text: 'Abonamentul meu' },
 ];
 
 export default function ZonaProprietar() {
