@@ -1,6 +1,7 @@
 // Rutele pentru planurile de abonament (in /admin/planuri).
 const express = require('express');
-const controller = require('../controllers/PlanuriController');
+const PlanuriController = require('../controllers/PlanuriController');
+const { actiune } = require('../infrastructura/container'); // DI: controllerul isi primeste serviciul
 
 const router = express.Router();
 
@@ -9,12 +10,12 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/', controller.index);
-router.get('/create', controller.createGet);
-router.post('/create', controller.createPost);
-router.get('/:id/edit', controller.editGet);
-router.post('/:id/edit', controller.editPost);
-router.post('/:id/activeaza', controller.activeaza);
-router.post('/:id/dezactiveaza', controller.dezactiveaza);
+router.get('/', actiune(PlanuriController, 'index'));
+router.get('/create', actiune(PlanuriController, 'createGet'));
+router.post('/create', actiune(PlanuriController, 'createPost'));
+router.get('/:id/edit', actiune(PlanuriController, 'editGet'));
+router.post('/:id/edit', actiune(PlanuriController, 'editPost'));
+router.post('/:id/activeaza', actiune(PlanuriController, 'activeaza'));
+router.post('/:id/dezactiveaza', actiune(PlanuriController, 'dezactiveaza'));
 
 module.exports = router;
