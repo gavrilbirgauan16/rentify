@@ -6,18 +6,17 @@
 const crypto = require('crypto');
 const app = require('../../app');
 const context = require('../../src/Repository_CodeFirst/context');
-const UtilizatorAccessor = require('../../src/NivelAccesDate/UtilizatorAccessor');
-const PlanAccessor = require('../../src/NivelAccesDate/PlanAccessor');
-const ProprietateAccessor = require('../../src/NivelAccesDate/ProprietateAccessor');
-const AnuntAccessor = require('../../src/NivelAccesDate/AnuntAccessor');
+// Accesorii ii construieste containerul DI, exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
+const scop = container.createScope();
 const { abonamentGratuit } = require('../../models/AbonamentViewModel');
 const { hashParola } = require('../../servicii/parole');
 const D = require('../../servicii/date');
 
-const utilizatori = new UtilizatorAccessor();
-const planuri = new PlanAccessor();
-const proprietati = new ProprietateAccessor();
-const anunturi = new AnuntAccessor();
+const utilizatori = scop.resolve('utilizatorAccessor');
+const planuri = scop.resolve('planAccessor');
+const proprietati = scop.resolve('proprietateAccessor');
+const anunturi = scop.resolve('anuntAccessor');
 
 // A doua plasa de siguranta (prima e in scripts/teste-integrare.js): nu pornim pe alta baza decat una "_test".
 if (!new URL(process.env.DATABASE_URL).pathname.endsWith('_test')) {

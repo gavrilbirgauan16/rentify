@@ -2,7 +2,9 @@
 // Folosire:  node scripts/seteaza-parola.js admin@rentify.test ParolaMea123
 require('dotenv/config');
 const context = require('../src/Repository_CodeFirst/context');
-const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
+// Accesorii ii construieste containerul DI, exact ca in aplicatie (laboratorul 10).
+const { container } = require('../infrastructura/container');
+const scop = container.createScope();
 const { hashParola, verificaReguliParola } = require('../servicii/parole');
 
 async function main() {
@@ -18,7 +20,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  const utilizatori = new UtilizatorAccessor();
+  const utilizatori = scop.resolve('utilizatorAccessor');
   const u = await utilizatori.getByEmail(email.trim().toLowerCase());
   if (!u) {
     console.log(`Nu exista niciun utilizator cu emailul ${email}.`);
