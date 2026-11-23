@@ -1,17 +1,16 @@
 // Middleware-uri pentru autentificare si roluri.
-const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
 const { mesajFlash } = require('../utils/http');
-
-const utilizatori = new UtilizatorAccessor();
 
 // La fiecare cerere: daca in sesiune e un utilizator, il incarcam din baza de date
 // (asa vedem imediat daca intre timp a fost blocat) si il punem la dispozitia paginilor.
+// Serviciul il luam din containerul CERERII (req.container, pus de infrastructura/container.js): un middleware
+// nu e construit de container ca un controller, asa ca isi cere singur dependinta din scope-ul cererii.
 async function incarcaUtilizator(req, res, next) {
   res.locals.utilizator = null;
   const id = req.session.utilizatorId;
   if (!id) return next();
 
-  const u = await utilizatori.getPentruSesiune(id);
+  const u = await req.container.cradle.autentificare.utilizatorPentruSesiune(id);
   if (!u || u.stare === 'blocat') {
     delete req.session.utilizatorId; // contul nu mai exista sau a fost blocat: il deconectam
     return next();
