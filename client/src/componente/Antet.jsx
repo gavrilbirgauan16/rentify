@@ -9,7 +9,7 @@ import { useAntetInteligent } from '../hooks/useAntetInteligent.js';
 
 // Paginile din meniu, dupa cine e conectat. "end": activ doar pe adresa exacta.
 function paginiPentru(utilizator) {
-  const pagini = [{ adresa: '/', text: 'Caută locuințe', end: true }];
+  const pagini = [{ adresa: '/cautare', text: 'Caută locuințe' }];
   if (utilizator?.rol === 'proprietar') pagini.push({ adresa: '/proprietar/anunturi', text: 'Anunțurile mele' });
   return pagini;
 }
