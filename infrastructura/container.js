@@ -29,6 +29,9 @@ const Tokenuri = require('../servicii/tokenuri');
 const Autentificare = require('../servicii/autentificare');
 const Cont = require('../servicii/cont');
 const Conturi = require('../servicii/conturi');
+const Jurnal = require('../servicii/jurnal');
+const PanouAdmin = require('../servicii/panouAdmin');
+const CautareAdmin = require('../servicii/cautareAdmin');
 
 function creeazaContainer() {
   const container = createContainer({
@@ -68,6 +71,9 @@ function creeazaContainer() {
     autentificare: asClass(Autentificare).scoped(),
     cont: asClass(Cont).scoped(),
     conturi: asClass(Conturi).scoped(),
+    jurnal: asClass(Jurnal).scoped(),
+    panouAdmin: asClass(PanouAdmin).scoped(),
+    cautareAdmin: asClass(CautareAdmin).scoped(),
   });
 
   return container;
