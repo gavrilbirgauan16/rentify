@@ -5,6 +5,11 @@
 // La orice cerere care SCHIMBA ceva (POST, PUT, DELETE) il trimitem in antetul x-csrf-token. Un site strain
 // nu-l poate citi, deci nu poate trimite cereri "in numele nostru".
 
+// Adresa paginilor facute pe server (EJS): panoul adminului, schimbarea parolei temporare, linkurile din email.
+// In timpul lucrului React e pe portul 5173, iar serverul pe 3000; publicate, sunt pe aceeasi adresa.
+// (Cookie-ul de sesiune merge pe ambele: browserul nu tine cont de port la cookie-uri.)
+export const ADRESA_SERVER = import.meta.env.DEV ? 'http://localhost:3000' : '';
+
 // Eroare primita de la API, cu tot ce trebuie pentru afisare: status (401, 404...), mesaj si erorile pe campuri.
 export class EroareApi extends Error {
   constructor(status, date) {
@@ -12,6 +17,7 @@ export class EroareApi extends Error {
     this.name = 'EroareApi';
     this.status = status;
     this.erori = date?.erori || {}; // ex. { email: 'Emailul nu este valid.' }
+    this.date = date || {};          // tot raspunsul (ex. { neconfirmat: true } la login)
   }
 }
 

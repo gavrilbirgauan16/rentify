@@ -65,6 +65,9 @@ body { margin: 0; background: var(--fundal); }
   position: sticky; top: 12px; z-index: 10; padding-top: 12px; container: antet / inline-size;
   transition: transform .4s cubic-bezier(.2, .75, .2, 1);
 }
+/* Antetul se lateste dupa fereastra (nu e limitat la 1200px ca restul paginii), cu o margine pe laterale
+   care creste putin pe ecranele mari: clamp(minim, ideal, maxim). */
+.antet.continut { width: calc(100% - 2 * clamp(12px, 2vw, 32px)); }
 .antet .bara {
   position: relative; display: flex; align-items: center; gap: 20px; min-height: 66px; padding: 8px 10px 8px 16px;
   background: rgb(255 255 255 / 90%); backdrop-filter: blur(12px);
@@ -73,8 +76,10 @@ body { margin: 0; background: var(--fundal); }
 }
 /* Antetul inteligent: derulezi in jos -> aluneca in sus, afara din ecran; derulezi in sus -> revine */
 .antet.ascuns { transform: translateY(calc(-100% - 16px)); }
-/* ...dar nu cat timp navighezi in el cu tastatura (Tab): ce are focus trebuie sa se vada */
-.antet.ascuns:focus-within { transform: none; }
+/* ...dar nu cat timp navighezi in el cu TASTATURA (Tab): ce are focus trebuie sa se vada.
+   :focus-visible = focus de la tastatura (nu de la un clic cu mouse-ul). Cu :focus-within, un link apasat
+   (ex. logo-ul) ramanea "selectat" si antetul nu se mai ascundea deloc. */
+.antet.ascuns:has(:focus-visible) { transform: none; }
 /* Dupa ce ai derulat putin: mai compact, mai opac si cu umbra mai mare (pluteste deasupra continutului) */
 .antet.derulat .bara { min-height: 58px; background: rgb(255 255 255 / 96%); box-shadow: var(--umbra-mare); }
 .antet .logo-link { text-decoration: none; flex-shrink: 0; }
@@ -93,12 +98,14 @@ body { margin: 0; background: var(--fundal); }
 .meniu a[aria-current='page'] { color: var(--principal); }
 .meniu a[aria-current='page']::after { transform: scaleX(1); }
 .antet .actiuni { display: flex; gap: 8px; flex-shrink: 0; margin-left: auto; }
-.buton-meniu { display: none; }
+/* ".antet .buton-meniu" (nu doar ".buton-meniu"): mai specific decat ".buton { display: inline-flex }",
+   care e scris mai jos in fisier si altfel ar castiga (la egalitate castiga regula scrisa ultima). */
+.antet .buton-meniu { display: none; }
 
 /* Fara loc pentru meniu: el se strange in butonul "Meniu" si se deschide ca o lista sub antet */
 @container antet (max-width: 900px) {
   /* Ordinea vizuala (order): logo, apoi "Meniu" impins spre dreapta, apoi butoanele de cont - fixe in colt */
-  .buton-meniu { display: inline-flex; order: 2; margin-left: auto; }
+  .antet .buton-meniu { display: inline-flex; order: 2; margin-left: auto; }
   .antet .actiuni { order: 3; margin-left: 0; }
   .meniu {
     display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; margin: 0;
@@ -127,6 +134,7 @@ body { margin: 0; background: var(--fundal); }
   transition: background-color .15s ease, color .15s ease, transform .1s ease, box-shadow .15s ease;
 }
 .buton:active { transform: translateY(1px); }
+.buton:disabled { opacity: .6; cursor: progress; transform: none; }
 .buton-principal { background: var(--principal); color: #fff; box-shadow: 0 4px 12px rgb(28 43 82 / 25%); }
 .buton-principal:hover { background: var(--principal-apasat); }
 .buton-moale { background: var(--principal-fin); color: var(--principal); }   /* la fel de "plin", doar mai discret */
@@ -207,8 +215,9 @@ body { margin: 0; background: var(--fundal); }
 .alerta-eroare { background: #fdf0ee; border-color: #f2c4bf; color: #7f1d1d; }
 
 /* ---------- Cardul de cont: se intoarce intre "Intra in cont" si "Creeaza cont" (3D) ---------- */
-.card-cont { perspective: 1400px; max-width: 440px; width: 100%; }
+.card-cont { perspective: 1400px; max-width: 420px; width: 100%; container: card / inline-size; }
 .card-cont .interior {
+  position: relative;
   display: grid;                       /* cele doua fete stau una peste alta, in aceeasi celula */
   transform-style: preserve-3d;
   transition: transform .75s cubic-bezier(.2, .75, .2, 1);
@@ -218,14 +227,58 @@ body { margin: 0; background: var(--fundal); }
   grid-area: 1 / 1;
   backface-visibility: hidden;         /* fata din spate nu se vede prin cea din fata */
   background: var(--suprafata); border: 1px solid var(--bordura); border-radius: 24px;
-  box-shadow: var(--umbra-mare); padding: 32px;
-  display: flex; flex-direction: column; gap: 16px;
+  box-shadow: var(--umbra-mare); padding: 26px 28px;
+  display: flex; flex-direction: column; gap: 12px;
+  position: relative;                  /* pentru stratul colorat din timpul rotatiei (::after) */
 }
 .card-cont .fata.spate { transform: rotateY(180deg); }
+/* Fata care NU se vede nu mai conteaza la inaltime: cardul are inaltimea fetei vizibile
+   (login-ul e scurt, deci nu mai apare derulare din cauza formularului de creare, mai lung). */
+.card-cont .interior:not(.intors) .fata.spate,
+.card-cont .interior.intors .fata:not(.spate) { position: absolute; inset: 0 0 auto 0; }
+/* ...si, dupa ce s-a terminat intoarcerea, e taiata la inaltimea fetei vizibile: altfel iese (invizibila) din
+   card in jos si pagina primeste bara de derulare. In timpul intoarcerii (.se-intoarce) e intreaga. */
+.card-cont .interior:not(.se-intoarce):not(.intors) .fata.spate,
+.card-cont .interior:not(.se-intoarce).intors .fata:not(.spate) { bottom: 0; overflow: hidden; }
+/* Cand alegi Chirias / Proprietar, cardul face o rotatie completa (ca o moneda), cu o mica "respiratie".
+   Ca sa nu se vada scrisul in oglinda: inainte sa ajunga cu spatele, continutul se stinge si cardul se
+   "imbraca" in culorile Rentify (bleumarin + acoperisul auriu din logo, desen simetric = arata la fel din spate);
+   dupa ce revine cu fata, stratul colorat dispare si formularul reapare. */
+.card-cont .fata.spate.se-invarte {
+  backface-visibility: visible;
+  animation: invarte .8s cubic-bezier(.45, .05, .25, 1);
+}
+.card-cont .fata.spate.se-invarte > * { animation: stinge .8s ease both; }
+.card-cont .fata.spate.se-invarte::after {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26'%3E%3Cpath d='M5 21 20 7l15 14' fill='none' stroke='%23c9973f' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 84px no-repeat,
+    radial-gradient(circle at 50% 45%, #2e4687, var(--principal) 55%, #0f1834);
+  box-shadow: inset 0 0 0 1px rgb(201 151 63 / 45%);  /* un chenar auriu fin */
+  animation: imbraca .8s ease both;
+}
+@keyframes stinge { 0% { opacity: 1; } 16%, 84% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes imbraca { 0% { opacity: 0; } 16%, 84% { opacity: 1; } 100% { opacity: 0; } }
+/* Siguranta: cand cardul arata login-ul, spatele (formularul de creare) NU se poate vedea niciodata */
+.card-cont .interior:not(.intors) .fata.spate { backface-visibility: hidden; animation: none; }
+@keyframes invarte {
+  from { transform: rotateY(180deg); }
+  50% { transform: rotateY(360deg) scale(.9); }
+  to { transform: rotateY(540deg); }   /* 540 = 180 + o tura completa: ajunge exact cum era */
+}
 .card-cont .titlu-card { text-align: center; }
-.card-cont .titlu-card h2 { font-size: 1.7rem; margin-bottom: .2em; }
-.card-cont .titlu-card p { margin: 0; color: var(--text-secundar); }
-.card-cont .schimba { text-align: center; color: var(--text-secundar); font-size: .95rem; margin: 0; }
+.card-cont .titlu-card h1, .card-cont .titlu-card h2 { font-size: 1.55rem; margin-bottom: .15em; }
+.card-cont .fata:not(.spate) { justify-content: center; }   /* fata e mai scurta decat spatele: o centram */
+.card-cont .iconita-mare { font-size: 2.6rem; margin-bottom: 8px; }
+.card-cont .alerta { flex-direction: column; align-items: stretch; }
+.card-cont .titlu-card p { margin: 0; color: var(--text-secundar); font-size: .92rem; }
+.card-cont .schimba { text-align: center; color: var(--text-secundar); font-size: .9rem; margin: 0; }
+/* In card, totul putin mai compact decat in restul aplicatiei */
+.card-cont .camp { gap: 4px; }
+.card-cont .camp label { font-size: .82rem; }
+.card-cont .intrare { padding: .62em .9em; }
+.card-cont .buton { padding: .68em 1.2em; }
+.card-cont .rand-doi { gap: 10px; }
 .card-cont .schimba button { border: 0; background: none; font: inherit; font-weight: 700; color: var(--principal); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Comutatorul Chirias / Proprietar: un "glisor" auriu care aluneca sub optiunea aleasa */
@@ -240,18 +293,21 @@ body { margin: 0; background: var(--fundal); }
 }
 .comutator[data-ales='proprietar'] .glisor { transform: translateX(100%); }
 .comutator button {
-  position: relative; z-index: 1; border: 0; background: none; padding: .65em; font: inherit;
+  position: relative; z-index: 1; border: 0; background: none; padding: .5em; font: inherit;
   font-weight: 650; color: var(--text-secundar); cursor: pointer; border-radius: 11px;
 }
 .comutator button[aria-checked='true'] { color: var(--principal); }
+/* Iconita rolului ales se roteste o data (animatia porneste cand butonul DEVINE ales) */
+.comutator .iconita-rol { display: inline-block; margin-right: 6px; }
+.comutator button[aria-checked='true'] .iconita-rol { animation: rotire .6s cubic-bezier(.2, .75, .2, 1); }
 
 /* Descrierea rolului: cand schimbi rolul, iconita se roteste o data */
-.rol-ales { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; background: var(--accent-deschis); }
+.rol-ales { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: var(--accent-deschis); }
 .rol-ales .iconita {
-  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; display: grid; place-items: center;
-  background: var(--principal); color: #fff; font-size: 1.4rem; animation: rotire .6s cubic-bezier(.2, .75, .2, 1);
+  width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center;
+  background: var(--principal); color: #fff; font-size: 1.15rem; animation: rotire .6s cubic-bezier(.2, .75, .2, 1);
 }
-.rol-ales p { margin: 0; font-size: .92rem; color: var(--accent-text); font-weight: 500; }
+.rol-ales p { margin: 0; font-size: .85rem; line-height: 1.4; color: var(--accent-text); font-weight: 500; }
 @keyframes rotire { from { transform: rotateY(-180deg) scale(.8); } to { transform: none; } }
 
 /* ---------- Ecranul de intrare (logo-ul, cat timp aplicatia porneste) ---------- */
@@ -269,6 +325,99 @@ body { margin: 0; background: var(--fundal); }
 }
 .ecran-intrare .nume span { color: var(--accent); }
 @keyframes aparitie { from { opacity: 0; transform: translateY(12px) scale(.92); } to { opacity: 1; transform: none; } }
+
+/* Progresul formularului in pasi: doua liniute; cele parcurse sunt aurii */
+.pasi { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; }
+.pasi span { width: 28px; height: 4px; border-radius: 4px; background: var(--bordura); transition: background-color .3s; }
+.pasi span.facut { background: var(--accent); }
+.pasi small { margin-left: 6px; color: var(--text-secundar); font-size: .8rem; }
+/* La pasul 2: ce ai ales la pasul 1 (ca sa stii pentru ce cont alegi parola) */
+.rezumat-pas {
+  margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--suprafata-2);
+  font-size: .85rem; color: var(--text-secundar); overflow-wrap: anywhere;
+}
+.rezumat-pas strong { color: var(--text); }
+/* "Inapoi" (mic) + butonul principal (ocupa restul randului) */
+.rand-butoane { display: flex; gap: 8px; }
+.rand-butoane .buton-principal { flex: 1; }
+
+/* Doua campuri pe acelasi rand (prenume + nume, parola + confirmare); unul sub altul pe card ingust */
+.rand-doi { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@container card (max-width: 400px) { .rand-doi { grid-template-columns: 1fr; } }
+
+.camp .ajutor { font-size: .82rem; color: var(--text-secundar); }
+
+/* Butonul "Arata" din interiorul campului de parola */
+.intrare-cu-buton { position: relative; }
+.intrare-cu-buton .intrare { padding-right: 84px; }
+.buton-in-camp {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%); height: 32px;
+  border: 0; border-radius: 8px; background: var(--suprafata-2); color: var(--text-secundar);
+  font: inherit; font-size: .8rem; font-weight: 600; padding: 0 10px; cursor: pointer;
+}
+.buton-in-camp:hover { color: var(--text); }
+
+/* Bifa (checkbox) cu text */
+.bifa { display: flex; gap: 10px; align-items: flex-start; font-size: .85rem; line-height: 1.4; color: var(--text-secundar); cursor: pointer; }
+.bifa input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--principal); flex-shrink: 0; }
+.bifa.cu-eroare { color: #a1271b; }
+.eroare-separata { font-size: .82rem; color: #a1271b; margin-top: -6px; }
+.nota { font-size: .9rem; color: var(--text-secundar); margin: 0; }
+
+/* Pagina "fixa" (intrare / creare cont): ocupa EXACT ecranul (100dvh = inaltimea vizibila, si pe telefon),
+   fara derulare si fara subsol. Doar daca fereastra e extrem de joasa, se poate derula zona de continut
+   (nu toata pagina), ca niciun camp sa nu ramana taiat. */
+.aplicatie.pagina-fixa { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.aplicatie.pagina-fixa > main { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+/* doar pe o fereastra extrem de joasa (sau cu textul marit mult) se poate derula zona de continut */
+@media (max-height: 520px) { .aplicatie.pagina-fixa > main { overflow-y: auto; } }
+
+/* Pagina de cont: textul in stanga, cardul in dreapta; pe ecran ingust doar cardul, centrat */
+.pagina-cont {
+  flex: 1; display: grid; grid-template-columns: 1fr minmax(0, 420px); gap: 56px; align-items: center; padding: 16px 0;
+}
+.cont-text h2 { font-size: clamp(2rem, 3vw + 1rem, 3rem); max-width: 14ch; }
+.cont-text h2 em { font-style: normal; color: var(--accent); }
+.avantaje { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 14px; }
+.avantaje li { position: relative; padding-left: 30px; color: var(--text-secundar); max-width: 46ch; }
+.avantaje li::before {
+  content: '✓'; position: absolute; left: 0; top: .1em; width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .75rem; font-weight: 700; background: var(--accent-deschis); color: var(--accent-text);
+}
+.avantaje strong { color: var(--text); }
+@media (max-width: 900px) {
+  .pagina-cont { grid-template-columns: 1fr; justify-items: center; }
+  .cont-text { display: none; }
+}
+
+/* Fereastra JOASA (ecran impartit pe orizontala, colt de ecran, laptop mic): cardul renunta treptat
+   la ce nu e esential, ca sa incapa fara derulare. Campurile si butoanele raman mereu. */
+@media (max-height: 900px) {
+  .card-cont .rol-ales { display: none; }   /* descrierea rolului; iconita care se roteste ramane in comutator */
+  .card-cont .camp .ajutor { display: none; }
+  .card-cont .fata.spate .titlu-card p { display: none; }
+}
+@media (max-height: 760px) {
+  .card-cont .fata { padding: 18px 22px; gap: 9px; border-radius: 20px; }
+  .card-cont .titlu-card h1 { font-size: 1.3rem; margin: 0; }
+  .card-cont .titlu-card p { display: none; }
+  .card-cont .intrare { padding: .5em .8em; }
+  .card-cont .camp label { font-size: .76rem; }
+  .card-cont .buton { padding: .55em 1em; }
+  .cont-text h2 { font-size: 2rem; }
+  .antet { padding-top: 6px; top: 6px; }
+  .antet .bara { min-height: 54px; padding-block: 4px; }
+}
+@media (max-height: 640px) {
+  /* etichetele raman pentru cititorul de ecran, dar dispar vizual (campurile au text-exemplu in ele) */
+  .card-cont .camp label {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .card-cont .comutator button { padding: .38em; }
+  .card-cont .schimba { font-size: .82rem; }
+  .card-cont .bifa { font-size: .78rem; }
+  .cont-text .avantaje { display: none; }
+}
 
 /* ---------- Sectiuni, stari de incarcare, pagina goala ---------- */
 .sectiune { padding-bottom: 56px; }
