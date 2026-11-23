@@ -10,7 +10,8 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 | Parte | Tehnologii |
 |---|---|
 | Server | **Node.js** 24, **Express.js** 5, JavaScript |
-| Pagini (randare pe server) | **EJS**, **HTML5**, **CSS3**, **Bootstrap** 5.3, JavaScript în browser |
+| Interfața utilizatorilor | **React** 19, React Router, Vite; **CSS3** propriu (variabile, Grid, Flexbox, container queries), **HTML5** |
+| Panoul de administrare (randare pe server) | **EJS**, **HTML5**, **CSS3**, **Bootstrap** 5.3, JavaScript în browser |
 | Bază de date | **PostgreSQL**, **Prisma ORM** 7 (Code First, migrări) |
 | Securitate | helmet, express-rate-limit, CSRF, parole **scrypt**, sesiuni cu express-session + connect-pg-simple |
 | Alte librării | Nodemailer (emailuri), Multer (imagini), morphism (DTO-uri API), dotenv |
@@ -19,7 +20,7 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 
 ## Instalare
 
-1. `npm install`, apoi `npx prisma generate`.
+1. `npm install`, apoi `npx prisma generate`. Pentru interfața React: `npm install --prefix client`.
 2. Copiază `.env.example` ca `.env` și completează `DATABASE_URL`, `SESSION_SECRET` și `API_KEY`.
    Pentru emailuri reale completează și `SMTP_*`, `EMAIL_FROM`, `APP_URL`; fără ele, emailurile apar doar în consolă.
 3. Creează baza de date din migrări: `npx prisma migrate deploy`.
@@ -31,6 +32,8 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 | Comandă | Ce face |
 |---|---|
 | `npm run dev` | pornește aplicația la http://localhost:3000 și o repornește la fiecare salvare |
+| `npm run dev` (în `client/`) | pornește interfața React la http://localhost:5173 (cu serverul pornit în altă fereastră) |
+| `npm run build` (în `client/`) | împachetează interfața React pentru publicare (în `client/dist/`) |
 | `npm start` | pornește aplicația (fără repornire automată) |
 | `npm test` | rulează testele automate (fără bază de date) |
 | `npm run test:integrare` | testele API-ului pe baza separată `rentify_test` (setările în `.env.test`, după `.env.test.example`) |
@@ -140,6 +143,21 @@ Filtrele căutării: `q`, `oras`, `tip`, `pret_min`, `pret_max`, `camere_min`, `
 
 Colecția Postman: `docs/Rentify-API.postman_collection.json`. În tab-ul Variables, `apiKey`, `emailChirias`, `parolaChirias`, `emailProprietar` și `parolaProprietar` se completează doar la Current value.
 
+## Interfața React (`client/`)
+
+Interfața pentru chiriași și proprietari, făcută în React peste API-ul de mai sus (`/api/...`).
+Panoul de administrare rămâne deocamdată în EJS.
+
+- **Pornire în timpul lucrului:** două ferestre CMD: `npm run dev` (serverul, portul 3000) și `npm run dev` în `client/` (portul 5173).
+  Vite trimite cererile `/api` și `/uploads` către server (proxy), deci pentru browser totul vine de la aceeași adresă.
+- **Autentificare:** aceeași sesiune ca paginile EJS (cookie httpOnly, pe care JavaScript nu îl poate citi) și tokenul CSRF
+  în antetul `x-csrf-token`, gestionat de `client/src/api/client.js` (singurul loc care vorbește cu serverul).
+- **Pagini:** Acasă (căutare cu filtrele în adresă, din `GET /api/anunturi`), Intră în cont / Creează cont
+  (un card care se întoarce; crearea contului în 2 pași), 404.
+- **Design:** sistem propriu în CSS3 (`client/src/stiluri/tema.css`): culorile, fonturile și formele sunt variabile;
+  se adaptează după lățimea și înălțimea ferestrei; respectă setarea "reduce animațiile" a sistemului.
+  Fonturile (Inter, Playfair Display) sunt în proiect, nu se încarcă de pe internet.
+
 ## Structura
 
 | Folder | Ce conține |
@@ -157,6 +175,7 @@ Colecția Postman: `docs/Rentify-API.postman_collection.json`. În tab-ul Variab
 | `scripts/` | unelte: setarea parolei, backup |
 | `test/` | teste automate (`node --test`); `test/integrare/` - testele API-ului cu baza de date |
 | `docs/` | colecția Postman |
+| `client/` | interfața React: `src/pagini/`, `src/componente/`, `src/api/` (clientul API), `src/sesiune/`, `src/stiluri/` |
 
 ## Securitate
 
