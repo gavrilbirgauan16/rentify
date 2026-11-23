@@ -154,6 +154,9 @@ Panoul de administrare rămâne deocamdată în EJS.
   în antetul `x-csrf-token`, gestionat de `client/src/api/client.js` (singurul loc care vorbește cu serverul).
 - **Pagini:** Acasă (căutare cu filtrele în adresă, din `GET /api/anunturi`), Intră în cont / Creează cont
   (un card care se întoarce; crearea contului în 2 pași), 404.
+- **Zona proprietarului** (`/proprietar`, doar pentru proprietari): **Anunțurile mele** (listă cu limita din plan, adăugare,
+  modificare, poze trase cu mouse-ul, publicare / retragere, ștergere cu confirmare) și **Proprietățile mele** (listă,
+  adăugare, modificare, dezactivare / activare). Fiecare acțiune e o cerere către API-ul `/api/proprietar/...` (CRUD prin API).
 - **Design:** sistem propriu în CSS3 (`client/src/stiluri/tema.css`): culorile, fonturile și formele sunt variabile;
   se adaptează după lățimea și înălțimea ferestrei; respectă setarea "reduce animațiile" a sistemului.
   Fonturile (Inter, Playfair Display) sunt în proiect, nu se încarcă de pe internet.
