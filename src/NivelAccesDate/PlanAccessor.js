@@ -24,6 +24,16 @@ class PlanAccessor {
     });
   }
 
+  // Oferta de planuri a unui rol (active si inactive, cu limitele), FARA numarul de abonati.
+  // Se poate tine in cache (servicii/cache.js): se schimba doar cand adminul modifica un plan.
+  async getOferta(numeRol) {
+    return this.context.plan_abonament.findMany({
+      where: { rol: { nume: numeRol } },
+      include: { rol: { select: { nume: true } }, limita_plan: true },
+      orderBy: [{ activ: 'desc' }, { pret_lunar: 'asc' }],
+    });
+  }
+
   // Toate planurile (active si inactive), cu rolul, pentru filtrele din liste.
   async getToate() {
     return this.context.plan_abonament.findMany({

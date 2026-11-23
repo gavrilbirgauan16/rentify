@@ -11,10 +11,16 @@ const D = require('./date');
 const lei = AbonamentViewModel.lei;
 
 class AbonamentProprietar {
-  constructor({ abonamentAccessor, planAccessor, verificariPlan }) {
+  constructor({ abonamentAccessor, planAccessor, verificariPlan, cache }) {
     this.abonamente = abonamentAccessor;
     this.planuri = planAccessor;
     this.verificariPlan = verificariPlan;
+    this.cache = cache; // Singleton: aceeasi oferta de planuri pentru toate cererile (pana o schimba adminul)
+  }
+
+  // Oferta de planuri pentru proprietari, din cache (se citeste din baza de date cel mult o data la 10 minute).
+  oferta() {
+    return this.cache.obtine('planuri:proprietar', () => this.planuri.getOferta('proprietar'));
   }
 
   // Situatia completa: abonamentul curent, schimbarea programata, limitele folosite, planurile si istoricul.
@@ -24,7 +30,7 @@ class AbonamentProprietar {
       this.abonamente.getCurente([proprietarId], azi),
       this.abonamente.getProgramate(proprietarId, azi),
       this.abonamente.getByUtilizator(proprietarId),
-      this.planuri.getByRol('proprietar'),
+      this.oferta(),
       this.verificariPlan.situatieProprietati(proprietarId),
       this.verificariPlan.situatieAnunturi(proprietarId),
     ]);

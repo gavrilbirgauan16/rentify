@@ -7,9 +7,15 @@ const PlanViewModel = require('../models/PlanViewModel');
 const NUME_FOLOSIT = 'Există deja un plan cu acest nume pentru acest rol.';
 
 class PlanuriAdmin {
-  constructor({ planAccessor, jurnal }) {
+  constructor({ planAccessor, jurnal, cache }) {
     this.planuri = planAccessor;
     this.jurnal = jurnal;
+    this.cache = cache;
+  }
+
+  // Dupa orice schimbare a unui plan, oferta din cache nu mai e valabila: o golim, ca toti sa vada imediat planul nou.
+  #golesteCache() {
+    this.cache.sterge('planuri:');
   }
 
   async lista(rol) {
@@ -35,6 +41,7 @@ class PlanuriAdmin {
     const erori = await this.#valideaza(model, rol);
     if (Object.keys(erori).length > 0) return { model, erori };
     const nou = await this.planuri.addEntity(rol, model.catreEntitate(), model.catreLimite());
+    this.#golesteCache();
     await this.jurnal.noteaza(admin, 'creare', 'plan', nou.id, nou.nume);
     return { nou };
   }
@@ -49,6 +56,7 @@ class PlanuriAdmin {
     const erori = await this.#valideaza(model, rol, id);
     if (Object.keys(erori).length > 0) return { model, erori, rol };
     await this.planuri.updateEntity(id, model.catreEntitate(), model.catreLimite());
+    this.#golesteCache();
     await this.jurnal.noteaza(admin, 'modificare', 'plan', id, model.nume);
     return { model, rol };
   }
@@ -58,6 +66,7 @@ class PlanuriAdmin {
     const entitate = await this.planuri.getById(id);
     if (!entitate) return { negasit: true };
     await this.planuri.schimbaActiv(id, activ);
+    this.#golesteCache();
     await this.jurnal.noteaza(admin, activ ? 'activare' : 'dezactivare', 'plan', id, entitate.nume);
     return { nume: entitate.nume, rol: entitate.rol.nume, aveaAbonati: entitate._count.abonament > 0 };
   }
