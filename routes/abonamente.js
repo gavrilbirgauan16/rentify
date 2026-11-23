@@ -1,15 +1,16 @@
 // Rutele pentru abonamente (in /admin/abonamente).
 const express = require('express');
-const controller = require('../controllers/AbonamenteController');
+const AbonamenteController = require('../controllers/AbonamenteController');
+const { actiune } = require('../infrastructura/container'); // DI: controllerul isi primeste serviciul
 
 const router = express.Router();
 router.use((req, res, next) => { res.locals.sectiune = 'abonamente'; next(); });
 
-router.get('/', controller.index);
-router.get('/create', controller.createGet);
-router.post('/create', controller.createPost);
-router.get('/:id', controller.details);
-router.post('/:id/plati', controller.plataPost);
-router.post('/:id/anuleaza', controller.anuleaza);
+router.get('/', actiune(AbonamenteController, 'index'));
+router.get('/create', actiune(AbonamenteController, 'createGet'));
+router.post('/create', actiune(AbonamenteController, 'createPost'));
+router.get('/:id', actiune(AbonamenteController, 'details'));
+router.post('/:id/plati', actiune(AbonamenteController, 'plataPost'));
+router.post('/:id/anuleaza', actiune(AbonamenteController, 'anuleaza'));
 
 module.exports = router;

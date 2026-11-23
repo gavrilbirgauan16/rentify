@@ -1,177 +1,120 @@
 // Controller-ul pentru utilizatori (in admin): lista cu filtre, Detalii, Blocare / Deblocare si Resetarea parolei.
 // Conturile noi nu se fac de aici: proprietarii si chiriasii isi vor face singuri cont (inregistrare).
-const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
-const AbonamentAccessor = require('../src/NivelAccesDate/AbonamentAccessor');
+// Logica e in serviciul utilizatoriAdmin (primit prin injectie, laboratorul 10); aici doar cererea, mesajele si pagina.
 const UtilizatorViewModel = require('../models/UtilizatorViewModel');
-const AbonamentViewModel = require('../models/AbonamentViewModel');
-const { hashParola, genereazaParolaTemporara } = require('../servicii/parole');
+const { SITUATII, SORTARI } = require('../servicii/utilizatoriAdmin');
 const { citesteId, negasit, mesajFlash } = require('../utils/http');
 const F = require('../servicii/filtre');
-const { azi } = require('../servicii/date');
-const JurnalAccessor = require('../src/NivelAccesDate/JurnalAccessor');
-
-const utilizatori = new UtilizatorAccessor();
-const abonamente = new AbonamentAccessor();
-const jurnal = new JurnalAccessor();
 
 const utilizatorNegasit = (res) => negasit(res, 'Utilizatorul nu există', 'Utilizatorul căutat nu a fost găsit.');
 
-// Filtrele listei de utilizatori si sortarile.
-const SITUATII = {
-  peste_limita: 'Proprietari peste limita planului',
-  fara_abonament: 'Fără abonament în curs',
-  neplatit: 'Abonament neplătit',
-  parola_temporara: 'Parolă temporară nefolosită',
-  email_neconfirmat: 'Email neconfirmat',
-};
+// Filtrele din adresa listei (?rol=proprietar&situatie=neplatit).
 const FILTRE = {
   q: { tip: 'text' },
   rol: { tip: 'enum', valori: Object.keys(UtilizatorViewModel.ROLURI) },
   stare: { tip: 'enum', valori: Object.keys(UtilizatorViewModel.STARI) },
   situatie: { tip: 'enum', valori: Object.keys(SITUATII) },
-  sort: { tip: 'enum', valori: ['nume', 'noi', 'conectare'], implicit: 'nume' },
-};
-const SORTARI = {
-  nume: [{ nume: 'asc' }, { prenume: 'asc' }],
-  noi: [{ creat_la: 'desc' }, { id: 'desc' }],
-  conectare: [{ ultima_autentificare: { sort: 'desc', nulls: 'last' } }, { nume: 'asc' }],
+  sort: { tip: 'enum', valori: Object.keys(SORTARI), implicit: 'nume' },
 };
 const PE_PAGINA = 25;
 
-// Situatiile "de verificat" se calculeaza din abonamentul curent si proprietati.
-const SE_POTRIVESTE = {
-  peste_limita: (u) => Boolean(u.situatieProprietati?.depaseste),
-  fara_abonament: (u) => u.areAbonamente && !u.abonament,
-  neplatit: (u) => u.abonament?.stareCod() === 'neplatit',
-  parola_temporara: (u) => u.areParolaTemporara,
-  email_neconfirmat: (u) => !u.emailConfirmat,
-};
-
-// GET /admin/utilizatori
-async function index(req, res) {
-  const f = F.citesteFiltre(req.query, FILTRE);
-  const entitati = await utilizatori.cauta({ rol: f.rol, stare: f.stare, cautare: f.q }, SORTARI[f.sort]);
-  // Abonamentele curente le aducem pe toate dintr-o singura interogare (nu cate una pentru fiecare utilizator).
-  const curente = await abonamente.getCurente(entitati.map((u) => u.id), azi());
-  const peUtilizator = new Map(curente.map((a) => [a.utilizator_id, a]));
-  let lista = entitati.map((u) => new UtilizatorViewModel(u, peUtilizator.get(u.id) ?? null));
-  if (f.situatie) lista = lista.filter(SE_POTRIVESTE[f.situatie]);
-  const pag = F.paginareLista(lista, f.pagina, PE_PAGINA);
-  res.render('admin/utilizatori/index', {
-    utilizatori: pag.randuri,
-    ...F.pentruPagina('/admin/utilizatori', f, FILTRE, pag),
-    roluri: UtilizatorViewModel.ROLURI,
-    stari: UtilizatorViewModel.STARI,
-    situatii: SITUATII,
-  });
-}
-
-// GET /admin/utilizatori/:id
-async function details(req, res) {
-  const id = citesteId(req);
-  const entitate = id && (await utilizatori.getDetalii(id));
-  if (!entitate) return utilizatorNegasit(res);
-  const [toate, curente, istoric] = await Promise.all([
-    abonamente.getByUtilizator(id),
-    abonamente.getCurente([id], azi()),
-    jurnal.getPentru('utilizator', id, 10),
-  ]);
-  res.render('admin/utilizatori/details', {
-    u: new UtilizatorViewModel(entitate, curente[0] ?? null),
-    abonamente: toate.map(AbonamentViewModel.dinEntitate),
-    istoric,
-  });
-}
-
-// Gaseste utilizatorul din adresa si verifica daca adminul conectat are voie sa-l administreze.
-// Intoarce modelul sau null (si a raspuns deja).
-async function utilizatorAdministrabil(req, res) {
-  const id = citesteId(req);
-  const entitate = id && (await utilizatori.getDetalii(id));
-  if (!entitate) {
+// Raspunsurile comune ale actiunilor pe un utilizator: nu exista (404) sau e un cont de administrator.
+// Intoarce true daca a raspuns deja.
+function aRaspuns(req, res, id, r) {
+  if (r.negasit) {
     utilizatorNegasit(res);
-    return null;
+    return true;
   }
-  const u = new UtilizatorViewModel(entitate);
-  if (!u.poateFiAdministratDe(res.locals.utilizator.id)) {
+  if (r.interzis) {
     mesajFlash(req, 'Conturile de administrator (inclusiv al tău) nu pot fi blocate sau resetate de aici.', 'warning');
     res.redirect(`/admin/utilizatori/${id}`);
-    return null;
+    return true;
   }
-  return u;
+  return false;
 }
 
-// POST /admin/utilizatori/:id/blocheaza si /deblocheaza
-async function schimbaStare(req, res, stare) {
-  const u = await utilizatorAdministrabil(req, res);
-  if (!u) return;
-  if (u.stare !== stare) {
-    await utilizatori.schimbaStare(u.id, stare);
-    await req.container.cradle.jurnal.noteaza(res.locals.utilizator, stare === 'blocat' ? 'blocare' : 'deblocare', 'utilizator', u.id, u.numeComplet);
-    mesajFlash(req, stare === 'blocat'
-      ? `Contul lui ${u.numeComplet} a fost blocat. Dacă era conectat, este deconectat imediat.`
-      : `Contul lui ${u.numeComplet} a fost deblocat.`);
+module.exports = function UtilizatoriController({ utilizatoriAdmin: serviciu }) {
+  // Ruleaza o actiune a serviciului pe utilizatorul din adresa (id gresit = 404, fara sa intrebe baza de date).
+  const peUtilizator = (req, actiune) => {
+    const id = citesteId(req);
+    return id ? actiune(id) : { negasit: true };
+  };
+
+  // GET /admin/utilizatori
+  async function index(req, res) {
+    const f = F.citesteFiltre(req.query, FILTRE);
+    const { randuri, pag } = await serviciu.lista(f, PE_PAGINA);
+    res.render('admin/utilizatori/index', {
+      utilizatori: randuri,
+      ...F.pentruPagina('/admin/utilizatori', f, FILTRE, pag),
+      roluri: UtilizatorViewModel.ROLURI,
+      stari: UtilizatorViewModel.STARI,
+      situatii: SITUATII,
+    });
   }
-  res.redirect(`/admin/utilizatori/${u.id}`);
-}
 
-// POST /admin/utilizatori/:id/reseteaza-parola
-// Genereaza o parola temporara, o arata O SINGURA DATA adminului si il obliga pe utilizator s-o schimbe
-// la prima conectare. Toate sesiunile deschise ale utilizatorului se inchid.
-async function reseteazaParola(req, res) {
-  const u = await utilizatorAdministrabil(req, res);
-  if (!u) return;
-  const parola = genereazaParolaTemporara();
-  await utilizatori.seteazaParola(u.id, await hashParola(parola), { temporara: true });
-  await utilizatori.inchideSesiunile(u.id);
-  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'resetare_parola', 'utilizator', u.id, u.numeComplet); // parola NU se scrie in jurnal
-
-  // Parola NU se pune in mesajul flash (care se salveaza in sesiune, in baza de date):
-  // o afisam direct, in raspuns, si cerem browserului sa nu pastreze pagina.
-  res.set('Cache-Control', 'no-store');
-  res.render('admin/utilizatori/parola-temporara', { u, parola });
-}
-
-// POST /admin/utilizatori/:id/trimite-link-resetare - varianta recomandata: utilizatorul isi alege singur
-// parola din linkul primit pe email (adminul nu afla nicio parola). Parola veche merge pana foloseste linkul.
-async function trimiteLinkParola(req, res) {
-  const u = await utilizatorAdministrabil(req, res);
-  if (!u) return;
-  if (u.esteBlocat) {
-    mesajFlash(req, 'Contul este blocat: deblochează-l întâi, altfel utilizatorul nu se poate conecta oricum.', 'warning');
-    return res.redirect(`/admin/utilizatori/${u.id}`);
+  // GET /admin/utilizatori/:id
+  async function details(req, res) {
+    const id = citesteId(req);
+    const date = id && (await serviciu.detalii(id));
+    if (!date) return utilizatorNegasit(res);
+    res.render('admin/utilizatori/details', date);
   }
-  // TEMPORAR (pana la pasul 3 al laboratorului 10): serviciul il luam din containerul cererii.
-  const plecat = await req.container.cradle.conturi.trimiteLinkResetare(u);
-  if (!plecat) {
-    mesajFlash(req, 'Emailul nu a putut fi trimis (verifică setările SMTP). Poți folosi parola temporară.', 'warning');
-    return res.redirect(`/admin/utilizatori/${u.id}`);
-  }
-  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'link_resetare', 'utilizator', u.id, u.numeComplet);
-  mesajFlash(req, `I-am trimis lui ${u.numeComplet} un link de resetare pe ${u.email} (valabil o oră).`);
-  res.redirect(`/admin/utilizatori/${u.id}`);
-}
 
-// POST /admin/utilizatori/:id/retrimite-confirmare - pentru cine nu a gasit emailul de confirmare
-async function retrimiteConfirmare(req, res) {
-  const u = await utilizatorAdministrabil(req, res);
-  if (!u) return;
-  if (u.emailConfirmat) {
-    mesajFlash(req, 'Adresa de email este deja confirmată.', 'warning');
-    return res.redirect(`/admin/utilizatori/${u.id}`);
+  // POST /admin/utilizatori/:id/blocheaza si /deblocheaza
+  async function schimbaStare(req, res, stare) {
+    const id = citesteId(req);
+    const r = await peUtilizator(req, (i) => serviciu.schimbaStare(i, stare, res.locals.utilizator));
+    if (aRaspuns(req, res, id, r)) return;
+    if (r.schimbat) {
+      mesajFlash(req, stare === 'blocat'
+        ? `Contul lui ${r.u.numeComplet} a fost blocat. Dacă era conectat, este deconectat imediat.`
+        : `Contul lui ${r.u.numeComplet} a fost deblocat.`);
+    }
+    res.redirect(`/admin/utilizatori/${r.u.id}`);
   }
-  await req.container.cradle.conturi.trimiteConfirmarea(u); // TEMPORAR (pana la pasul 3)
-  await req.container.cradle.jurnal.noteaza(res.locals.utilizator, 'link_confirmare', 'utilizator', u.id, u.numeComplet);
-  mesajFlash(req, `Am retrimis linkul de confirmare pe ${u.email}.`);
-  res.redirect(`/admin/utilizatori/${u.id}`);
-}
 
-module.exports = {
-  index,
-  trimiteLinkParola,
-  retrimiteConfirmare,
-  details,
-  blocheaza: (req, res) => schimbaStare(req, res, 'blocat'),
-  deblocheaza: (req, res) => schimbaStare(req, res, 'activ'),
-  reseteazaParola,
+  // POST /admin/utilizatori/:id/reseteaza-parola
+  // Parola temporara se arata O SINGURA DATA adminului; utilizatorul e obligat s-o schimbe la prima conectare.
+  async function reseteazaParola(req, res) {
+    const id = citesteId(req);
+    const r = await peUtilizator(req, (i) => serviciu.reseteazaParola(i, res.locals.utilizator));
+    if (aRaspuns(req, res, id, r)) return;
+    // Parola NU se pune in mesajul flash (care se salveaza in sesiune, in baza de date):
+    // o afisam direct, in raspuns, si cerem browserului sa nu pastreze pagina.
+    res.set('Cache-Control', 'no-store');
+    res.render('admin/utilizatori/parola-temporara', { u: r.u, parola: r.parola });
+  }
+
+  // POST /admin/utilizatori/:id/trimite-link-resetare - varianta recomandata: utilizatorul isi alege singur
+  // parola din linkul primit pe email (adminul nu afla nicio parola). Parola veche merge pana foloseste linkul.
+  async function trimiteLinkParola(req, res) {
+    const id = citesteId(req);
+    const r = await peUtilizator(req, (i) => serviciu.trimiteLinkParola(i, res.locals.utilizator));
+    if (aRaspuns(req, res, id, r)) return;
+    if (r.blocat) mesajFlash(req, 'Contul este blocat: deblochează-l întâi, altfel utilizatorul nu se poate conecta oricum.', 'warning');
+    else if (r.neplecat) mesajFlash(req, 'Emailul nu a putut fi trimis (verifică setările SMTP). Poți folosi parola temporară.', 'warning');
+    else mesajFlash(req, `I-am trimis lui ${r.u.numeComplet} un link de resetare pe ${r.u.email} (valabil o oră).`);
+    res.redirect(`/admin/utilizatori/${r.u.id}`);
+  }
+
+  // POST /admin/utilizatori/:id/retrimite-confirmare - pentru cine nu a gasit emailul de confirmare
+  async function retrimiteConfirmare(req, res) {
+    const id = citesteId(req);
+    const r = await peUtilizator(req, (i) => serviciu.retrimiteConfirmare(i, res.locals.utilizator));
+    if (aRaspuns(req, res, id, r)) return;
+    if (r.dejaConfirmat) mesajFlash(req, 'Adresa de email este deja confirmată.', 'warning');
+    else mesajFlash(req, `Am retrimis linkul de confirmare pe ${r.u.email}.`);
+    res.redirect(`/admin/utilizatori/${r.u.id}`);
+  }
+
+  return {
+    index,
+    details,
+    blocheaza: (req, res) => schimbaStare(req, res, 'blocat'),
+    deblocheaza: (req, res) => schimbaStare(req, res, 'activ'),
+    reseteazaParola,
+    trimiteLinkParola,
+    retrimiteConfirmare,
+  };
 };
