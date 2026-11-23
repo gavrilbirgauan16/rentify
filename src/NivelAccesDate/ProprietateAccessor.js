@@ -1,13 +1,11 @@
 // Metode de acces la date pentru modelul "proprietate".
 // Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
 // laboratorul 10), de la containerul din infrastructura/container.js.
-// TEMPORAR: pana cand nimeni nu mai creeaza accesori cu "new" (pasul 4), constructorul are o valoare implicita.
-const contextImplicit = require('../Repository_CodeFirst/context');
 const { NESTERS } = require('./AnuntAccessor');
 
 class ProprietateAccessor {
   // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
-  constructor({ context = contextImplicit } = {}) {
+  constructor({ context }) {
     this.context = context;
   }
 

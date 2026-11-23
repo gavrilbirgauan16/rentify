@@ -1,8 +1,6 @@
 // Metode de acces la date pentru planurile de abonament (tabelele plan_abonament si limita_plan).
 // Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
 // laboratorul 10), de la containerul din infrastructura/container.js.
-// TEMPORAR: pana cand nimeni nu mai creeaza accesori cu "new" (pasul 4), constructorul are o valoare implicita.
-const contextImplicit = require('../Repository_CodeFirst/context');
 
 // Ce aducem mereu impreuna cu un plan: rolul, limitele si cate abonamente ACTIVE are.
 const CU_DETALII = {
@@ -13,7 +11,7 @@ const CU_DETALII = {
 
 class PlanAccessor {
   // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
-  constructor({ context = contextImplicit } = {}) {
+  constructor({ context }) {
     this.context = context;
   }
 
