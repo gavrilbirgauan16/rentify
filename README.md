@@ -152,8 +152,12 @@ Panoul de administrare rămâne deocamdată în EJS.
   Vite trimite cererile `/api` și `/uploads` către server (proxy), deci pentru browser totul vine de la aceeași adresă.
 - **Autentificare:** aceeași sesiune ca paginile EJS (cookie httpOnly, pe care JavaScript nu îl poate citi) și tokenul CSRF
   în antetul `x-csrf-token`, gestionat de `client/src/api/client.js` (singurul loc care vorbește cu serverul).
-- **Pagini:** Acasă (căutare cu filtrele în adresă, din `GET /api/anunturi`), Intră în cont / Creează cont
+- **Pagini:** Acasă (căutare rapidă și anunțurile noi), Intră în cont / Creează cont
   (un card care se întoarce; crearea contului în 2 pași), 404.
+- **Căutarea** (`/cautare`): filtre (cuvinte, oraș, tip, preț, camere, câte persoane), sortare și pagini; totul stă
+  în adresă (`/cautare?oras=Suceava&camere_min=2&pagina=2`). Pe ecran îngust, filtrele se deschid într-o fereastră.
+- **Pagina anunțului** (`/anunturi/:id`): galerie (poza mărită, cu săgeți), detaliile locuinței, cât plătește fiecare
+  persoană, telefonul proprietarului (doar pentru chiriași conectați, cu limita de contactări din plan) și favorite.
 - **Zona proprietarului** (`/proprietar`, doar pentru proprietari): **Anunțurile mele** (listă cu limita din plan, adăugare,
   modificare, poze trase cu mouse-ul, publicare / retragere, ștergere cu confirmare) și **Proprietățile mele** (listă,
   adăugare, modificare, dezactivare / activare). Fiecare acțiune e o cerere către API-ul `/api/proprietar/...` (CRUD prin API).
