@@ -1,39 +1,60 @@
-// Prima componenta: verifica legatura cu serverul. La pornire intreaba API-ul "cine e conectat?"
-// (GET /api/auth/eu) si arata raspunsul. (Pasul urmator: meniul, paginile si login-ul.)
+// Aplicatia: sesiunea, ecranul de intrare si paginile (React Router).
+// Adresele paginilor sunt scrise O SINGURA DATA, aici. Paginile se adauga pe masura ce le construim.
 import { useEffect, useState } from 'react';
+import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
+import SesiuneProvider from './sesiune/SesiuneProvider.jsx';
+import { useSesiune } from './sesiune/sesiune.js';
+import EcranIntrare from './componente/EcranIntrare.jsx';
+import Cadru from './componente/Cadru.jsx';
+import Acasa from './pagini/Acasa.jsx';
+import NuExista from './pagini/NuExista.jsx';
 
-export default function App() {
-  // Starea componentei: ce stim acum. Cand se schimba (setStare), React redeseneaza componenta.
-  const [stare, setStare] = useState({ tip: 'incarcare' });
+const router = createBrowserRouter([
+  {
+    Component: Cadru, // antetul + subsolul, pentru toate paginile
+    children: [
+      {
+        // O eroare intr-o pagina se arata IN cadru (antetul ramane), nu ca o pagina alba.
+        ErrorBoundary: NuExista,
+        children: [
+          { index: true, Component: Acasa },
+          { path: '*', Component: NuExista }, // orice alta adresa: 404
+        ],
+      },
+    ],
+  },
+]);
 
-  // useEffect: cod care ruleaza DUPA ce componenta apare pe ecran (aici: o cerere catre API).
+// Ecranul cu logo: prima data in aceasta fila, macar putin (sa se vada animatia); apoi doar cat dureaza
+// verificarea sesiunii (la un refresh nu mai asteptam degeaba).
+const CHEIE_INTRARE = 'rentify-intrare-vazuta';
+function primaIntrare() {
+  try { return !sessionStorage.getItem(CHEIE_INTRARE); } catch { return true; }
+}
+
+function Pornire() {
+  const { verificata } = useSesiune();
+  const [asteaptaAnimatia, setAsteaptaAnimatia] = useState(primaIntrare);
+
   useEffect(() => {
-    // AbortController: daca componenta dispare inainte sa vina raspunsul, anulam cererea.
-    const anulare = new AbortController();
-    fetch('/api/auth/eu', { signal: anulare.signal })
-      .then(async (r) => {
-        if (r.status === 401) return setStare({ tip: 'neconectat' });
-        if (!r.ok) throw new Error(`Serverul a răspuns cu ${r.status}`);
-        const date = await r.json();
-        setStare({ tip: 'conectat', utilizator: date.utilizator });
-      })
-      .catch((e) => {
-        if (e.name !== 'AbortError') setStare({ tip: 'eroare', mesaj: e.message });
-      });
-    return () => anulare.abort(); // "curatenia": ruleaza cand componenta dispare
-  }, []); // [] = o singura data, la pornire
+    try { sessionStorage.setItem(CHEIE_INTRARE, '1'); } catch { /* fara sessionStorage: nu e grav */ }
+    const t = setTimeout(() => setAsteaptaAnimatia(false), 900);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
-    <main>
-      <h1>Rentify</h1>
-      {stare.tip === 'incarcare' && <p>Se verifică legătura cu serverul…</p>}
-      {stare.tip === 'neconectat' && <p>Legătura cu serverul merge. Nu ești conectat.</p>}
-      {stare.tip === 'conectat' && (
-        <p>Legătura cu serverul merge. Ești conectat ca <strong>{stare.utilizator.prenume}</strong> ({stare.utilizator.rol}).</p>
-      )}
-      {stare.tip === 'eroare' && (
-        <p role="alert">Nu pot ajunge la server ({stare.mesaj}). Pornește serverul cu <code>npm run dev</code>.</p>
-      )}
-    </main>
+    <>
+      <EcranIntrare vizibil={!verificata || asteaptaAnimatia} />
+      <RouterProvider router={router} />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SesiuneProvider>
+      <Pornire />
+    </SesiuneProvider>
   );
 }
