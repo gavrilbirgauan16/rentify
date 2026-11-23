@@ -94,4 +94,22 @@ const anuntRespins = (u, titlu, motiv) => ({
   }),
 });
 
-module.exports = { contExistent, confirmareCont, resetareParola, schimbareEmail, emailSchimbat, anuntAprobat, anuntRespins };
+// Alerta de securitate dupa schimbarea parolei (din cont sau prin linkul de resetare), ca la Google sau la banci:
+// daca nu a fost el, afla imediat si isi poate reseta parola. cum = 'schimbare' | 'resetare'; cand = Date.
+const parolaSchimbata = (u, cum, cand) => ({
+  subiect: 'Parola contului Rentify a fost schimbată',
+  ...sablon({
+    salut: `Bună, ${u.prenume}!`,
+    paragrafe: [
+      `Parola contului tău Rentify (${u.email}) a fost schimbată ${cum === 'resetare' ? 'prin linkul de resetare primit pe email' : 'din pagina contului'}, `
+        + `pe ${cand.toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest', dateStyle: 'long', timeStyle: 'short' })}.`,
+      'Din motive de siguranță, contul a fost deconectat de pe celelalte dispozitive.',
+      'Dacă nu tu ai schimbat parola, resetează-o imediat cu butonul de mai jos.',
+    ],
+    buton: 'Nu am fost eu – resetează parola',
+    link: `${config.appUrl}/parola-uitata`,
+    nota: 'Dacă tu ai făcut schimbarea, nu trebuie să faci nimic.',
+  }),
+});
+
+module.exports = { contExistent, confirmareCont, resetareParola, schimbareEmail, emailSchimbat, anuntAprobat, anuntRespins, parolaSchimbata };

@@ -47,5 +47,6 @@ class Evenimente {
 // Numele evenimentelor, intr-un singur loc (ca sa nu le scriem gresit in doua locuri diferite).
 Evenimente.ANUNT_APROBAT = 'anunt.aprobat';
 Evenimente.ANUNT_RESPINS = 'anunt.respins';
+Evenimente.PAROLA_SCHIMBATA = 'cont.parola_schimbata'; // { utilizator: { email, prenume }, cum: 'schimbare' | 'resetare', cand }
 
 module.exports = Evenimente;

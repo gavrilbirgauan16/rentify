@@ -8,6 +8,7 @@
 const CONSUMATORI = [
   require('../servicii/consumatori/emailModerare'),
   require('../servicii/consumatori/jurnalModerare'),
+  require('../servicii/consumatori/emailSecuritate'),
 ];
 
 function aboneazaConsumatorii(container) {

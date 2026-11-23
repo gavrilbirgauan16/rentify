@@ -79,3 +79,19 @@ test('consumatorul de jurnal: scrie actiunea adminului, cu jurnalul din scope-ul
   assert.deepEqual(notate[0], [{ id: 3 }, 'aprobare', 'anunt', 12, 'Garsonieră centru']);
   assert.deepEqual(notate[1], [{ id: 3 }, 'respingere', 'anunt', 12, 'Garsonieră centru – motiv: Pozele nu sunt clare.']);
 });
+
+test('alerta de securitate: schimbarea parolei are consumatorul de email, cu textul potrivit', async (t) => {
+  const emailSecuritate = require('../servicii/consumatori/emailSecuritate');
+  assert.deepEqual(container.resolve('evenimente').consumatori(Evenimente.PAROLA_SCHIMBATA), ['email-alerta-securitate']);
+  const trimise = [];
+  t.mock.method(posta, 'trimite', async (mesaj) => { trimise.push(mesaj); return true; });
+  const cand = new Date('2026-11-24T16:30:00Z'); // 18:30 ora Romaniei
+  await emailSecuritate.la[Evenimente.PAROLA_SCHIMBATA]({ utilizator: { email: 'ana@exemplu.ro', prenume: 'Ana' }, cum: 'resetare', cand });
+  await emailSecuritate.la[Evenimente.PAROLA_SCHIMBATA]({ utilizator: null, cum: 'schimbare', cand }); // fara adresa: nimic
+  assert.equal(trimise.length, 1);
+  assert.equal(trimise[0].catre, 'ana@exemplu.ro');
+  assert.match(trimise[0].subiect, /parola/i);
+  assert.match(trimise[0].text, /prin linkul de resetare/);
+  assert.match(trimise[0].text, /24 noiembrie 2026.*18:30/);
+  assert.match(trimise[0].text, /\/parola-uitata/);
+});
