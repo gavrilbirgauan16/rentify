@@ -2,10 +2,13 @@
 // cod care nu se executa niciodata...). Ruleaza cu:  npm run lint
 const js = require('@eslint/js');
 const globals = require('globals');
+const reactHooks = require('eslint-plugin-react-hooks');
+// Pachetul e scris ca modul ES: din CommonJS (require) il primim sub ".default"
+const reactRefresh = require('eslint-plugin-react-refresh').default;
 
 module.exports = [
   // Ce NU se verifica: pachetele instalate, fisierele generate si imaginile incarcate
-  { ignores: ['node_modules/', 'uploads/', 'backups/', 'src/generated/', 'public/vendor/'] },
+  { ignores: ['node_modules/', 'uploads/', 'backups/', 'src/generated/', 'public/vendor/', 'client/dist/'] },
 
   // Regulile recomandate de ESLint, pentru tot codul de server (Node.js, CommonJS)
   js.configs.recommended,
@@ -30,4 +33,20 @@ module.exports = [
     files: ['public/**/*.js'],
     languageOptions: { sourceType: 'script', globals: { ...globals.browser } },
   },
+
+  // Interfata React (client/): module ES (import / export), JSX, ruleaza in browser.
+  {
+    files: ['client/**/*.{js,jsx}'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: { ...globals.browser },
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  // Regulile hook-urilor React (useState, useEffect...): ordinea apelurilor, dependintele efectelor
+  { files: ['client/src/**/*.{js,jsx}'], ...reactHooks.configs.flat['recommended-latest'] },
+  // Reincarcarea rapida (Vite): un fisier cu o componenta sa exporte doar componente
+  { files: ['client/src/**/*.jsx'], ...reactRefresh.configs.vite },
+  // Configurarea Vite ruleaza in Node, nu in browser
+  { files: ['client/vite.config.js'], languageOptions: { globals: { ...globals.node } } },
 ];
