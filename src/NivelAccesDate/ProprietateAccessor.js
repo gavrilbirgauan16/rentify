@@ -1,11 +1,19 @@
 // Metode de acces la date pentru modelul "proprietate".
-const context = require('../Repository_CodeFirst/context');
+// Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
+// laboratorul 10), de la containerul din infrastructura/container.js.
+// TEMPORAR: pana cand nimeni nu mai creeaza accesori cu "new" (pasul 4), constructorul are o valoare implicita.
+const contextImplicit = require('../Repository_CodeFirst/context');
 const { NESTERS } = require('./AnuntAccessor');
 
 class ProprietateAccessor {
+  // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
+  constructor({ context = contextImplicit } = {}) {
+    this.context = context;
+  }
+
   // Toate proprietatile, cu numele proprietarului (pagina Index).
   async getAll() {
-    return context.proprietate.findMany({
+    return this.context.proprietate.findMany({
       include: { utilizator: { select: { nume: true, prenume: true } } },
       orderBy: { id: 'asc' },
     });
@@ -14,7 +22,7 @@ class ProprietateAccessor {
   // O pagina din lista filtrata (admin). where si orderBy vin gata facute din controller, din filtrele alese.
   // Aducem si cate anunturi active are fiecare proprietate.
   async getPagina(where, orderBy, { skip, take }) {
-    return context.proprietate.findMany({
+    return this.context.proprietate.findMany({
       where,
       include: {
         utilizator: { select: { nume: true, prenume: true } },
@@ -28,18 +36,18 @@ class ProprietateAccessor {
 
   // Cate proprietati se potrivesc filtrelor (pentru paginare).
   async numara(where) {
-    return context.proprietate.count({ where });
+    return this.context.proprietate.count({ where });
   }
 
   // Orasele in care exista proprietati (pentru lista de filtrare).
   async getOrase() {
-    const randuri = await context.proprietate.findMany({ distinct: ['oras'], select: { oras: true }, orderBy: { oras: 'asc' } });
+    const randuri = await this.context.proprietate.findMany({ distinct: ['oras'], select: { oras: true }, orderBy: { oras: 'asc' } });
     return randuri.map((r) => r.oras);
   }
 
   // O proprietate dupa id, cu proprietarul si anunturile ei (Details si Edit).
   async getById(id) {
-    return context.proprietate.findUnique({
+    return this.context.proprietate.findUnique({
       where: { id },
       include: { utilizator: { select: { nume: true, prenume: true } }, anunt: true },
     });
@@ -47,7 +55,7 @@ class ProprietateAccessor {
 
   // Proprietatile libere dintr-un oras (de la laboratorul 3).
   async getLibereInOras(oras) {
-    return context.proprietate.findMany({
+    return this.context.proprietate.findMany({
       where: { oras, stare: 'liber' },
       orderBy: { suprafata_mp: 'desc' },
     });
@@ -55,7 +63,7 @@ class ProprietateAccessor {
 
   // Cate proprietati are un proprietar (pentru limita de abonament).
   async countByProprietar(proprietarId) {
-    return context.proprietate.count({
+    return this.context.proprietate.count({
       where: { proprietar_id: proprietarId, NOT: { stare: 'inactiv' } },
     });
   }
@@ -65,7 +73,7 @@ class ProprietateAccessor {
 
   // Proprietatile unui proprietar, cu numarul de anunturi active (pagina "Proprietatile mele").
   async getAleProprietarului(proprietarId) {
-    return context.proprietate.findMany({
+    return this.context.proprietate.findMany({
       where: { proprietar_id: proprietarId },
       include: { _count: { select: { anunt: { where: { stare: 'activ', ...NESTERS } } } } },
       orderBy: [{ creat_la: 'desc' }, { id: 'desc' }],
@@ -74,12 +82,12 @@ class ProprietateAccessor {
 
   // O proprietate, doar daca apartine acestui proprietar; altfel null (pagina 404).
   async getByIdSiProprietar(id, proprietarId) {
-    return context.proprietate.findFirst({ where: { id, proprietar_id: proprietarId } });
+    return this.context.proprietate.findFirst({ where: { id, proprietar_id: proprietarId } });
   }
 
   // Proprietatile active ale unui proprietar (lista din formularul lui de anunt).
   async getDisponibileAleProprietarului(proprietarId) {
-    return context.proprietate.findMany({
+    return this.context.proprietate.findMany({
       where: { proprietar_id: proprietarId, NOT: { stare: 'inactiv' } },
       orderBy: { denumire: 'asc' },
     });
@@ -87,12 +95,12 @@ class ProprietateAccessor {
 
   // Adauga o proprietate noua (Create).
   async addEntity(date) {
-    return context.proprietate.create({ data: date });
+    return this.context.proprietate.create({ data: date });
   }
 
   // Proprietatile care nu sunt inactive (pentru lista din formularul de anunt).
   async getDisponibile() {
-    return context.proprietate.findMany({
+    return this.context.proprietate.findMany({
       where: { NOT: { stare: 'inactiv' } },
       include: { utilizator: { select: { nume: true, prenume: true } } },
       orderBy: { denumire: 'asc' },
@@ -116,7 +124,7 @@ class ProprietateAccessor {
   // Proprietatea e reactivata   -> anunturile ei inactive redevin active (doar daca reactiveazaAnunturi).
   // Intoarce si cate anunturi s-au schimbat, ca sa-l anuntam pe utilizator.
   async #salveazaCuAnunturi(id, date, reactiveazaAnunturi = true) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const inainte = await tx.proprietate.findUnique({ where: { id }, select: { stare: true } });
       const proprietate = await tx.proprietate.update({ where: { id }, data: date });
       let anunturiDezactivate = 0;
