@@ -38,7 +38,19 @@ export default function SesiuneProvider({ children }) {
     }
   }, []);
 
+  // Intreaba din nou serverul cine e conectat. Dupa actiuni care schimba sesiunea PE SERVER, fara login / logout
+  // aici: ex. resetarea parolei inchide toate sesiunile contului; modificarea profilului schimba numele din antet.
+  const reimprospateaza = useCallback(async () => {
+    try {
+      const { date } = await api.get('/auth/eu');
+      setStare({ verificata: true, utilizator: date.utilizator });
+    } catch {
+      seteazaTokenCsrf(null);
+      setStare({ verificata: true, utilizator: null });
+    }
+  }, []);
+
   // useMemo: aceeasi valoare cat timp starea nu se schimba (altfel toate componentele s-ar redesena degeaba)
-  const valoare = useMemo(() => ({ ...stare, conecteaza, iesi }), [stare, conecteaza, iesi]);
+  const valoare = useMemo(() => ({ ...stare, conecteaza, iesi, reimprospateaza }), [stare, conecteaza, iesi, reimprospateaza]);
   return <SesiuneContext.Provider value={valoare}>{children}</SesiuneContext.Provider>;
 }
