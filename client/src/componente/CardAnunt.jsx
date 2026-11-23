@@ -1,5 +1,5 @@
 // Cardul unui anunt din lista (poza, oras, titlu, camere, suprafata, pret). Primeste anuntul asa cum il trimite API-ul.
-const pretAfisat = (a) => `${Number(a.pret).toLocaleString('ro-RO')} ${a.moneda === 'RON' ? 'lei' : a.moneda}`;
+import { pretAfisat } from '../utile/formatare.js';
 
 export default function CardAnunt({ anunt: a }) {
   const p = a.proprietate || {};
@@ -18,7 +18,7 @@ export default function CardAnunt({ anunt: a }) {
           {p.suprafata_mp > 0 && <span>{p.suprafata_mp} m²</span>}
           {a.promovat && <span className="insigna insigna-promovat">★ Promovat</span>}
         </div>
-        <div className="pret">{pretAfisat(a)} {a.tip === 'inchiriere' && <small>/ lună</small>}</div>
+        <div className="pret">{pretAfisat(a.pret, a.moneda)} {a.tip === 'inchiriere' && <small>/ lună</small>}</div>
       </div>
     </article>
   );
