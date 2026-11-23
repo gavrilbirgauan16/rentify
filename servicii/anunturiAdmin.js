@@ -4,13 +4,14 @@
 // Reguli:
 //   - adminul e moderatorul: un anunt pus de el "Activ" e si aprobat;
 //   - un anunt "In asteptare" e al proprietarului: adminul nu-i schimba continutul, doar il aproba sau il respinge;
-//   - la aprobare, blocare optimista: adminul aproba exact varianta pe care a vazut-o (amprenta continutului).
+//   - la aprobare, blocare optimista: adminul aproba exact varianta pe care a vazut-o (amprenta continutului);
+//   - aprobarea / respingerea PUBLICA un eveniment (servicii/evenimente.js); emailul catre proprietar si jurnalul
+//     sunt consumatori independenti (servicii/consumatori/), iar serviciul nu stie de ei.
 // Fiecare metoda intoarce un rezultat; controllerul decide cum il arata (pagina, mesaj, redirectionare).
 const AnuntViewModel = require('../models/AnuntViewModel');
 const { stergeFisiere, eroareImagini } = require('../middleware/incarcareImagini');
 const { valideazaMotiv, amprentaContinut } = require('./moderare');
-const emailuri = require('./emailuri');
-const { trimite } = require('./email');
+const Evenimente = require('./evenimente');
 const F = require('./filtre');
 
 const { verificaProprietatea } = AnuntViewModel;
@@ -46,19 +47,24 @@ function conditie(f) {
   return where;
 }
 
-// Trimite proprietarului emailul despre aprobare / respingere. Un email care nu pleaca nu opreste actiunea.
-async function anuntaProprietarul(entitate, email) {
+// Datele evenimentului de moderare: doar ce le trebuie consumatorilor, ca obiecte simple (nu entitati din baza).
+function dateModerare(entitate, admin, motiv = null) {
   const u = entitate.proprietate?.utilizator;
-  if (!u?.email) return;
-  await trimite({ catre: u.email, subiect: email.subiect, text: email.text, html: email.html });
+  return {
+    anunt: { id: entitate.id, titlu: entitate.titlu },
+    proprietar: u ? { email: u.email, prenume: u.prenume, nume: u.nume } : null,
+    admin: admin ? { id: admin.id } : null,
+    motiv,
+  };
 }
 
 class AnunturiAdmin {
-  constructor({ anuntAccessor, proprietateAccessor, utilizatorAccessor, jurnal }) {
+  constructor({ anuntAccessor, proprietateAccessor, utilizatorAccessor, jurnal, evenimente }) {
     this.anunturi = anuntAccessor;
     this.proprietati = proprietateAccessor;
     this.utilizatori = utilizatorAccessor;
     this.jurnal = jurnal;
+    this.evenimente = evenimente; // Singleton: magistrala prin care anuntam ce s-a intamplat
   }
 
   // O pagina din lista filtrata (cu pozele) + listele pentru filtre. Implicit lista NU contine anunturile sterse;
@@ -195,8 +201,8 @@ class AnunturiAdmin {
     if (String(versiune || '') !== amprentaContinut(entitate, imagini.map((f) => f.id))) return { versiuneVeche: true };
     // Conditia "in asteptare" e verificata chiar in baza de date (vezi accesorul): doi admini deodata nu-l aproba de doua ori.
     if (!(await this.anunturi.aproba(id))) return { nuMaiAsteapta: true };
-    await this.jurnal.noteaza(admin, 'aprobare', 'anunt', id, entitate.titlu);
-    await anuntaProprietarul(entitate, emailuri.anuntAprobat(entitate.proprietate.utilizator, entitate.titlu));
+    // Aprobarea e facuta; restul (email, jurnal) il fac consumatorii evenimentului.
+    await this.evenimente.publica(Evenimente.ANUNT_APROBAT, dateModerare(entitate, admin));
     return { titlu: entitate.titlu };
   }
 
@@ -208,8 +214,7 @@ class AnunturiAdmin {
     const { motiv, eroare } = valideazaMotiv(motivTrimis);
     if (eroare) return { eroare };
     if (!(await this.anunturi.respinge(id, motiv))) return { nuSePoate: true };
-    await this.jurnal.noteaza(admin, 'respingere', 'anunt', id, `${entitate.titlu} – motiv: ${motiv}`);
-    await anuntaProprietarul(entitate, emailuri.anuntRespins(entitate.proprietate.utilizator, entitate.titlu, motiv));
+    await this.evenimente.publica(Evenimente.ANUNT_RESPINS, dateModerare(entitate, admin, motiv));
     return { titlu: entitate.titlu };
   }
 
