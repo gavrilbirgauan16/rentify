@@ -9,6 +9,7 @@ import EcranIntrare from './componente/EcranIntrare.jsx';
 import Cadru from './componente/Cadru.jsx';
 import Acasa from './pagini/Acasa.jsx';
 import NuExista from './pagini/NuExista.jsx';
+import PaginaCont from './pagini/PaginaCont.jsx';
 
 const router = createBrowserRouter([
   {
@@ -19,6 +20,11 @@ const router = createBrowserRouter([
         ErrorBoundary: NuExista,
         children: [
           { index: true, Component: Acasa },
+          {
+            // Ambele adrese folosesc ACEEASI pagina (nu se reface la schimbare), deci cardul se poate intoarce animat.
+            Component: PaginaCont,
+            children: [{ path: 'intrare' }, { path: 'inregistrare' }],
+          },
           { path: '*', Component: NuExista }, // orice alta adresa: 404
         ],
       },

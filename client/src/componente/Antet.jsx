@@ -2,7 +2,7 @@
 // (vezi tema.css): cand nu mai e loc, meniul se strange in butonul "Meniu".
 // Se ascunde cand derulezi in jos si revine cand derulezi in sus (useAntetInteligent).
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router';
+import { Link, NavLink, useNavigate } from 'react-router';
 import Logo from './Logo.jsx';
 import { useSesiune } from '../sesiune/sesiune.js';
 import { useAntetInteligent } from '../hooks/useAntetInteligent.js';
@@ -13,15 +13,25 @@ const PAGINI = [
 ];
 
 export default function Antet() {
-  const { utilizator } = useSesiune();
+  const { utilizator, iesi } = useSesiune();
+  const navigate = useNavigate();
   const [deschis, setDeschis] = useState(false);
   const inchide = () => setDeschis(false); // dupa un clic in meniu, lista se inchide
   const { ascuns, derulat } = useAntetInteligent();
   // Cu meniul deschis, antetul nu se ascunde (altfel ar fugi lista de sub deget).
   const clase = `antet continut${ascuns && !deschis ? ' ascuns' : ''}${derulat ? ' derulat' : ''}`;
 
+  async function laIesire() {
+    inchide();
+    await iesi();
+    navigate('/');
+  }
+
   const butoaneCont = (clasaLata) => (utilizator ? (
-    <span className="salut">Bună, <strong>{utilizator.prenume}</strong></span>
+    <>
+      <span className="salut">Bună, <strong>{utilizator.prenume}</strong></span>
+      <button className={`buton buton-moale${clasaLata}`} type="button" onClick={laIesire}>Ieși</button>
+    </>
   ) : (
     <>
       <Link className={`buton buton-moale${clasaLata}`} to="/intrare" onClick={inchide}>Intră în cont</Link>
