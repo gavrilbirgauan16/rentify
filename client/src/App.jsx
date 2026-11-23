@@ -1,7 +1,7 @@
 // Aplicatia: sesiunea, ecranul de intrare si paginile (React Router).
 // Adresele paginilor sunt scrise O SINGURA DATA, aici. Paginile se adauga pe masura ce le construim.
 import { useEffect, useState } from 'react';
-import { createBrowserRouter } from 'react-router';
+import { Navigate, createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import SesiuneProvider from './sesiune/SesiuneProvider.jsx';
 import { useSesiune } from './sesiune/sesiune.js';
@@ -10,6 +10,12 @@ import Cadru from './componente/Cadru.jsx';
 import Acasa from './pagini/Acasa.jsx';
 import NuExista from './pagini/NuExista.jsx';
 import PaginaCont from './pagini/PaginaCont.jsx';
+import RutaProtejata from './componente/RutaProtejata.jsx';
+import ZonaProprietar from './pagini/proprietar/ZonaProprietar.jsx';
+import AnunturileMele from './pagini/proprietar/AnunturileMele.jsx';
+import FormularAnunt from './pagini/proprietar/FormularAnunt.jsx';
+import ProprietatileMele from './pagini/proprietar/ProprietatileMele.jsx';
+import FormularProprietate from './pagini/proprietar/FormularProprietate.jsx';
 
 const router = createBrowserRouter([
   {
@@ -24,6 +30,23 @@ const router = createBrowserRouter([
             // Ambele adrese folosesc ACEEASI pagina (nu se reface la schimbare), deci cardul se poate intoarce animat.
             Component: PaginaCont,
             children: [{ path: 'intrare' }, { path: 'inregistrare' }],
+          },
+          {
+            // Zona proprietarului: doar pentru conturile de proprietar (altfel -> "Intra in cont").
+            element: <RutaProtejata rol="proprietar" />,
+            children: [{
+              path: 'proprietar',
+              Component: ZonaProprietar, // titlul si filele, comune
+              children: [
+                { index: true, element: <Navigate to="anunturi" replace /> },
+                { path: 'anunturi', Component: AnunturileMele },
+                { path: 'anunturi/nou', Component: FormularAnunt },
+                { path: 'anunturi/:id', Component: FormularAnunt },
+                { path: 'proprietati', Component: ProprietatileMele },
+                { path: 'proprietati/nou', Component: FormularProprietate },
+                { path: 'proprietati/:id', Component: FormularProprietate },
+              ],
+            }],
           },
           { path: '*', Component: NuExista }, // orice alta adresa: 404
         ],

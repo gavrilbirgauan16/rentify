@@ -7,10 +7,12 @@ import Logo from './Logo.jsx';
 import { useSesiune } from '../sesiune/sesiune.js';
 import { useAntetInteligent } from '../hooks/useAntetInteligent.js';
 
-// Paginile din meniu (se adauga pe masura ce le construim). "end": activ doar pe adresa exacta.
-const PAGINI = [
-  { adresa: '/', text: 'Caută locuințe', end: true },
-];
+// Paginile din meniu, dupa cine e conectat. "end": activ doar pe adresa exacta.
+function paginiPentru(utilizator) {
+  const pagini = [{ adresa: '/', text: 'Caută locuințe', end: true }];
+  if (utilizator?.rol === 'proprietar') pagini.push({ adresa: '/proprietar/anunturi', text: 'Anunțurile mele' });
+  return pagini;
+}
 
 export default function Antet() {
   const { utilizator, iesi } = useSesiune();
@@ -45,7 +47,7 @@ export default function Antet() {
         <Link className="logo-link" to="/" aria-label="Rentify - prima pagină" onClick={inchide}><Logo /></Link>
 
         <nav id="meniu-principal" className={`meniu${deschis ? ' deschis' : ''}`} aria-label="Meniu principal">
-          {PAGINI.map((p) => (
+          {paginiPentru(utilizator).map((p) => (
             // NavLink pune singur aria-current="page" pe pagina curenta (linia aurie din CSS)
             <NavLink key={p.adresa} to={p.adresa} end={p.end} onClick={inchide}>{p.text}</NavLink>
           ))}

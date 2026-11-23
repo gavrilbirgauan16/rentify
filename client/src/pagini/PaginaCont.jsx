@@ -13,6 +13,11 @@ const ROLURI = {
   proprietar: { nume: 'Proprietar', iconita: '🏠', text: 'Ai o locuință de închiriat: publici anunțuri și îți urmărești proprietățile.' },
 };
 
+// Unde ajunge fiecare dupa login (daca nu venea de la o anumita pagina): proprietarul la anunturile lui.
+function paginaDeStart(u) {
+  return u.rol === 'proprietar' ? '/proprietar/anunturi' : '/';
+}
+
 // Paginile care nu sunt (inca) in React: panoul adminului si schimbarea parolei temporare.
 function mergiPeServer(cale) {
   window.location.assign(`${ADRESA_SERVER}${cale}`);
@@ -54,7 +59,7 @@ function FormularIntrare({ ascuns, laSchimbare, destinatie }) {
       const u = await conecteaza(email.trim(), parola);
       if (u.schimba_parola) mergiPeServer('/cont/parola'); // parola temporara: intai alege una noua
       else if (u.rol === 'admin') mergiPeServer('/admin'); // panoul adminului ramane (deocamdata) pe server
-      else navigate(destinatie, { replace: true });
+      else navigate(destinatie || paginaDeStart(u), { replace: true });
     } catch (err) {
       setEroare(err);
       setSeTrimite(false);
@@ -260,7 +265,7 @@ export default function PaginaCont() {
     if (utilizator.rol === 'admin') {
       return <section className="pagina-mesaj"><h1>Ești conectat ca administrator</h1><a className="buton buton-principal" href={`${ADRESA_SERVER}/admin`}>Mergi la panoul de administrare</a></section>;
     }
-    return <Navigate to={state?.de || '/'} replace />;
+    return <Navigate to={state?.de || paginaDeStart(utilizator)} replace />;
   }
 
   const schimba = () => navigate(intors ? '/intrare' : '/inregistrare', { state });
@@ -278,7 +283,7 @@ export default function PaginaCont() {
       </section>
       <div className="card-cont" ref={card}>
         <div className={`interior${intors ? ' intors' : ''}${seIntoarce ? ' se-intoarce' : ''}`}>
-          <FormularIntrare ascuns={intors} laSchimbare={schimba} destinatie={state?.de || '/'} />
+          <FormularIntrare ascuns={intors} laSchimbare={schimba} destinatie={state?.de} />
           <FormularCreare ascuns={!intors} laSchimbare={schimba} />
         </div>
       </div>

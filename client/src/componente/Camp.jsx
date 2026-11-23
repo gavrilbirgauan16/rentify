@@ -3,7 +3,8 @@
 import { useId, useState } from 'react';
 
 // buton (optional): un buton afisat IN casuta, la dreapta (ex. "Arata" la parola).
-export function Camp({ eticheta, eroare, ajutor, buton, className = '', ...atribute }) {
+// element (optional): 'input' (implicit), 'select' (optiunile vin ca children) sau 'textarea'.
+export function Camp({ eticheta, eroare, ajutor, buton, element: Element = 'input', children, className = '', ...atribute }) {
   const id = useId(); // un id unic, generat de React (doua formulare pe pagina nu se incurca)
   const idMesaj = `${id}-mesaj`;
   const mesaj = eroare || ajutor;
@@ -11,8 +12,8 @@ export function Camp({ eticheta, eroare, ajutor, buton, className = '', ...atrib
     <div className={`camp${eroare ? ' cu-eroare' : ''} ${className}`}>
       <label htmlFor={id}>{eticheta}</label>
       <div className={buton ? 'intrare-cu-buton' : undefined}>
-        <input id={id} className="intrare" aria-invalid={eroare ? true : undefined}
-          aria-describedby={mesaj ? idMesaj : undefined} {...atribute} />
+        <Element id={id} className="intrare" aria-invalid={eroare ? true : undefined}
+          aria-describedby={mesaj ? idMesaj : undefined} {...atribute}>{children}</Element>
         {buton}
       </div>
       {mesaj && <span id={idMesaj} className={eroare ? 'eroare' : 'ajutor'}>{mesaj}</span>}
