@@ -5,6 +5,31 @@ export function pretAfisat(suma, moneda = 'RON') {
   return `${Number(suma).toLocaleString('ro-RO')} ${moneda === 'RON' ? 'lei' : moneda}`;
 }
 
+// Bani in lei, cu cel mult 2 zecimale: 250 -> "250 lei"; 80.5 -> "80,5 lei"; 1500 -> "1.500 lei"
+export function lei(suma) {
+  return `${Number(suma).toLocaleString('ro-RO', { maximumFractionDigits: 2 })} lei`;
+}
+
+// "2026-11-24" (data fara ora, cum o trimite serverul) -> "24 noiembrie 2026".
+// O construim din bucati (an, luna, zi), nu cu new Date("2026-11-24"): acela ar fi miezul noptii in UTC,
+// adica 23 noiembrie seara in unele fusuri orare.
+export function dataAfisata(text) {
+  if (!text) return '';
+  const [an, luna, zi] = String(text).slice(0, 10).split('-').map(Number);
+  return new Date(an, luna - 1, zi).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Abonamentul: perioadele si starile (aceleasi coduri ca pe server, in models/AbonamentViewModel.js).
+export const PERIOADE = { lunar: 'lunar', anual: 'anual' };
+export const STARI_ABONAMENT = {
+  platit: { text: 'Activ, plătit', clasa: 'insigna-activ' },
+  neplatit: { text: 'Neplătit', clasa: 'insigna-respins' },
+  programat: { text: 'Începe curând', clasa: 'insigna-asteptare' },
+  expirat: { text: 'Expirat', clasa: 'insigna-inactiv' },
+  anulat: { text: 'Anulat', clasa: 'insigna-inactiv' },
+  inlocuit: { text: 'Înlocuit (upgrade)', clasa: 'insigna-ciorna' },
+};
+
 // Starile unui anunt: textul afisat si clasa insignei (culoarea).
 export const STARI_ANUNT = {
   ciorna: { text: 'Ciornă', clasa: 'insigna-ciorna' },

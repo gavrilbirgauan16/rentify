@@ -1,5 +1,6 @@
 // Metode de acces la date pentru modelul "anunt" (si imaginile lui din tabelul "fisier").
-const context = require('../Repository_CodeFirst/context');
+// Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
+// laboratorul 10), de la containerul din infrastructura/container.js.
 const { STARI_PUBLICATE } = require('../../servicii/moderare');
 
 // Imaginile sunt in tabelul general "fisier", recunoscute dupa entitate = 'anunt' si tip = 'imagine'.
@@ -41,9 +42,14 @@ const CU_PROPRIETATE_PUBLIC = {
 };
 
 class AnuntAccessor {
+  // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
+  constructor({ context }) {
+    this.context = context;
+  }
+
   // Anunturile active, cu proprietatea fiecaruia (ce apare pe prima pagina).
   async getActive() {
-    return context.anunt.findMany({
+    return this.context.anunt.findMany({
       where: { stare: 'activ', ...NESTERS },
       include: {
         proprietate: { select: { denumire: true, oras: true, zona: true } },
@@ -54,7 +60,7 @@ class AnuntAccessor {
 
   // Anunturile de inchiriere dintr-un interval de pret.
   async getInchirieriIntrePreturi(pretMinim, pretMaxim) {
-    return context.anunt.findMany({
+    return this.context.anunt.findMany({
       where: {
         tip: 'inchiriere',
         stare: 'activ',
@@ -67,7 +73,7 @@ class AnuntAccessor {
 
   // Cautare dupa un cuvant in titlu sau descriere.
   async cauta(text) {
-    return context.anunt.findMany({
+    return this.context.anunt.findMany({
       where: {
         stare: 'activ',
         ...NESTERS,
@@ -82,7 +88,7 @@ class AnuntAccessor {
   // Creste numarul de vizualizari cand cineva deschide anuntul (doar la anunturile publice).
   // updateMany + conditia in WHERE: un id gresit sau un anunt care nu e public nu da eroare, doar nu numara.
   async inregistreazaVizualizare(id) {
-    return context.anunt.updateMany({
+    return this.context.anunt.updateMany({
       where: { id, ...PUBLIC },
       data: { vizualizari: { increment: 1 } },
     });
@@ -93,21 +99,21 @@ class AnuntAccessor {
   // O pagina din rezultatele cautarii. where vine din servicii/cautareAnunturi.js (contine deja conditia PUBLIC).
   // AND, nu { ...where, ...PUBLIC }: spread-ul ar suprascrie where.proprietate (filtrele de oras, camere...).
   async cautaPublice(where, orderBy, { skip, take }) {
-    return context.anunt.findMany({ where: { AND: [where, PUBLIC] }, include: CU_PROPRIETATE_PUBLIC, orderBy, skip, take });
+    return this.context.anunt.findMany({ where: { AND: [where, PUBLIC] }, include: CU_PROPRIETATE_PUBLIC, orderBy, skip, take });
   }
 
   async numaraPublice(where) {
-    return context.anunt.count({ where: { AND: [where, PUBLIC] } });
+    return this.context.anunt.count({ where: { AND: [where, PUBLIC] } });
   }
 
   // Un anunt public dupa id; null daca nu exista sau nu e public (ciorna, in asteptare, respins...).
   async getPublicById(id) {
-    return context.anunt.findFirst({ where: { id, ...PUBLIC }, include: CU_PROPRIETATE_PUBLIC });
+    return this.context.anunt.findFirst({ where: { id, ...PUBLIC }, include: CU_PROPRIETATE_PUBLIC });
   }
 
   // Telefonul proprietarului unui anunt public (doar dupa contactare; nu apare niciodata in cautare).
   async getTelefonProprietar(id) {
-    const a = await context.anunt.findFirst({
+    const a = await this.context.anunt.findFirst({
       where: { id, ...PUBLIC },
       select: { proprietate: { select: { utilizator: { select: { telefon: true, prenume: true } } } } },
     });
@@ -116,26 +122,26 @@ class AnuntAccessor {
 
   // Toate anunturile nesterse, cu proprietatea si proprietarul ei (API-ul cu cheie, laboratorul 7).
   async getAll() {
-    return context.anunt.findMany({ where: NESTERS, include: CU_PROPRIETATE, orderBy: { creat_la: 'desc' } });
+    return this.context.anunt.findMany({ where: NESTERS, include: CU_PROPRIETATE, orderBy: { creat_la: 'desc' } });
   }
 
   // O pagina din lista filtrata (admin). where si orderBy vin din filtrele alese in controller.
   // Implicit fara cele sterse; sterse = true -> DOAR cele sterse (filtrul "Sterse" al adminului).
   // AND, nu spread: where poate avea deja chei proprii (OR, proprietate...).
   async getPagina(where, orderBy, { skip, take }, { sterse = false } = {}) {
-    return context.anunt.findMany({ where: { AND: [where, sterse ? STERS : NESTERS] }, include: CU_PROPRIETATE, orderBy, skip, take });
+    return this.context.anunt.findMany({ where: { AND: [where, sterse ? STERS : NESTERS] }, include: CU_PROPRIETATE, orderBy, skip, take });
   }
 
   // Cate anunturi se potrivesc filtrelor (pentru paginare). Aceeasi regula pentru sterse ca la getPagina.
   async numara(where, { sterse = false } = {}) {
-    return context.anunt.count({ where: { AND: [where, sterse ? STERS : NESTERS] } });
+    return this.context.anunt.count({ where: { AND: [where, sterse ? STERS : NESTERS] } });
   }
 
   // ===== Zona proprietarului: un anunt e "al lui" daca proprietatea anuntului e a lui =====
 
   // Anunturile proprietarului, cele mai noi primele (pagina "Anunturile mele").
   async getAleProprietarului(proprietarId) {
-    return context.anunt.findMany({
+    return this.context.anunt.findMany({
       where: { ...NESTERS, proprietate: { proprietar_id: proprietarId } },
       include: CU_PROPRIETATE,
       orderBy: [{ creat_la: 'desc' }, { id: 'desc' }],
@@ -144,13 +150,13 @@ class AnuntAccessor {
 
   // Un anunt, doar daca e al acestui proprietar si nu e sters; altfel null (pagina 404, protectie IDOR).
   async getByIdSiProprietar(id, proprietarId) {
-    return context.anunt.findFirst({ where: { id, ...NESTERS, proprietate: { proprietar_id: proprietarId } }, include: CU_PROPRIETATE });
+    return this.context.anunt.findFirst({ where: { id, ...NESTERS, proprietate: { proprietar_id: proprietarId } }, include: CU_PROPRIETATE });
   }
 
   // Cate anunturi publicate are un proprietar (pentru limita max_anunturi_active din plan):
   // cele active si cele trimise spre aprobare (altfel ar putea trimite oricate deodata).
   async numaraPublicateAleProprietarului(proprietarId) {
-    return context.anunt.count({ where: { stare: { in: STARI_PUBLICATE }, ...NESTERS, proprietate: { proprietar_id: proprietarId } } });
+    return this.context.anunt.count({ where: { stare: { in: STARI_PUBLICATE }, ...NESTERS, proprietate: { proprietar_id: proprietarId } } });
   }
 
   // ===== Moderarea (adminul) =====
@@ -159,7 +165,7 @@ class AnuntAccessor {
   // daca doi admini apasa deodata, sau proprietarul l-a retras intre timp, nu se aproba de doua ori / gresit.
   // Intoarce true daca s-a aprobat.
   async aproba(id) {
-    const r = await context.anunt.updateMany({
+    const r = await this.context.anunt.updateMany({
       where: { id, stare: 'in_asteptare', ...NESTERS },
       data: { stare: 'activ', aprobat_la: new Date(), motiv_respingere: null },
     });
@@ -168,7 +174,7 @@ class AnuntAccessor {
 
   // Respinge un anunt in asteptare (sau scoate de pe site unul activ), cu motiv. Intoarce true daca s-a respins.
   async respinge(id, motiv) {
-    const r = await context.anunt.updateMany({
+    const r = await this.context.anunt.updateMany({
       where: { id, stare: { in: STARI_PUBLICATE }, ...NESTERS },
       data: { stare: 'respins', motiv_respingere: motiv, aprobat_la: null },
     });
@@ -178,7 +184,7 @@ class AnuntAccessor {
   // Un anunt nesters dupa id, cu proprietatea lui (Edit si butoanele de stare); null daca nu exista sau e sters.
   // findFirst, nu findUnique: findUnique cauta doar dupa campuri unice (id), nu accepta si conditia NESTERS.
   async getById(id) {
-    return context.anunt.findFirst({ where: { id, ...NESTERS }, include: CU_PROPRIETATE });
+    return this.context.anunt.findFirst({ where: { id, ...NESTERS }, include: CU_PROPRIETATE });
   }
 
   // ===== Stergerea logica =====
@@ -187,7 +193,7 @@ class AnuntAccessor {
   // din toate listele. Un anunt activ / in asteptare devine si inactiv (regula anunt_sters_check).
   // Conditia "nesters" e in WHERE: daca e apasat de doua ori deodata, se sterge o singura data. Intoarce true / false.
   async stergeLogic(id) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const a = await tx.anunt.findFirst({ where: { id, ...NESTERS }, select: { stare: true } });
       if (!a) return false;
       const dePeSite = STARI_PUBLICATE.includes(a.stare);
@@ -203,7 +209,7 @@ class AnuntAccessor {
   // ca proprietarul sa-l verifice si sa-l trimita din nou spre aprobare (limita din plan se verifica atunci).
   // Intoarce anuntul restaurat sau null (nu exista ori nu e sters - ex. alt admin l-a restaurat deja).
   async restaureaza(id) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const r = await tx.anunt.updateMany({
         where: { id, ...STERS },
         data: { sters_la: null, stare: 'ciorna', aprobat_la: null, motiv_respingere: null },
@@ -214,7 +220,7 @@ class AnuntAccessor {
 
   // Imaginile mai multor anunturi, cu o singura interogare (fara problema N+1).
   async getImagini(idAnunturi) {
-    return context.fisier.findMany({
+    return this.context.fisier.findMany({
       where: { ...IMAGINE_ANUNT, entitate_id: { in: idAnunturi } },
       orderBy: { id: 'asc' },
     });
@@ -224,7 +230,7 @@ class AnuntAccessor {
   // Tranzactie: daca imaginile nu se pot salva, nu se salveaza nici anuntul.
   // incarcatDe = cine a incarcat imaginile (adminul sau proprietarul).
   async addEntity(date, imagini = [], incarcatDe) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const anunt = await tx.anunt.create({ data: date });
       await this.#adaugaImagini(tx, anunt.id, imagini, incarcatDe);
       return anunt;
@@ -234,7 +240,7 @@ class AnuntAccessor {
   // Modifica un anunt: datele, imaginile noi si imaginile bifate pentru stergere (Edit).
   // Intoarce caile imaginilor sterse, ca sa fie sterse si de pe disc.
   async updateEntity(id, date, imaginiNoi = [], idImaginiDeSters = [], incarcatDe) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       // Motivul respingerii ramane doar cat anuntul e respins (regula anunt_motiv_check din baza de date).
       const anunt = await tx.anunt.update({ where: { id }, data: { ...date, ...(date.stare && date.stare !== 'respins' ? { motiv_respingere: null } : {}) } });
       const deSters = await tx.fisier.findMany({
@@ -249,7 +255,7 @@ class AnuntAccessor {
   // Schimba doar starea (butoanele Activeaza / Dezactiveaza).
   // aprobat_la (optional): ex. adminul activeaza = aproba; proprietarul nu atinge aprobarea.
   async schimbaStare(id, stare, { aprobat_la } = {}) {
-    return context.anunt.update({
+    return this.context.anunt.update({
       where: { id },
       data: { stare, motiv_respingere: null, ...(aprobat_la !== undefined ? { aprobat_la } : {}) },
     });
@@ -257,7 +263,7 @@ class AnuntAccessor {
 
   // Cate anunturi asteapta aprobarea (Panou -> "De rezolvat").
   async numaraInAsteptare() {
-    return context.anunt.count({ where: { stare: 'in_asteptare', ...NESTERS } });
+    return this.context.anunt.count({ where: { stare: 'in_asteptare', ...NESTERS } });
   }
 
   // Salveaza in tabelul fisier imaginile primite de la formular.

@@ -6,6 +6,7 @@ const PgSesiuni = require('connect-pg-simple')(session);
 const helmet = require('helmet');
 const path = require('path');
 const context = require('./src/Repository_CodeFirst/context');
+const { scopPeCerere } = require('./infrastructura/container'); // Dependency Injection (laboratorul 10)
 const { incarcaUtilizator, cereParolaNoua } = require('./middleware/autentificare');
 const { pregatesteToken, verificaToken } = require('./middleware/csrf');
 const autentificareRouter = require('./routes/autentificare');
@@ -39,6 +40,10 @@ app.use(helmet({
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist'), { maxAge: '7d' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Dependency Injection: fiecare cerere primeste propriul "scope" din container (req.container).
+// Inaintea sesiunii si a utilizatorului, care vor lua si ei piese din container.
+app.use(scopPeCerere);
 
 // Sesiuni: tin minte cine e conectat. Se salveaza in PostgreSQL (tabelul "sesiune"),
 // deci raman valabile si dupa repornirea aplicatiei.

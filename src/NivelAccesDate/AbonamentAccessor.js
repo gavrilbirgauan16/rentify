@@ -1,5 +1,6 @@
 // Metode de acces la date pentru abonamente si platile lor (tabelele abonament si plata_abonament).
-const context = require('../Repository_CodeFirst/context');
+// Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
+// laboratorul 10), de la containerul din infrastructura/container.js.
 const { catreDate } = require('../../servicii/date');
 
 // Ce aducem mereu impreuna cu un abonament: cine il are (fara parola!), ce plan si platile.
@@ -10,24 +11,29 @@ const CU_DETALII = {
 };
 
 class AbonamentAccessor {
+  // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
+  constructor({ context }) {
+    this.context = context;
+  }
+
   // Lista filtrata (admin). where si orderBy vin din controller, din filtrele alese.
   async getLista(where, orderBy) {
-    return context.abonament.findMany({ where, include: CU_DETALII, orderBy });
+    return this.context.abonament.findMany({ where, include: CU_DETALII, orderBy });
   }
 
   async getById(id) {
-    return context.abonament.findUnique({ where: { id }, include: CU_DETALII });
+    return this.context.abonament.findUnique({ where: { id }, include: CU_DETALII });
   }
 
   // Abonamentele unui utilizator (pentru pagina lui de detalii).
   async getByUtilizator(utilizatorId) {
-    return context.abonament.findMany({ where: { utilizator_id: utilizatorId }, include: CU_DETALII, orderBy: { data_inceput: 'desc' } });
+    return this.context.abonament.findMany({ where: { utilizator_id: utilizatorId }, include: CU_DETALII, orderBy: { data_inceput: 'desc' } });
   }
 
   // Abonamentele care ruleaza AZI (neanulate, azi intre inceput si sfarsit), pentru mai multi utilizatori odata.
   async getCurente(utilizatorIds, azi) {
     const ziua = catreDate(azi);
-    return context.abonament.findMany({
+    return this.context.abonament.findMany({
       where: { utilizator_id: { in: utilizatorIds }, stare: 'activ', data_inceput: { lte: ziua }, data_sfarsit: { gte: ziua } },
       include: CU_DETALII,
     });
@@ -35,7 +41,7 @@ class AbonamentAccessor {
 
   // Abonamentele neanulate care inca nu s-au terminat (pentru panou: neplatite / expira curand).
   async getNeterminate(azi) {
-    return context.abonament.findMany({
+    return this.context.abonament.findMany({
       where: { stare: 'activ', data_sfarsit: { gte: catreDate(azi) } },
       include: CU_DETALII,
       orderBy: { data_sfarsit: 'asc' },
@@ -44,7 +50,7 @@ class AbonamentAccessor {
 
   // true daca utilizatorul are deja un abonament neanulat care se suprapune cu intervalul dat.
   async seSuprapune(utilizatorId, inceput, sfarsit) {
-    const gasit = await context.abonament.findFirst({
+    const gasit = await this.context.abonament.findFirst({
       where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { lte: catreDate(sfarsit) }, data_sfarsit: { gte: catreDate(inceput) } },
       select: { id: true },
     });
@@ -53,7 +59,7 @@ class AbonamentAccessor {
 
   // Abonament nou; daca s-a platit pe loc, salvam si plata. Totul intr-o tranzactie (ori ambele, ori niciuna).
   async addEntity(date, plata = null) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const abonament = await tx.abonament.create({ data: date });
       if (plata) await tx.plata_abonament.create({ data: { ...plata, abonament_id: abonament.id, data_platii: new Date() } });
       return abonament;
@@ -61,19 +67,19 @@ class AbonamentAccessor {
   }
 
   async adaugaPlata(abonamentId, plata) {
-    return context.plata_abonament.create({ data: { ...plata, abonament_id: abonamentId, data_platii: new Date() } });
+    return this.context.plata_abonament.create({ data: { ...plata, abonament_id: abonamentId, data_platii: new Date() } });
   }
 
   // Anularea: abonamentul se opreste si nu se mai reinnoieste. Nu stergem nimic (istoricul ramane).
   async anuleaza(id) {
-    return context.abonament.update({ where: { id }, data: { stare: 'anulat', reinnoire_automata: false } });
+    return this.context.abonament.update({ where: { id }, data: { stare: 'anulat', reinnoire_automata: false } });
   }
 
   // ===== Schimbarea planului de catre utilizator =====
 
   // Abonamentele programate (neanulate, care incep dupa azi): ex. un downgrade care incepe la final de perioada.
   async getProgramate(utilizatorId, azi) {
-    return context.abonament.findMany({
+    return this.context.abonament.findMany({
       where: { utilizator_id: utilizatorId, stare: 'activ', data_inceput: { gt: catreDate(azi) } },
       include: CU_DETALII,
       orderBy: { data_inceput: 'asc' },
@@ -87,7 +93,7 @@ class AbonamentAccessor {
   //  - creeaza abonamentul nou si, daca e ceva de plata, plata (simulata).
   // Intoarce abonamentul nou sau null daca abonamentul curent s-a schimbat intre timp.
   async schimbaPlanul({ utilizatorId, curentId, tip, azi, abonamentNou, plata }) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       await this.#blocheazaUtilizatorul(tx, utilizatorId);
       const ziua = catreDate(azi);
       const curente = await tx.abonament.findMany({
@@ -112,7 +118,7 @@ class AbonamentAccessor {
   // Anuleaza schimbarile programate (inca neincepute) ale unui utilizator; cel curent se reinnoieste din nou.
   // Intoarce cate s-au anulat.
   async anuleazaProgramate(utilizatorId, azi) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       await this.#blocheazaUtilizatorul(tx, utilizatorId);
       const ziua = catreDate(azi);
       const anulate = await this.#anuleazaProgramateTx(tx, utilizatorId, ziua);
@@ -150,7 +156,7 @@ class AbonamentAccessor {
 
   // Suma platilor reusite de la o data incoace (incasarile lunii).
   async incasariDin(dataInceput) {
-    const r = await context.plata_abonament.aggregate({ _sum: { suma: true }, where: { stare: 'reusita', data_platii: { gte: catreDate(dataInceput) } } });
+    const r = await this.context.plata_abonament.aggregate({ _sum: { suma: true }, where: { stare: 'reusita', data_platii: { gte: catreDate(dataInceput) } } });
     return Number(r._sum.suma ?? 0);
   }
 }

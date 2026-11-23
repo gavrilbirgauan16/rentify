@@ -12,6 +12,14 @@ jobs:
   verificare:
     runs-on: ubuntu-latest
 
+    # Setarile aplicatiei pentru TOTI pasii (pe GitHub nu exista fisierul .env). Si testele unitare au nevoie de ele:
+    # cele care verifica containerul DI (duratele de viata, evenimentele) incarca setarile, iar config/index.js
+    # opreste programul daca lipsesc. Nu sunt secrete reale: baza de mai jos exista doar cateva minute.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rentify_test
+      SESSION_SECRET: cheie-de-sesiune-doar-pentru-teste-in-ci-0123456789
+      API_KEY: cheie-api-doar-pentru-teste-in-ci-0123456789abcdef
+
     # O baza PostgreSQL temporara, doar pentru testele de integrare. GitHub o porneste goala si o sterge dupa rulare;
     # nu are nicio legatura cu baza de pe calculator. Parola de aici nu e un secret (baza exista doar cateva minute).
     services:
@@ -67,10 +75,6 @@ jobs:
         run: npm run build --prefix client
 
       # Testele de integrare: API-ul cu baza reala (cea temporara de mai sus). Scriptul reface baza din migrari,
-      # apoi ruleaza test/integrare/. Setarile de mai jos sunt doar pentru teste, nu secrete reale.
+      # apoi ruleaza test/integrare/ (cu setarile de test de la inceputul job-ului).
       - name: Ruleaza testele de integrare (API + PostgreSQL)
         run: npm run test:integrare
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rentify_test
-          SESSION_SECRET: cheie-de-sesiune-doar-pentru-teste-in-ci-0123456789
-          API_KEY: cheie-api-doar-pentru-teste-in-ci-0123456789abcdef

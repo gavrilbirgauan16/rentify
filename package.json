@@ -30,6 +30,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "awilix": "13.0.5",
     "bootstrap": "5.3",
     "connect-pg-simple": "10.0.0",
     "dotenv": "^18.0.8",

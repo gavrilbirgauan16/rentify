@@ -1,8 +1,10 @@
 // Aplicatie consola: afiseaza date din baza rentify_cf, creata prin Code First.
 const context = require('../Repository_CodeFirst/context');
-const UtilizatorAccessor = require('../NivelAccesDate/UtilizatorAccessor');
+// Accesorii ii construieste containerul DI, exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
+const scop = container.createScope();
 
-const utilizatori = new UtilizatorAccessor();
+const utilizatori = scop.resolve('utilizatorAccessor');
 
 async function main() {
   console.log('=== Toti utilizatorii ===');

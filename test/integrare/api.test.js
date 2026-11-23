@@ -3,7 +3,9 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { pornesteAplicatia, Browser, creeazaUtilizator, creeazaProprietate, creeazaAnunt } = require('./ajutor');
-const AnuntAccessor = require('../../src/NivelAccesDate/AnuntAccessor');
+// Accesorii ii construieste containerul DI, exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
+const scop = container.createScope();
 
 let aplicatie;
 before(async () => { aplicatie = await pornesteAplicatia(); });
@@ -145,7 +147,7 @@ test('favoritele: adaugare (201, apoi 200), lista, anunt devenit indisponibil, s
   assert.equal(lista[0].disponibil, true);
   assert.equal(lista[0].proprietar, 'Test proprietar'); // aceleasi date ca la cautare
 
-  await new AnuntAccessor().schimbaStare(anunt.id, 'inactiv'); // proprietarul il scoate de pe site
+  await scop.resolve('anuntAccessor').schimbaStare(anunt.id, 'inactiv'); // proprietarul il scoate de pe site
   lista = (await b.get('/api/favorite')).date;
   assert.equal(lista[0].disponibil, false); // ramane in lista, dar marcat indisponibil
 

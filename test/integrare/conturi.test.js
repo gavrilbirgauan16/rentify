@@ -5,10 +5,13 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { pornesteAplicatia, Browser, creeazaUtilizator, unic } = require('./ajutor');
-const UtilizatorAccessor = require('../../src/NivelAccesDate/UtilizatorAccessor');
-const tokenuri = require('../../servicii/tokenuri');
+// Serviciul de tokenuri si accesorii, construiti de containerul DI - exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
 
-const utilizatori = new UtilizatorAccessor();
+const scop = container.createScope();
+const tokenuri = scop.resolve('tokenuri');
+
+const utilizatori = scop.resolve('utilizatorAccessor');
 
 let aplicatie;
 before(async () => { aplicatie = await pornesteAplicatia(); });

@@ -4,10 +4,12 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { pornesteAplicatia, Browser, creeazaUtilizator, unic } = require('./ajutor');
-const PlanAccessor = require('../../src/NivelAccesDate/PlanAccessor');
+// Accesorii ii construieste containerul DI, exact ca in aplicatie (laboratorul 10).
+const { container } = require('../../infrastructura/container');
+const scop = container.createScope();
 const D = require('../../servicii/date');
 
-const planuri = new PlanAccessor();
+const planuri = scop.resolve('planAccessor');
 
 // Baza de test are doar ce pun migrarile (planul Gratuit), asa ca planurile platite le facem aici, cu nume unice.
 const planNou = (rol, pretLunar, maxProprietati) => planuri.addEntity(rol, {

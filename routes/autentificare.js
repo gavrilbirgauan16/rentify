@@ -1,7 +1,8 @@
 // Rutele pentru conectare si iesire din cont.
 const express = require('express');
+const { actiune } = require('../infrastructura/container'); // DI: controllerele isi primesc serviciile
 const { rateLimit } = require('express-rate-limit');
-const controller = require('../controllers/AutentificareController');
+const AutentificareController = require('../controllers/AutentificareController');
 
 const router = express.Router();
 
@@ -19,8 +20,8 @@ const limitaAutentificare = rateLimit({
   }),
 });
 
-router.get('/autentificare', controller.autentificareGet);
-router.post('/autentificare', limitaAutentificare, controller.autentificarePost);
-router.post('/iesire', controller.iesire);
+router.get('/autentificare', actiune(AutentificareController, 'autentificareGet'));
+router.post('/autentificare', limitaAutentificare, actiune(AutentificareController, 'autentificarePost'));
+router.post('/iesire', actiune(AutentificareController, 'iesire'));
 
 module.exports = router;

@@ -14,9 +14,9 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 | Panoul de administrare (randare pe server) | **EJS**, **HTML5**, **CSS3**, **Bootstrap** 5.3, JavaScript în browser |
 | Bază de date | **PostgreSQL**, **Prisma ORM** 7 (Code First, migrări) |
 | Securitate | helmet, express-rate-limit, CSRF, parole **scrypt**, sesiuni cu express-session + connect-pg-simple |
-| Alte librării | Nodemailer (emailuri), Multer (imagini), morphism (DTO-uri API), dotenv |
+| Alte librării | Awilix (Dependency Injection), Nodemailer (emailuri), Multer (imagini), morphism (DTO-uri API), dotenv |
 | Calitate | ESLint, teste automate (`node:test`), CI cu **GitHub Actions**, Postman (API) |
-| Arhitectură | MVC + ViewModel, nivel separat de acces la date (accesori), API REST |
+| Arhitectură | MVC + ViewModel, nivel de servicii (logica de business), nivel de acces la date (accesori), API REST, Dependency Injection, cache, evenimente |
 
 ## Instalare
 
@@ -161,6 +161,10 @@ Panoul de administrare rămâne deocamdată în EJS.
 - **Zona proprietarului** (`/proprietar`, doar pentru proprietari): **Anunțurile mele** (listă cu limita din plan, adăugare,
   modificare, poze trase cu mouse-ul, publicare / retragere, ștergere cu confirmare) și **Proprietățile mele** (listă,
   adăugare, modificare, dezactivare / activare). Fiecare acțiune e o cerere către API-ul `/api/proprietar/...` (CRUD prin API).
+- **Abonamentul meu** (`/proprietar/abonament`): planul curent, cât a folosit din limite, planurile pentru proprietari
+  (lunar / anual), istoricul și renunțarea la o schimbare programată. „Alege” duce la pagina de confirmare
+  (`/proprietar/abonament/schimba?plan=…&perioada=…`): prețul, creditul și datele le calculează **serverul**;
+  la plată se trimit doar planul și perioada (plată simulată, fără date de card).
 - **Design:** sistem propriu în CSS3 (`client/src/stiluri/tema.css`): culorile, fonturile și formele sunt variabile;
   se adaptează după lățimea și înălțimea ferestrei; respectă setarea "reduce animațiile" a sistemului.
   Fonturile (Inter, Playfair Display) sunt în proiect, nu se încarcă de pe internet.
@@ -175,7 +179,8 @@ Panoul de administrare rămâne deocamdată în EJS.
 | `views/` | paginile EJS (`views/admin/...` pentru administrator) |
 | `src/NivelAccesDate/` | accesorii: singurul loc care vorbește cu baza de date |
 | `middleware/` | autentificare, roluri, CSRF, încărcarea imaginilor, cheia API |
-| `servicii/` | logica comună: parole (scrypt), emailuri, linkuri din email (tokenuri), limitele planurilor, filtre și paginare, jurnalul adminului, date calendaristice |
+| `servicii/` | nivelul de servicii (logica de business): câte un serviciu pe zonă (ex. `anunturiAdmin`, `abonamentProprietar`), plus parole (scrypt), emailuri, tokenuri, limite, filtre, jurnal, cache, evenimente; `servicii/consumatori/` - cine reacționează la evenimente |
+| `infrastructura/` | containerul de Dependency Injection (`container.js`) și abonarea consumatorilor la evenimente (`consumatori.js`) |
 | `utils/` | ajutoare pentru controllere (mesaje flash, întoarcerea la lista filtrată) |
 | `config/` | setările citite din `.env` |
 | `prisma/` | schema și migrările (Code First) |
@@ -183,6 +188,34 @@ Panoul de administrare rămâne deocamdată în EJS.
 | `test/` | teste automate (`node --test`); `test/integrare/` - testele API-ului cu baza de date |
 | `docs/` | colecția Postman |
 | `client/` | interfața React: `src/pagini/`, `src/componente/`, `src/api/` (clientul API), `src/sesiune/`, `src/stiluri/` |
+
+## Arhitectura: servicii, Dependency Injection, cache, evenimente
+
+```
+cerere HTTP → rută → controller (fabrică) → serviciu (logica) → accesor (Prisma) → PostgreSQL
+                          ↑ toate primesc dependențele prin constructor, de la containerul DI
+```
+
+- **Nivelul de servicii** (`servicii/`): toată logica de business (regulile planurilor, moderarea, schimbarea abonamentului,
+  conturile). Controllerele doar citesc cererea, cheamă serviciul și aleg răspunsul (pagină EJS sau JSON). Aceleași
+  servicii sunt folosite și de paginile EJS, și de API (React).
+- **Dependency Injection** cu **Awilix** (`infrastructura/container.js`): nicio clasă nu-și mai creează singură
+  dependențele (fără `new XAccessor()`); le primește prin constructor, după nume. Fiecare cerere HTTP are propriul
+  „scope” (`req.container`). Duratele de viață (verificate în `test/durateViata.test.js`):
+
+  | Durata | Ce | De ce |
+  |---|---|---|
+  | **Singleton** (o dată pentru toată aplicația) | contextul Prisma, cache-ul, magistrala de evenimente | Prisma ține un „pool” de conexiuni; cache-ul și abonările trebuie să supraviețuiască între cereri |
+  | **Scoped** (o dată pe cerere) | accesorii și serviciile | toți cei care lucrează la aceeași cerere împart aceleași obiecte; nu se păstrează nimic între cereri |
+  | **Transient** (de fiecare dată) | controllerele | construite din nou la fiecare cerere, ca în ASP.NET Core |
+
+  Containerul e în modul `strict`: refuză un Singleton care ar depinde de un obiect Scoped (ar ține minte o cerere pentru totdeauna).
+- **Cache** (`servicii/cache.js`, Singleton): planurile proprietarului se citesc din baza de date cel mult o dată la
+  10 minute; când adminul schimbă un plan, cache-ul se golește imediat. Cache-ul e în memoria procesului.
+- **Evenimente** (`servicii/evenimente.js`, pe `EventEmitter` din Node.js): când adminul aprobă sau respinge un anunț,
+  serviciul **publică** `anunt.aprobat` / `anunt.respins`, fără să știe cine ascultă. Doi **consumatori independenți**
+  (`servicii/consumatori/`): emailul către proprietar și jurnalul adminului. Dacă unul eșuează (ex. serverul de email),
+  celălalt rulează oricum, iar aprobarea rămâne valabilă. Un consumator nou se adaugă doar în `infrastructura/consumatori.js`.
 
 ## Securitate
 

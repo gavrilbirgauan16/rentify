@@ -1,5 +1,6 @@
 // Metode de acces la date pentru planurile de abonament (tabelele plan_abonament si limita_plan).
-const context = require('../Repository_CodeFirst/context');
+// Conexiunea la baza de date NU mai e luata direct de aici: o primeste constructorul (Dependency Injection,
+// laboratorul 10), de la containerul din infrastructura/container.js.
 
 // Ce aducem mereu impreuna cu un plan: rolul, limitele si cate abonamente ACTIVE are.
 const CU_DETALII = {
@@ -9,18 +10,33 @@ const CU_DETALII = {
 };
 
 class PlanAccessor {
+  // Dependinta primita prin constructor: contextul Prisma (echivalentul DbContext din Entity Framework).
+  constructor({ context }) {
+    this.context = context;
+  }
+
   // Planurile unui rol (proprietar / chirias), cele active primele, apoi dupa pret.
   async getByRol(numeRol) {
-    return context.plan_abonament.findMany({
+    return this.context.plan_abonament.findMany({
       where: { rol: { nume: numeRol } },
       include: CU_DETALII,
       orderBy: [{ activ: 'desc' }, { pret_lunar: 'asc' }],
     });
   }
 
+  // Oferta de planuri a unui rol (active si inactive, cu limitele), FARA numarul de abonati.
+  // Se poate tine in cache (servicii/cache.js): se schimba doar cand adminul modifica un plan.
+  async getOferta(numeRol) {
+    return this.context.plan_abonament.findMany({
+      where: { rol: { nume: numeRol } },
+      include: { rol: { select: { nume: true } }, limita_plan: true },
+      orderBy: [{ activ: 'desc' }, { pret_lunar: 'asc' }],
+    });
+  }
+
   // Toate planurile (active si inactive), cu rolul, pentru filtrele din liste.
   async getToate() {
-    return context.plan_abonament.findMany({
+    return this.context.plan_abonament.findMany({
       include: { rol: { select: { nume: true } } },
       orderBy: [{ rol_id: 'asc' }, { pret_lunar: 'asc' }],
     });
@@ -28,7 +44,7 @@ class PlanAccessor {
 
   // Toate planurile active (pentru alegerea planului la un abonament nou), grupate apoi pe rol.
   async getActive() {
-    return context.plan_abonament.findMany({
+    return this.context.plan_abonament.findMany({
       where: { activ: true },
       include: { rol: { select: { nume: true } } },
       orderBy: [{ rol_id: 'asc' }, { pret_lunar: 'asc' }],
@@ -37,19 +53,19 @@ class PlanAccessor {
 
   // Planul gratuit al unui rol (pret 0), dat automat la confirmarea contului. Null daca nu exista.
   async getGratuit(numeRol) {
-    return context.plan_abonament.findFirst({
+    return this.context.plan_abonament.findFirst({
       where: { activ: true, pret_lunar: 0, pret_anual: 0, rol: { nume: numeRol } },
       orderBy: { id: 'asc' },
     });
   }
 
   async getById(id) {
-    return context.plan_abonament.findUnique({ where: { id }, include: CU_DETALII });
+    return this.context.plan_abonament.findUnique({ where: { id }, include: CU_DETALII });
   }
 
   // true daca exista deja alt plan cu acelasi nume pentru acelasi rol.
   async numeFolosit(numeRol, nume, exceptId = null) {
-    const gasit = await context.plan_abonament.findFirst({
+    const gasit = await this.context.plan_abonament.findFirst({
       where: { rol: { nume: numeRol }, nume: { equals: nume, mode: 'insensitive' }, NOT: exceptId ? { id: exceptId } : undefined },
       select: { id: true },
     });
@@ -58,7 +74,7 @@ class PlanAccessor {
 
   // Plan nou, cu limitele lui (Create). Totul intr-o tranzactie.
   async addEntity(numeRol, date, limite) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const plan = await tx.plan_abonament.create({ data: { ...date, rol: { connect: { nume: numeRol } } } });
       await tx.limita_plan.createMany({ data: limite.map((l) => ({ ...l, plan_id: plan.id })) });
       if (plan.recomandat) await this.#doarUnulRecomandat(tx, plan);
@@ -68,7 +84,7 @@ class PlanAccessor {
 
   // Modifica un plan: datele lui si inlocuieste limitele (Edit). Totul intr-o tranzactie.
   async updateEntity(id, date, limite) {
-    return context.$transaction(async (tx) => {
+    return this.context.$transaction(async (tx) => {
       const plan = await tx.plan_abonament.update({ where: { id }, data: date });
       await tx.limita_plan.deleteMany({ where: { plan_id: id } });
       await tx.limita_plan.createMany({ data: limite.map((l) => ({ ...l, plan_id: id })) });
@@ -79,7 +95,7 @@ class PlanAccessor {
 
   // Activeaza / dezactiveaza un plan. Un plan dezactivat nu mai poate fi recomandat.
   async schimbaActiv(id, activ) {
-    return context.plan_abonament.update({ where: { id }, data: activ ? { activ } : { activ, recomandat: false } });
+    return this.context.plan_abonament.update({ where: { id }, data: activ ? { activ } : { activ, recomandat: false } });
   }
 
   // Un singur plan recomandat pe rol: cand unul devine recomandat, celelalte nu mai sunt.
