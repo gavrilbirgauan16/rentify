@@ -5,7 +5,7 @@ const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const { cereCheie } = require('../middleware/cheieApi');
 const { asiguraToken, verificaTokenApi } = require('../middleware/csrf');
-const anunturi = require('../controllers/api/AnunturiApiController');
+const AnunturiApiController = require('../controllers/api/AnunturiApiController');
 const AutentificareApiController = require('../controllers/api/AutentificareApiController');
 const ChiriasApiController = require('../controllers/api/ChiriasApiController');
 const ConturiApiController = require('../controllers/api/ConturiApiController');
@@ -59,10 +59,10 @@ router.post('/auth/parola-uitata', limitaEmailuri, actiune(ConturiApiController,
 router.get('/auth/resetare/:token', limitaResetare, actiune(ConturiApiController, 'verificaResetarea'));
 router.post('/auth/resetare', limitaResetare, actiune(ConturiApiController, 'resetare'));
 
-router.get('/anunturi', anunturi.getAll);
-router.get('/anunturi/:id', anunturi.getById);
-router.post('/anunturi', cereCheie, anunturi.post);
-router.put('/anunturi/:id', cereCheie, anunturi.put);
+router.get('/anunturi', actiune(AnunturiApiController, 'getAll'));
+router.get('/anunturi/:id', actiune(AnunturiApiController, 'getById'));
+router.post('/anunturi', cereCheie, actiune(AnunturiApiController, 'post'));
+router.put('/anunturi/:id', cereCheie, actiune(AnunturiApiController, 'put'));
 
 // Contul meu (orice rol conectat). Schimbarea parolei merge si cu parola temporara de la admin (altfel ar ramane blocat).
 // Parola si emailul: cel mult 10 incercari in 15 minute (nu se poate ghici parola curenta de aici).
