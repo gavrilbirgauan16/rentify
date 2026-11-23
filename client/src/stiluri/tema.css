@@ -419,6 +419,116 @@ body { margin: 0; background: var(--fundal); }
   .cont-text .avantaje { display: none; }
 }
 
+/* ---------- Zona proprietarului: titlu si file ---------- */
+.zona { padding: 28px 0 64px; }
+.zona-titlu .supratitlu { margin: 0; color: var(--accent-text); font-weight: 650; font-size: .85rem; letter-spacing: .06em; text-transform: uppercase; }
+.zona-titlu h1 { font-size: clamp(1.8rem, 2vw + 1rem, 2.4rem); margin: .1em 0 .4em; }
+/* Filele: linia aurie sub fila curenta (ca in meniu); pe ecran ingust se pot derula orizontal */
+.file { display: flex; gap: 26px; border-bottom: 1px solid var(--bordura); margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
+.file a { position: relative; padding: 10px 0 12px; color: var(--text-secundar); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.file a:hover { color: var(--text); }
+.file a[aria-current='page'] { color: var(--principal); }
+.file a[aria-current='page']::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); }
+
+/* Bara de sus: limita din plan + butonul "Anunt nou" */
+.bara-zona { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.limita-plan { display: grid; gap: 6px; color: var(--text-secundar); }
+.limita-plan strong { color: var(--text); }
+.progres { display: block; width: 220px; max-width: 100%; height: 6px; border-radius: 6px; background: var(--suprafata-2); overflow: hidden; }
+.progres span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .4s ease; }
+.nota-stare { margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; background: var(--accent-deschis); color: var(--accent-text); font-size: .9rem; }
+.nota-stare.respins { background: #fde4e1; color: #7f1d1d; }
+.insigna-inactiv { background: #e6e8ee; color: #4a5068; }
+
+/* ---------- Lista "Anunturile mele": cate un rand pe anunt ---------- */
+.lista-anunturi { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 14px; container: lista / inline-size; }
+.rand-anunt {
+  display: grid; grid-template-columns: 132px 1fr auto; gap: 18px; align-items: center;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); padding: 12px; box-shadow: var(--umbra);
+}
+.miniatura-anunt { aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: var(--suprafata-2); display: grid; place-items: center; color: var(--text-secundar); font-size: .8rem; }
+.miniatura-anunt img { width: 100%; height: 100%; object-fit: cover; }
+.detalii-anunt { min-width: 0; }
+.linie-titlu { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.linie-titlu h3 { font-size: 1.15rem; margin: 0; }
+.linie-titlu h3 a { color: var(--text); text-decoration: none; }
+.linie-titlu h3 a:hover { color: var(--principal); text-decoration: underline; text-underline-offset: 3px; }
+.rand-anunt .meta { margin: 0; color: var(--text-secundar); font-size: .9rem; }
+.rand-anunt .nota-stare { margin: 8px 0 0; padding: 6px 10px; font-size: .85rem; }
+.actiuni-anunt { display: flex; flex-direction: column; gap: 6px; }
+.actiuni-anunt .buton { padding: .5em 1em; font-size: .9rem; }
+/* Lista ingusta (telefon, ecran impartit): poza sus, actiunile pe un rand jos */
+@container lista (max-width: 680px) {
+  .rand-anunt { grid-template-columns: 96px 1fr; }
+  .actiuni-anunt { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+  .actiuni-anunt .buton { flex: 1 1 auto; }
+}
+.lista-schelet { display: grid; gap: 14px; }
+.card-schelet.rand { aspect-ratio: auto; height: 120px; }
+.card-schelet.formular { aspect-ratio: auto; height: 520px; }
+.buton-pericol-plin { background: #c0362c; color: #fff; }
+.buton-pericol-plin:hover { background: #a1271b; }
+
+/* ---------- Formularul de anunt ---------- */
+.formular-anunt { display: grid; gap: 18px; }
+.formular-cap { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.formular-cap h2 { margin: 4px 0 0; }
+.inapoi { font-size: .9rem; font-weight: 600; text-decoration: none; }
+.formular-grila { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+.formular-grila .pe-tot-randul { grid-column: 1 / -1; }
+@media (max-width: 900px) { .formular-grila { grid-template-columns: 1fr; } }
+.card-sectiune {
+  margin: 0; min-width: 0; display: grid; gap: 14px; padding: 20px 22px 22px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra);
+}
+.card-sectiune legend { float: left; width: 100%; padding: 0; font-family: var(--font-titlu); font-size: 1.2rem; font-weight: 700; }
+.card-sectiune legend + * { clear: both; }
+.rand-pret { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+textarea.intrare { resize: vertical; min-height: 120px; line-height: 1.5; }
+/* select: aceeasi forma ca restul campurilor, cu sageata noastra */
+select.intrare {
+  appearance: none; padding-right: 2.4em; cursor: pointer;
+  background: var(--suprafata) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23475069' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right .9em center / 12px no-repeat;
+}
+.formular-butoane { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 560px) { .formular-butoane .buton { flex: 1 1 100%; } }
+
+/* ---------- Pozele: grila cu miniaturi + zona in care le tragi ---------- */
+.zona-poze { display: grid; gap: 14px; }
+.grila-poze { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 12px; }
+.grila-poze:empty { display: none; }
+.poza-mica { position: relative; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; background: var(--suprafata-2); border: 1px solid var(--bordura); }
+.poza-mica img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sterge-poza {
+  position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; border-radius: 50%; border: 0; cursor: pointer;
+  background: rgb(18 25 51 / 72%); color: #fff; font-size: .85rem; display: grid; place-items: center;
+  transition: background-color .15s, transform .15s;
+}
+.sterge-poza:hover { background: #c0362c; transform: scale(1.08); }
+.eticheta-poza { position: absolute; left: 6px; bottom: 6px; padding: .1em .5em; border-radius: 6px; background: rgb(255 255 255 / 90%); font-size: .7rem; font-weight: 600; color: var(--text-secundar); }
+.zona-tragere {
+  display: grid; justify-items: center; gap: 8px; text-align: center; padding: 26px 16px;
+  border: 2px dashed var(--bordura); border-radius: var(--raza); background: var(--fundal);
+  transition: border-color .15s, background-color .15s;
+}
+.zona-tragere.activa { border-color: var(--accent); background: var(--accent-deschis); }
+.zona-tragere p { margin: 0; }
+.zona-tragere small { color: var(--text-secundar); }
+.iconita-tragere { font-size: 1.8rem; }
+
+/* ---------- Fereastra (elementul HTML5 <dialog>) ---------- */
+.fereastra {
+  padding: 0; border: 0; border-radius: 20px; max-width: min(460px, calc(100% - 32px)); width: 100%;
+  background: var(--suprafata); color: var(--text); box-shadow: var(--umbra-mare);
+}
+.fereastra::backdrop { background: rgb(13 21 48 / 55%); backdrop-filter: blur(3px); }
+.fereastra[open] { animation: aparitie-fereastra .22s cubic-bezier(.2, .75, .2, 1); }
+@keyframes aparitie-fereastra { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+.fereastra-continut { padding: 24px; font-family: var(--font-text); }
+.fereastra-continut h2 { font-family: var(--font-titlu); margin: 0 0 10px; font-size: 1.4rem; }
+.fereastra-continut p { margin: 0 0 12px; color: var(--text-secundar); }
+.butoane-fereastra { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+
 /* ---------- Sectiuni, stari de incarcare, pagina goala ---------- */
 .sectiune { padding-bottom: 56px; }
 .titlu-sectiune { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
