@@ -33,6 +33,8 @@ const Jurnal = require('../servicii/jurnal');
 const PanouAdmin = require('../servicii/panouAdmin');
 const CautareAdmin = require('../servicii/cautareAdmin');
 const Cache = require('../servicii/cache');
+const Evenimente = require('../servicii/evenimente');
+const { aboneazaConsumatorii } = require('./consumatori');
 const ProprietatiAdmin = require('../servicii/proprietatiAdmin');
 const PlanuriAdmin = require('../servicii/planuriAdmin');
 const AnunturiAdmin = require('../servicii/anunturiAdmin');
@@ -57,6 +59,8 @@ function creeazaContainer() {
     context: asValue(context),
     // Cache-ul (planurile etc.): tot Singleton - trebuie sa supravietuiasca intre cereri, altfel n-ar folosi la nimic.
     cache: asClass(Cache).singleton(),
+    // Magistrala de evenimente: Singleton - abonarile consumatorilor se fac o data, la pornire, pentru toate cererile.
+    evenimente: asClass(Evenimente).singleton(),
 
     // Accesorii (NivelAccesDate): cate unul pe cerere (Scoped). Nu tin date intre cereri.
     abonamentAccessor: asClass(AbonamentAccessor).scoped(),
@@ -91,6 +95,8 @@ function creeazaContainer() {
     abonamenteAdmin: asClass(AbonamenteAdmin).scoped(),
   });
 
+  // Consumatorii evenimentelor (emailul, jurnalul) se aboneaza o singura data, cand se creeaza containerul.
+  aboneazaConsumatorii(container);
   return container;
 }
 
