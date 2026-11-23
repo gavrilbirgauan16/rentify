@@ -7,13 +7,14 @@ const { cereCheie } = require('../middleware/cheieApi');
 const { asiguraToken, verificaTokenApi } = require('../middleware/csrf');
 const anunturi = require('../controllers/api/AnunturiApiController');
 const auth = require('../controllers/api/AutentificareApiController');
-const chirias = require('../controllers/api/ChiriasApiController');
+const ChiriasApiController = require('../controllers/api/ChiriasApiController');
 const conturi = require('../controllers/api/ConturiApiController');
 const cont = require('../controllers/api/ContApiController');
-const proprietati = require('../controllers/api/ProprietatiApiController');
-const anunturiProprietar = require('../controllers/api/AnunturiProprietarApiController');
-const abonament = require('../controllers/api/AbonamentApiController');
+const ProprietatiApiController = require('../controllers/api/ProprietatiApiController');
+const AnunturiProprietarApiController = require('../controllers/api/AnunturiProprietarApiController');
+const AbonamentApiController = require('../controllers/api/AbonamentApiController');
 const { incarcaImagini } = require('../middleware/incarcareImagini');
+const { actiune } = require('../infrastructura/container'); // DI: controllerele isi primesc serviciile
 const { cereConectatApi, cereAutentificareApi, cereRolApi } = require('../middleware/autentificare');
 
 const router = express.Router();
@@ -74,39 +75,39 @@ router.post('/cont/email/confirmare', limitaResetare, cont.confirmaEmailul);
 
 // Chiriasul conectat: contactarea proprietarului (cu limita din plan) si favoritele.
 const doarChirias = [cereAutentificareApi, cereRolApi('chirias')];
-router.get('/contactari', doarChirias, chirias.situatie);
-router.post('/anunturi/:id/contact', doarChirias, chirias.contact);
-router.get('/favorite', doarChirias, chirias.listaFavorite);
-router.post('/favorite/:id', doarChirias, chirias.adaugaFavorit);
-router.delete('/favorite/:id', doarChirias, chirias.stergeFavorit);
+router.get('/contactari', doarChirias, actiune(ChiriasApiController, 'situatie'));
+router.post('/anunturi/:id/contact', doarChirias, actiune(ChiriasApiController, 'contact'));
+router.get('/favorite', doarChirias, actiune(ChiriasApiController, 'listaFavorite'));
+router.post('/favorite/:id', doarChirias, actiune(ChiriasApiController, 'adaugaFavorit'));
+router.delete('/favorite/:id', doarChirias, actiune(ChiriasApiController, 'stergeFavorit'));
 
 // Proprietarul conectat: proprietatile lui (limita din plan, doar ale lui).
 const doarProprietar = [cereAutentificareApi, cereRolApi('proprietar')];
-router.get('/proprietar/proprietati', doarProprietar, proprietati.lista);
-router.get('/proprietar/proprietati/:id', doarProprietar, proprietati.una);
-router.post('/proprietar/proprietati', doarProprietar, proprietati.adauga);
-router.put('/proprietar/proprietati/:id', doarProprietar, proprietati.modifica);
-router.post('/proprietar/proprietati/:id/dezactiveaza', doarProprietar, proprietati.dezactiveaza);
-router.post('/proprietar/proprietati/:id/activeaza', doarProprietar, proprietati.activeaza);
+router.get('/proprietar/proprietati', doarProprietar, actiune(ProprietatiApiController, 'lista'));
+router.get('/proprietar/proprietati/:id', doarProprietar, actiune(ProprietatiApiController, 'una'));
+router.post('/proprietar/proprietati', doarProprietar, actiune(ProprietatiApiController, 'adauga'));
+router.put('/proprietar/proprietati/:id', doarProprietar, actiune(ProprietatiApiController, 'modifica'));
+router.post('/proprietar/proprietati/:id/dezactiveaza', doarProprietar, actiune(ProprietatiApiController, 'dezactiveaza'));
+router.post('/proprietar/proprietati/:id/activeaza', doarProprietar, actiune(ProprietatiApiController, 'activeaza'));
 
 // Proprietarul conectat: anunturile lui (limita, moderarea, doar pe proprietatile lui).
-router.get('/proprietar/anunturi', doarProprietar, anunturiProprietar.lista);
-router.get('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.unul);
-router.post('/proprietar/anunturi', doarProprietar, anunturiProprietar.adauga);
-router.put('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.modifica);
-router.post('/proprietar/anunturi/:id/publica', doarProprietar, anunturiProprietar.publica);
-router.post('/proprietar/anunturi/:id/retrage', doarProprietar, anunturiProprietar.retrage);
-router.delete('/proprietar/anunturi/:id', doarProprietar, anunturiProprietar.sterge); // stergere logica
+router.get('/proprietar/anunturi', doarProprietar, actiune(AnunturiProprietarApiController, 'lista'));
+router.get('/proprietar/anunturi/:id', doarProprietar, actiune(AnunturiProprietarApiController, 'unul'));
+router.post('/proprietar/anunturi', doarProprietar, actiune(AnunturiProprietarApiController, 'adauga'));
+router.put('/proprietar/anunturi/:id', doarProprietar, actiune(AnunturiProprietarApiController, 'modifica'));
+router.post('/proprietar/anunturi/:id/publica', doarProprietar, actiune(AnunturiProprietarApiController, 'publica'));
+router.post('/proprietar/anunturi/:id/retrage', doarProprietar, actiune(AnunturiProprietarApiController, 'retrage'));
+router.delete('/proprietar/anunturi/:id', doarProprietar, actiune(AnunturiProprietarApiController, 'sterge')); // stergere logica
 // Pozele: intai rolul (cine nu e proprietar nu poate urca nimic), apoi incarcarea si verificarea fisierelor.
-router.post('/proprietar/anunturi/:id/imagini', doarProprietar, incarcaImagini, anunturiProprietar.adaugaImagini);
-router.delete('/proprietar/anunturi/:id/imagini/:idImagine', doarProprietar, anunturiProprietar.stergeImagine);
+router.post('/proprietar/anunturi/:id/imagini', doarProprietar, incarcaImagini, actiune(AnunturiProprietarApiController, 'adaugaImagini'));
+router.delete('/proprietar/anunturi/:id/imagini/:idImagine', doarProprietar, actiune(AnunturiProprietarApiController, 'stergeImagine'));
 
 // Abonamentul proprietarului: situatia, previzualizarea pretului, schimbarea (plata simulata), renuntarea la cea programata.
 const limitaPlati = limita(15, 20); // cineva care apasa "Plateste" la nesfarsit (sau un script)
-router.get('/proprietar/abonament', doarProprietar, abonament.situatie);
-router.get('/proprietar/abonament/previzualizare', doarProprietar, abonament.previzualizare);
-router.post('/proprietar/abonament/schimba', doarProprietar, limitaPlati, abonament.schimba);
-router.delete('/proprietar/abonament/programat', doarProprietar, abonament.anuleazaProgramat);
+router.get('/proprietar/abonament', doarProprietar, actiune(AbonamentApiController, 'situatie'));
+router.get('/proprietar/abonament/previzualizare', doarProprietar, actiune(AbonamentApiController, 'previzualizare'));
+router.post('/proprietar/abonament/schimba', doarProprietar, limitaPlati, actiune(AbonamentApiController, 'schimba'));
+router.delete('/proprietar/abonament/programat', doarProprietar, actiune(AbonamentApiController, 'anuleazaProgramat'));
 
 // Orice alta adresa din /api: raspuns JSON, nu pagina HTML.
 router.use((req, res) => res.status(404).json({ eroare: 'Adresa API nu există.' }));

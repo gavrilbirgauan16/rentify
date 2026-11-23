@@ -2,10 +2,11 @@
 // trebuie sa fii conectat si sa ai rolul "proprietar" (ca /admin pentru administrator).
 const express = require('express');
 const { cereAutentificare, cereRol } = require('../middleware/autentificare');
-const proprietati = require('../controllers/proprietar/ProprietatiController');
-const anunturi = require('../controllers/proprietar/AnunturiController');
-const abonament = require('../controllers/proprietar/AbonamentController');
+const ProprietatiController = require('../controllers/proprietar/ProprietatiController');
+const AnunturiController = require('../controllers/proprietar/AnunturiController');
+const AbonamentController = require('../controllers/proprietar/AbonamentController');
 const { incarcaImagini } = require('../middleware/incarcareImagini');
+const { actiune } = require('../infrastructura/container'); // DI: controllerele isi primesc serviciile
 
 const router = express.Router();
 
@@ -21,30 +22,30 @@ router.use((req, res, next) => {
 const sectiune = (nume) => (req, res, next) => { res.locals.sectiune = nume; next(); };
 
 router.use('/proprietati', sectiune('proprietati'));
-router.get('/proprietati', proprietati.index);
-router.get('/proprietati/create', proprietati.createGet);
-router.post('/proprietati/create', proprietati.createPost);
-router.get('/proprietati/:id/edit', proprietati.editGet);
-router.post('/proprietati/:id/edit', proprietati.editPost);
-router.post('/proprietati/:id/dezactiveaza', proprietati.dezactiveaza);
-router.post('/proprietati/:id/activeaza', proprietati.activeaza);
+router.get('/proprietati', actiune(ProprietatiController, 'index'));
+router.get('/proprietati/create', actiune(ProprietatiController, 'createGet'));
+router.post('/proprietati/create', actiune(ProprietatiController, 'createPost'));
+router.get('/proprietati/:id/edit', actiune(ProprietatiController, 'editGet'));
+router.post('/proprietati/:id/edit', actiune(ProprietatiController, 'editPost'));
+router.post('/proprietati/:id/dezactiveaza', actiune(ProprietatiController, 'dezactiveaza'));
+router.post('/proprietati/:id/activeaza', actiune(ProprietatiController, 'activeaza'));
 
 // Anunturile mele. Formularele cu imagini trec intai prin incarcaImagini (care verifica si tokenul CSRF).
 router.use('/anunturi', sectiune('anunturi'));
-router.get('/anunturi', anunturi.index);
-router.get('/anunturi/create', anunturi.createGet);
-router.post('/anunturi/create', incarcaImagini, anunturi.createPost);
-router.get('/anunturi/:id/edit', anunturi.editGet);
-router.post('/anunturi/:id/edit', incarcaImagini, anunturi.editPost);
-router.post('/anunturi/:id/activeaza', anunturi.activeaza);
-router.post('/anunturi/:id/dezactiveaza', anunturi.dezactiveaza);
-router.post('/anunturi/:id/sterge', anunturi.sterge); // stergere logica (formularul are token CSRF)
+router.get('/anunturi', actiune(AnunturiController, 'index'));
+router.get('/anunturi/create', actiune(AnunturiController, 'createGet'));
+router.post('/anunturi/create', incarcaImagini, actiune(AnunturiController, 'createPost'));
+router.get('/anunturi/:id/edit', actiune(AnunturiController, 'editGet'));
+router.post('/anunturi/:id/edit', incarcaImagini, actiune(AnunturiController, 'editPost'));
+router.post('/anunturi/:id/activeaza', actiune(AnunturiController, 'activeaza'));
+router.post('/anunturi/:id/dezactiveaza', actiune(AnunturiController, 'dezactiveaza'));
+router.post('/anunturi/:id/sterge', actiune(AnunturiController, 'sterge')); // stergere logica (formularul are token CSRF)
 
 // Abonamentul meu: afisare, schimbarea planului (confirmare + plata simulata), anularea unei schimbari programate.
 router.use('/abonament', sectiune('abonament'));
-router.get('/abonament', abonament.index);
-router.get('/abonament/schimba', abonament.schimbaGet);
-router.post('/abonament/schimba', abonament.schimbaPost);
-router.post('/abonament/anuleaza-programat', abonament.anuleazaProgramatPost);
+router.get('/abonament', actiune(AbonamentController, 'index'));
+router.get('/abonament/schimba', actiune(AbonamentController, 'schimbaGet'));
+router.post('/abonament/schimba', actiune(AbonamentController, 'schimbaPost'));
+router.post('/abonament/anuleaza-programat', actiune(AbonamentController, 'anuleazaProgramatPost'));
 
 module.exports = router;

@@ -19,6 +19,12 @@ const PlanAccessor = require('../src/NivelAccesDate/PlanAccessor');
 const ProprietateAccessor = require('../src/NivelAccesDate/ProprietateAccessor');
 const TokenAccessor = require('../src/NivelAccesDate/TokenAccessor');
 const UtilizatorAccessor = require('../src/NivelAccesDate/UtilizatorAccessor');
+// Nivelul de servicii (BusinessLayer): logica aplicatiei, intre controllere si accesul la date.
+const VerificariPlan = require('../servicii/verificariPlan');
+const ProprietatiProprietar = require('../servicii/proprietatiProprietar');
+const AnunturiProprietar = require('../servicii/anunturiProprietar');
+const AbonamentProprietar = require('../servicii/abonamentProprietar');
+const Chirias = require('../servicii/chirias');
 
 function creeazaContainer() {
   const container = createContainer({
@@ -47,6 +53,13 @@ function creeazaContainer() {
     proprietateAccessor: asClass(ProprietateAccessor).scoped(),
     tokenAccessor: asClass(TokenAccessor).scoped(),
     utilizatorAccessor: asClass(UtilizatorAccessor).scoped(),
+
+    // Serviciile: tot Scoped. Isi primesc accesorii (si alte servicii) prin constructor, dupa nume.
+    verificariPlan: asClass(VerificariPlan).scoped(),
+    proprietatiProprietar: asClass(ProprietatiProprietar).scoped(),
+    anunturiProprietar: asClass(AnunturiProprietar).scoped(),
+    abonamentProprietar: asClass(AbonamentProprietar).scoped(),
+    chirias: asClass(Chirias).scoped(),
   });
 
   return container;
@@ -62,4 +75,12 @@ function scopPeCerere(req, res, next) {
   next();
 }
 
-module.exports = { container, scopPeCerere };
+// Leaga o ruta de actiunea unui controller. La fiecare cerere, containerul cererii (req.container) "construieste"
+// controllerul - apeleaza fabrica lui cu dependintele cerute, dupa nume - si ruleaza actiunea.
+// (Echivalentul lui RegisterApiControllers din Autofac: controllerele primesc dependintele, nu le creeaza.)
+//   router.get('/anunturi', actiune(AnunturiController, 'index'))
+function actiune(fabricaController, metoda) {
+  return (req, res, next) => req.container.build(fabricaController)[metoda](req, res, next);
+}
+
+module.exports = { container, scopPeCerere, actiune };
