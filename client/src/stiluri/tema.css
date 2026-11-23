@@ -1,0 +1,272 @@
+/* Sistemul de design Rentify (CSS3) - tema "Urban": bleumarin (incredere) + auriu (premium).
+   Toate culorile, fonturile si formele sunt VARIABILE (--nume); componentele folosesc doar variabilele.
+   Fonturi: Playfair Display (titluri, elegant) + Inter (text, foarte clar), puse IN PROIECT (pachetele
+   @fontsource-variable, importate in main.jsx): merg si fara internet si nu trimit date catre Google. */
+
+/* ---------- Valorile temei ---------- */
+.aplicatie {
+  --fundal: #f3f5f9;
+  --suprafata: #ffffff;
+  --suprafata-2: #eaeef5;
+  --text: #121933;
+  --text-secundar: #475069;       /* mai inchis decat inainte: textul secundar se citeste clar */
+  --bordura: #dce2ec;
+  --principal: #1c2b52;           /* bleumarin spre ALBASTRU (nu spre verde-petrol) */
+  --principal-apasat: #121d3b;
+  --principal-fin: #e4e9f4;
+  --accent: #c9973f;              /* auriu */
+  --accent-deschis: #f6ead2;
+  --accent-text: #7a5414;         /* auriu inchis, pentru text pe fundal deschis (contrast bun) */
+
+  --raza: 18px;                   /* carduri */
+  --raza-camp: 12px;              /* campuri de formular */
+  --raza-buton: 12px;
+  --umbra: 0 1px 2px rgb(18 25 51 / 6%), 0 8px 24px rgb(18 25 51 / 8%);
+  --umbra-mare: 0 2px 6px rgb(18 25 51 / 6%), 0 24px 48px rgb(18 25 51 / 14%);
+
+  --font-titlu: 'Playfair Display Variable', Georgia, serif;   /* Georgia / system-ui: rezerva, pana se incarca */
+  --font-text: 'Inter Variable', system-ui, sans-serif;
+}
+
+/* ---------- Baza ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+
+.aplicatie {
+  min-height: 100vh;
+  background: var(--fundal);
+  color: var(--text);
+  font-family: var(--font-text);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.aplicatie h1, .aplicatie h2, .aplicatie h3 {
+  font-family: var(--font-titlu); font-weight: 700; line-height: 1.15; margin: 0 0 .5em; letter-spacing: -.01em;
+}
+/* :where() are specificitate 0: linkurile obisnuite primesc culoarea, dar NU suprascriu butoanele
+   (inainte, butonul-link "Creeaza cont" avea text bleumarin pe fundal bleumarin). */
+:where(.aplicatie) a { color: var(--principal); }
+
+.continut { width: min(1200px, 100% - 32px); margin-inline: auto; }
+.aplicatie :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Logo ---------- */
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-semn { flex-shrink: 0; filter: drop-shadow(0 2px 4px rgb(28 43 82 / 25%)); }
+.logo-text { font-family: var(--font-titlu); font-size: 1.55rem; font-weight: 800; color: var(--principal); letter-spacing: -.02em; }
+.logo-text span { color: var(--accent); }
+
+/* ---------- Antet (plutitor, rotunjit) ----------
+   "container query": antetul se aranjeaza dupa LATIMEA LUI (nu a ecranului), deci arata bine si pe
+   ecran impartit in doua, si in fereastra micsorata, si pe telefon. */
+.antet { position: sticky; top: 12px; z-index: 10; padding-top: 12px; container: antet / inline-size; }
+.antet .bara {
+  position: relative; display: flex; align-items: center; gap: 20px; min-height: 66px; padding: 8px 10px 8px 16px;
+  background: rgb(255 255 255 / 90%); backdrop-filter: blur(12px);
+  border: 1px solid var(--bordura); border-radius: 20px; box-shadow: var(--umbra);
+}
+.antet .logo-link { text-decoration: none; flex-shrink: 0; }
+.meniu { display: flex; gap: 22px; margin-right: auto; }
+.meniu a {
+  position: relative; color: var(--text-secundar); text-decoration: none; font-weight: 600;
+  white-space: nowrap; padding: .5em 0; transition: color .15s;
+}
+/* Pagina curenta si hover: o linie aurie sub text, care "creste" din mijloc */
+.meniu a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: .15em; height: 2px; border-radius: 2px;
+  background: var(--accent); transform: scaleX(0); transition: transform .25s ease;
+}
+.meniu a:hover { color: var(--text); }
+.meniu a:hover::after { transform: scaleX(.6); }
+.meniu a[aria-current='page'] { color: var(--principal); }
+.meniu a[aria-current='page']::after { transform: scaleX(1); }
+.antet .actiuni { display: flex; gap: 8px; flex-shrink: 0; margin-left: auto; }
+.buton-meniu { display: none; }
+
+/* Fara loc pentru meniu: el se strange in butonul "Meniu" si se deschide ca o lista sub antet */
+@container antet (max-width: 900px) {
+  /* Ordinea vizuala (order): logo, apoi "Meniu" impins spre dreapta, apoi butoanele de cont - fixe in colt */
+  .buton-meniu { display: inline-flex; order: 2; margin-left: auto; }
+  .antet .actiuni { order: 3; margin-left: 0; }
+  .meniu {
+    display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; margin: 0;
+    flex-direction: column; gap: 2px; padding: 10px;
+    background: var(--suprafata); border: 1px solid var(--bordura); border-radius: 18px; box-shadow: var(--umbra-mare);
+  }
+  .meniu.deschis { display: flex; }
+  .meniu a { padding: .75em 1em; border-radius: 12px; }
+  .meniu a::after { display: none; }
+  .meniu a:hover { background: var(--suprafata-2); }
+  .meniu a[aria-current='page'] { background: var(--principal-fin); }
+}
+/* Foarte ingust (telefon, fereastra mica): doar semnul logo-ului; butoanele de cont trec in meniu */
+@container antet (max-width: 560px) {
+  .antet .logo-text { display: none; }
+  .antet .actiuni { display: none; }
+  .meniu .doar-ingust { display: flex; }
+}
+.meniu .doar-ingust { display: none; flex-direction: column; gap: 8px; padding-top: 8px; margin-top: 6px; border-top: 1px solid var(--bordura); }
+
+/* ---------- Butoane: aceeasi forma si marime; difera doar culoarea ---------- */
+.buton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: .72em 1.3em; border: 0; border-radius: var(--raza-buton);
+  font: inherit; font-weight: 650; cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease, transform .1s ease, box-shadow .15s ease;
+}
+.buton:active { transform: translateY(1px); }
+.buton-principal { background: var(--principal); color: #fff; box-shadow: 0 4px 12px rgb(28 43 82 / 25%); }
+.buton-principal:hover { background: var(--principal-apasat); }
+.buton-moale { background: var(--principal-fin); color: var(--principal); }   /* la fel de "plin", doar mai discret */
+.buton-moale:hover { background: #d6deef; }
+.buton-auriu { background: var(--accent); color: #1b1305; }
+.buton-auriu:hover { background: #b8862f; }
+.buton-pericol { background: #fdeceb; color: #a1271b; }
+.buton-pericol:hover { background: #fbdad7; }
+.buton-lat { width: 100%; }
+
+/* ---------- Prima parte a paginii ---------- */
+.hero { padding: 56px 0 40px; }
+.hero h1 { font-size: clamp(2.1rem, 4vw + 1rem, 3.6rem); max-width: 15ch; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero p { color: var(--text-secundar); font-size: 1.15rem; max-width: 52ch; }
+
+.zona-cautare { container: cautare / inline-size; margin-top: 28px; }
+.cautare {
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 8px;
+  background: var(--suprafata); padding: 8px; border-radius: 20px;
+  box-shadow: var(--umbra); border: 1px solid var(--bordura);
+}
+@container cautare (max-width: 820px) {
+  .cautare { grid-template-columns: 1fr 1fr; }
+  .cautare .intrare:first-child, .cautare .buton { grid-column: 1 / -1; }   /* orasul si butonul pe tot randul */
+}
+@container cautare (max-width: 480px) {
+  .cautare { grid-template-columns: 1fr; }
+}
+
+/* ---------- Formulare ---------- */
+.camp { display: flex; flex-direction: column; gap: 6px; }
+.camp label { font-size: .875rem; font-weight: 600; }
+.intrare {
+  width: 100%; padding: .8em 1em; font: inherit; color: var(--text);
+  background: var(--suprafata); border: 1.5px solid var(--bordura); border-radius: var(--raza-camp);
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.intrare::placeholder { color: #8a92a6; }
+.cautare .intrare { border-color: transparent; background: var(--suprafata-2); }
+.intrare:hover { border-color: #c5cddc; }
+.intrare:focus { outline: none; border-color: var(--principal); background: var(--suprafata); box-shadow: 0 0 0 4px var(--principal-fin); }
+.camp .eroare { font-size: .82rem; color: #a1271b; }
+.camp.cu-eroare .intrare { border-color: #d9534a; }
+
+/* ---------- Carduri de anunt ---------- */
+.grila-anunturi { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); gap: 24px; }
+.card-anunt {
+  background: var(--suprafata); border-radius: var(--raza); overflow: hidden;
+  border: 1px solid var(--bordura); box-shadow: var(--umbra); transition: transform .2s ease, box-shadow .2s ease;
+}
+.card-anunt:hover { transform: translateY(-4px); box-shadow: var(--umbra-mare); }
+.card-anunt .poza { position: relative; aspect-ratio: 4 / 3; background: linear-gradient(135deg, var(--suprafata-2), var(--principal-fin)); }
+.card-anunt .poza img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-anunt .poza .fara-poza { display: grid; place-items: center; height: 100%; color: var(--text-secundar); font-size: .9rem; }
+.card-anunt .favorit {
+  position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%;
+  border: 0; background: rgb(255 255 255 / 92%); cursor: pointer; font-size: 1.15rem; box-shadow: var(--umbra);
+}
+.card-anunt .corp { padding: 16px 18px 18px; }
+.card-anunt .oras { color: var(--text-secundar); font-size: .875rem; margin-bottom: 4px; }
+.card-anunt h3 { font-size: 1.2rem; margin-bottom: 10px; }
+.card-anunt .detalii { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--text-secundar); font-size: .875rem; }
+.card-anunt .pret { margin-top: 14px; font-size: 1.3rem; font-weight: 700; font-family: var(--font-titlu); }
+.card-anunt .pret small { font-family: var(--font-text); font-size: .85rem; font-weight: 400; color: var(--text-secundar); }
+
+/* ---------- Insigne ---------- */
+.insigna { display: inline-block; padding: .28em .8em; border-radius: 999px; font-size: .78rem; font-weight: 650; }
+.insigna-activ { background: #dcf3e5; color: #17663a; }
+.insigna-asteptare { background: #fdf0d5; color: #8a5a00; }
+.insigna-respins { background: #fde4e1; color: #a1271b; }
+.insigna-ciorna { background: var(--suprafata-2); color: var(--text-secundar); }
+.insigna-promovat { background: var(--accent-deschis); color: var(--accent-text); }
+
+/* ---------- Mesaje ---------- */
+.alerta { padding: 14px 18px; border-radius: 14px; border: 1px solid; }
+.alerta-succes { background: #ecf8f0; border-color: #bfe5cc; color: #14532d; }
+.alerta-eroare { background: #fdf0ee; border-color: #f2c4bf; color: #7f1d1d; }
+
+/* ---------- Cardul de cont: se intoarce intre "Intra in cont" si "Creeaza cont" (3D) ---------- */
+.card-cont { perspective: 1400px; max-width: 440px; width: 100%; }
+.card-cont .interior {
+  display: grid;                       /* cele doua fete stau una peste alta, in aceeasi celula */
+  transform-style: preserve-3d;
+  transition: transform .75s cubic-bezier(.2, .75, .2, 1);
+}
+.card-cont .interior.intors { transform: rotateY(180deg); }
+.card-cont .fata {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;         /* fata din spate nu se vede prin cea din fata */
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: 24px;
+  box-shadow: var(--umbra-mare); padding: 32px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.card-cont .fata.spate { transform: rotateY(180deg); }
+.card-cont .titlu-card { text-align: center; }
+.card-cont .titlu-card h2 { font-size: 1.7rem; margin-bottom: .2em; }
+.card-cont .titlu-card p { margin: 0; color: var(--text-secundar); }
+.card-cont .schimba { text-align: center; color: var(--text-secundar); font-size: .95rem; margin: 0; }
+.card-cont .schimba button { border: 0; background: none; font: inherit; font-weight: 700; color: var(--principal); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Comutatorul Chirias / Proprietar: un "glisor" auriu care aluneca sub optiunea aleasa */
+.comutator {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--suprafata-2); border-radius: 14px; padding: 4px;
+}
+.comutator .glisor {
+  position: absolute; inset: 4px auto 4px 4px; width: calc(50% - 4px);
+  background: var(--suprafata); border-radius: 11px; box-shadow: var(--umbra);
+  transition: transform .4s cubic-bezier(.2, .75, .2, 1);
+}
+.comutator[data-ales='proprietar'] .glisor { transform: translateX(100%); }
+.comutator button {
+  position: relative; z-index: 1; border: 0; background: none; padding: .65em; font: inherit;
+  font-weight: 650; color: var(--text-secundar); cursor: pointer; border-radius: 11px;
+}
+.comutator button[aria-checked='true'] { color: var(--principal); }
+
+/* Descrierea rolului: cand schimbi rolul, iconita se roteste o data */
+.rol-ales { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; background: var(--accent-deschis); }
+.rol-ales .iconita {
+  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; display: grid; place-items: center;
+  background: var(--principal); color: #fff; font-size: 1.4rem; animation: rotire .6s cubic-bezier(.2, .75, .2, 1);
+}
+.rol-ales p { margin: 0; font-size: .92rem; color: var(--accent-text); font-weight: 500; }
+@keyframes rotire { from { transform: rotateY(-180deg) scale(.8); } to { transform: none; } }
+
+/* ---------- Ecranul de intrare (logo-ul, cat timp aplicatia porneste) ---------- */
+.ecran-intrare {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 40%, #24356a, var(--principal) 60%, #0d1530);
+  transition: opacity .5s ease, visibility .5s;
+}
+.ecran-intrare.ascuns { opacity: 0; visibility: hidden; }
+.ecran-intrare .continut-intrare { display: grid; justify-items: center; gap: 18px; }
+.ecran-intrare .logo-semn { animation: aparitie .8s cubic-bezier(.2, .75, .2, 1) both; filter: drop-shadow(0 10px 30px rgb(0 0 0 / 35%)); }
+.ecran-intrare .nume {
+  font-family: var(--font-titlu); font-size: 2.4rem; font-weight: 800; color: #fff; letter-spacing: -.02em;
+  animation: aparitie .8s .2s cubic-bezier(.2, .75, .2, 1) both;
+}
+.ecran-intrare .nume span { color: var(--accent); }
+@keyframes aparitie { from { opacity: 0; transform: translateY(12px) scale(.92); } to { opacity: 1; transform: none; } }
+
+/* ---------- Telefon ---------- */
+@media (max-width: 760px) {
+  .hero { padding-top: 36px; }
+  .card-cont .fata { padding: 24px; }
+}
+
+/* Cine a cerut miscare redusa (setare a sistemului) nu vede animatiile si rotirile */
+@media (prefers-reduced-motion: reduce) {
+  .aplicatie *, .ecran-intrare, .ecran-intrare * { transition: none !important; animation: none !important; }
+}
