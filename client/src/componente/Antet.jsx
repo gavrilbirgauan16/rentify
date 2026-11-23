@@ -11,6 +11,7 @@ import { useAntetInteligent } from '../hooks/useAntetInteligent.js';
 function paginiPentru(utilizator) {
   const pagini = [{ adresa: '/cautare', text: 'Caută locuințe' }];
   if (utilizator?.rol === 'proprietar') pagini.push({ adresa: '/proprietar/anunturi', text: 'Anunțurile mele' });
+  if (utilizator) pagini.push({ adresa: '/cont', text: 'Contul meu' });
   return pagini;
 }
 
@@ -31,7 +32,8 @@ export default function Antet() {
 
   const butoaneCont = (clasaLata) => (utilizator ? (
     <>
-      <span className="salut">Bună, <strong>{utilizator.prenume}</strong></span>
+      {/* salutul duce la "Contul meu" */}
+      <Link className="salut" to="/cont" onClick={inchide} title="Contul meu">Bună, <strong>{utilizator.prenume}</strong></Link>
       <button className={`buton buton-moale${clasaLata}`} type="button" onClick={laIesire}>Ieși</button>
     </>
   ) : (

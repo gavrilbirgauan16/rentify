@@ -722,6 +722,21 @@ select.intrare {
 /* "Ai uitat parola?" - mic, aliniat la dreapta sub parola (cardul de intrare trebuie sa incapa fara derulare) */
 .link-uitat { align-self: flex-end; margin-top: -4px; font-size: .85rem; font-weight: 600; color: var(--principal); text-underline-offset: 3px; }
 
+/* ---------- Contul meu ---------- */
+/* Doua coloane pe ecran lat (datele | parola + email), una singura pe ecran ingust */
+.grila-setari { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 16px; align-items: start; }
+.coloana-setari { display: grid; gap: 16px; }
+.card-setari {
+  display: flex; flex-direction: column; gap: 12px; padding: 22px 24px;
+  background: var(--suprafata); border: 1px solid var(--bordura); border-radius: var(--raza); box-shadow: var(--umbra);
+}
+.card-setari h2 { margin: 0; font-size: 1.3rem; }
+.actiuni-setari { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.actiuni-setari .link-uitat { align-self: center; margin: 0; }
+.email-curent { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; overflow-wrap: anywhere; }
+a.salut { text-decoration: none; border-radius: 10px; }
+a.salut:hover strong { color: var(--principal); text-decoration: underline; text-underline-offset: 3px; }
+
 /* ---------- Abonamentul meu ---------- */
 /* Text citit doar de cititoarele de ecran (ex. "Inclus:" langa bifa), ascuns vizual */
 .ascuns-vizual { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

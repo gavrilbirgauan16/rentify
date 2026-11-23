@@ -18,7 +18,7 @@ function paginaDeStart(u) {
   return u.rol === 'proprietar' ? '/proprietar/anunturi' : '/';
 }
 
-// Paginile care nu sunt (inca) in React: panoul adminului si schimbarea parolei temporare.
+// Paginile care nu sunt in React: panoul adminului (randat pe server, cu EJS).
 function mergiPeServer(cale) {
   window.location.assign(`${ADRESA_SERVER}${cale}`);
 }
@@ -57,7 +57,7 @@ function FormularIntrare({ ascuns, laSchimbare, destinatie, mesaj }) {
     setSeTrimite(true);
     try {
       const u = await conecteaza(email.trim(), parola);
-      if (u.schimba_parola) mergiPeServer('/cont/parola'); // parola temporara: intai alege una noua
+      if (u.schimba_parola) navigate('/cont', { replace: true }); // parola temporara: intai alege una noua (oricare ar fi rolul)
       else if (u.rol === 'admin') mergiPeServer('/admin'); // panoul adminului ramane (deocamdata) pe server
       else navigate(destinatie || paginaDeStart(u), { replace: true });
     } catch (err) {
