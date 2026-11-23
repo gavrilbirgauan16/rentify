@@ -26,7 +26,11 @@ if (apiKey && apiKey.length < 32) {
 
 // Trimiterea emailurilor (SMTP, ex. Gmail). Optionala: fara ea, emailurile se afiseaza doar in consola
 // (bun pentru dezvoltare). Daca se completeaza, trebuie completate toate.
-const smtp = process.env.SMTP_HOST
+// In TESTE (NODE_ENV=test) nu se trimite NICIODATA un email real: testele folosesc adrese inventate
+// (ex. ...@test.rentify), iar "dotenv/config" de mai sus completeaza din .env ce lipseste din .env.test -
+// inclusiv SMTP-ul real. Fara aceasta regula, fiecare rulare a testelor ar trimite zeci de emailuri adevarate.
+const esteTest = process.env.NODE_ENV === 'test';
+const smtp = process.env.SMTP_HOST && !esteTest
   ? {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 465,
