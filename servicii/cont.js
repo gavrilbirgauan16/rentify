@@ -6,10 +6,13 @@ const { hashParola, verificaParola, verificaReguliParola } = require('./parole')
 const emailuri = require('./emailuri');
 const { trimite } = require('./email');
 
+const Evenimente = require('./evenimente');
+
 class Cont {
-  constructor({ utilizatorAccessor, tokenuri }) {
+  constructor({ utilizatorAccessor, tokenuri, evenimente }) {
     this.utilizatori = utilizatorAccessor;
     this.tokenuri = tokenuri;
+    this.evenimente = evenimente; // Singleton: anuntam "parola a fost schimbata" (alerta pe email o trimite un consumator)
   }
 
   // Datele de profil ale contului (nume, prenume, telefon, oras, email, rol).
@@ -39,6 +42,8 @@ class Cont {
     if (!erori.parola_noua && parolaNoua !== String(confirmare || '')) erori.confirmare = 'Cele două parole nu se potrivesc.';
     if (Object.keys(erori).length > 0) return { erori };
     await this.utilizatori.seteazaParola(utilizatorId, await hashParola(parolaNoua));
+    const u = await this.utilizatori.getProfil(utilizatorId);
+    await this.evenimente.publica(Evenimente.PAROLA_SCHIMBATA, { utilizator: { email: u.email, prenume: u.prenume }, cum: 'schimbare', cand: new Date() });
     return {};
   }
 

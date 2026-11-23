@@ -7,13 +7,15 @@ const { hashParola, verificaReguliParola } = require('./parole');
 const emailuri = require('./emailuri');
 const { trimite } = require('./email');
 const { abonamentGratuit } = require('../models/AbonamentViewModel');
+const Evenimente = require('./evenimente');
 const { azi } = require('./date');
 
 class Conturi {
-  constructor({ utilizatorAccessor, planAccessor, tokenuri }) {
+  constructor({ utilizatorAccessor, planAccessor, tokenuri, evenimente }) {
     this.utilizatori = utilizatorAccessor;
     this.planuri = planAccessor;
     this.tokenuri = tokenuri;
+    this.evenimente = evenimente; // Singleton: anuntam "parola a fost schimbata" (alerta pe email o trimite un consumator)
   }
 
   // Trimite linkul de confirmare (unul nou; cel vechi nu mai merge).
@@ -104,6 +106,7 @@ class Conturi {
     if (!t) return { linkInvalid: true };
     await this.utilizatori.reseteazaParola(t.utilizator.id, await hashParola(noua));
     await this.utilizatori.inchideSesiunile(t.utilizator.id); // cine era conectat cu parola veche e scos afara
+    await this.evenimente.publica(Evenimente.PAROLA_SCHIMBATA, { utilizator: { email: t.utilizator.email, prenume: t.utilizator.prenume }, cum: 'resetare', cand: new Date() });
     return { utilizatorId: t.utilizator.id };
   }
 }
