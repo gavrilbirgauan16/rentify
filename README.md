@@ -22,7 +22,9 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 
 1. `npm install`, apoi `npx prisma generate`. Pentru interfața React: `npm install --prefix client`.
 2. Copiază `.env.example` ca `.env` și completează `DATABASE_URL`, `SESSION_SECRET` și `API_KEY`.
-   Pentru emailuri reale completează și `SMTP_*`, `EMAIL_FROM`, `APP_URL`; fără ele, emailurile apar doar în consolă.
+   Pentru emailuri reale completează și `SMTP_*`, `EMAIL_FROM` și `APP_URL` (adresa interfeței React pe care o deschid
+   linkurile din emailuri; în timpul lucrului `http://localhost:5173`); fără SMTP, emailurile apar doar în consolă.
+   Pentru Gmail: verificarea în 2 pași + o „parolă de aplicație” (myaccount.google.com/apppasswords).
 3. Creează baza de date din migrări: `npx prisma migrate deploy`.
 4. (Opțional) Date de test: `npx prisma db seed`.
 5. Pune parole conturilor de test: `npm run seteaza-parola -- admin@rentify.test ParolaTa123`.
@@ -53,11 +55,21 @@ Proiect PPAW - Bîrgăuan Gavril, grupa 3711a, USV.
 
 ## Conturi
 
-- Înregistrare ca chiriaș sau proprietar (`/inregistrare`); contul de admin nu se poate crea din aplicație.
-- Confirmarea emailului e obligatorie înainte de conectare (link valabil 24 de ore).
-- Chiriașul și proprietarul primesc automat planul **Gratuit** al rolului lor la confirmare.
-- Parola uitată: link pe email, valabil o oră; după resetare se închid toate sesiunile.
-- "Contul meu" (`/cont`): date personale, schimbarea parolei, schimbarea emailului (cu reconfirmare).
+Totul trece prin email, ca într-o aplicație reală (emailuri trimise prin SMTP, cu Nodemailer):
+
+| Acțiune | Ce se întâmplă |
+|---|---|
+| Cont nou (`/inregistrare`, chiriaș sau proprietar) | email cu link de confirmare (24 de ore); fără confirmare nu te poți conecta; la confirmare primești planul **Gratuit** al rolului |
+| Ai uitat parola? (`/parola-uitata`) | link pe email (o oră, o singură folosire) → `/resetare/:token` → parola nouă; toate sesiunile se închid |
+| Contul meu → Parola (`/cont`) | ceri parola actuală; celelalte dispozitive sunt deconectate |
+| Contul meu → Adresa de email | link pe adresa **nouă**; până la confirmare rămâne cea veche; după confirmare, anunț pe adresa **veche** |
+| Parolă temporară (dată de admin) | la intrare ești dus direct la „Alege-ți o parolă nouă”; până atunci, API-ul refuză restul |
+| După orice schimbare a parolei | **email de alertă** „Parola a fost schimbată”, cu butonul „Nu am fost eu – resetează parola” |
+
+- Contul de admin nu se poate crea din aplicație.
+- Răspunsurile la înregistrare și la parola uitată sunt **aceleași** pentru orice adresă (nu se poate afla cine are cont).
+- Alerta de parolă e un **eveniment** (`cont.parola_schimbata`) cu un consumator de email, ca la moderarea anunțurilor.
+- În teste (`NODE_ENV=test`) nu se trimite **niciodată** un email real, chiar dacă `.env` are SMTP (`test/config.test.js`).
 
 ## Zona proprietarului (`/proprietar`)
 
@@ -146,12 +158,15 @@ Colecția Postman: `docs/Rentify-API.postman_collection.json`. În tab-ul Variab
 ## Interfața React (`client/`)
 
 Interfața pentru chiriași și proprietari, făcută în React peste API-ul de mai sus (`/api/...`).
-Panoul de administrare rămâne deocamdată în EJS.
+Panoul de administrare rămâne în EJS (MVC, randat pe server).
 
 - **Pornire în timpul lucrului:** două ferestre CMD: `npm run dev` (serverul, portul 3000) și `npm run dev` în `client/` (portul 5173).
   Vite trimite cererile `/api` și `/uploads` către server (proxy), deci pentru browser totul vine de la aceeași adresă.
 - **Autentificare:** aceeași sesiune ca paginile EJS (cookie httpOnly, pe care JavaScript nu îl poate citi) și tokenul CSRF
   în antetul `x-csrf-token`, gestionat de `client/src/api/client.js` (singurul loc care vorbește cu serverul).
+- **Contul:** „Ai uitat parola?”, resetarea și confirmarea din email, **Contul meu** (`/cont`: date, parolă, email);
+  paginile deschise din linkurile din emailuri (`/confirmare/:token`, `/resetare/:token`, `/cont/email/confirmare/:token`)
+  trimit tokenul o singură dată (React, în timpul lucrului, pornește efectele de două ori).
 - **Pagini:** Acasă (căutare rapidă și anunțurile noi), Intră în cont / Creează cont
   (un card care se întoarce; crearea contului în 2 pași), 404.
 - **Căutarea** (`/cautare`): filtre (cuvinte, oraș, tip, preț, camere, câte persoane), sortare și pagini; totul stă
